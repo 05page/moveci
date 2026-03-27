@@ -88,6 +88,27 @@ class ConversationController extends Controller
     }
 
     /**
+     * GET /conversations/unread-count
+     *
+     * Retourne le nombre total de messages non lus pour l'user connecté,
+     * toutes conversations confondues. Utilisé par le badge du header.
+     */
+    public function unreadCount(): JsonResponse
+    {
+        $userId = Auth::id();
+
+        $count = Messages::whereHas('conversation', function ($q) use ($userId) {
+                $q->where('participant_1_id', $userId)
+                  ->orWhere('participant_2_id', $userId);
+            })
+            ->where('sender_id', '!=', $userId)
+            ->whereNull('read_at')
+            ->count();
+
+        return response()->json(['unread_count' => $count]);
+    }
+
+    /**
      * POST /conversations
      *
      * Cree ou recupere une conversation existante entre deux users

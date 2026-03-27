@@ -139,6 +139,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Messagerie ─────────────────────────────────────────────────────────────
     Route::prefix('conversations')->group(function () {
+        Route::get('/unread-count',       [ConversationController::class, 'unreadCount']);
         Route::get('/',                   [ConversationController::class, 'index']);
         Route::post('/',                  [ConversationController::class, 'findOrCreate']);
         Route::get('/{id}/messages',      [ConversationController::class, 'messages']);

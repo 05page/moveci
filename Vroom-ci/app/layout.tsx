@@ -5,6 +5,7 @@ import ConditionalHeader from "./components/ConditionalHeader";
 import { Toaster } from "sonner";
 import { UserProvider } from "@/src/context/UserContext";
 import { NotificationProvider } from "@/src/context/NotificationContext";
+import { MessageProvider } from "@/src/context/MessageContext";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -35,9 +36,11 @@ export default function RootLayout({
       <body className="antialiased bg-white text-black min-h-screen">
         <UserProvider>
           <NotificationProvider>
+          <MessageProvider>
               <ConditionalHeader />
               {children}
               <Toaster position="top-center" />
+          </MessageProvider>
           </NotificationProvider>
         </UserProvider>
       </body>

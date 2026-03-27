@@ -28,13 +28,15 @@ class MessageSent implements ShouldBroadcastNow
     }
 
     /**
-     * Canal prive : seuls les participants de la conversation
-     * sont autorises (voir channels.php).
+     * Broadcast sur deux canaux :
+     * - conversation.{id} : pour afficher le message en temps réel dans le chat
+     * - user.{receiver_id} : pour incrémenter le badge "messages non lus" dans le header
      */
     public function broadcastOn(): array
     {
         return [
             new PrivateChannel('conversation.' . $this->message->conversation_id),
+            new PrivateChannel('user.' . $this->message->receiver_id),
         ];
     }
 
