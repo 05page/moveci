@@ -33,7 +33,6 @@ import { cn, getPhotoUrl } from "@/src/lib/utils"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? ""
 
 /** URL d'une photo véhicule — gère les URLs Supabase complètes et les chemins locaux */
 function vehiclePhotoUrl(path?: string): string | null {
@@ -402,7 +401,7 @@ export default function MessagesContent() {
                     </div>
                 ) : (
                     <>
-                        {/* Header de la conversation */}
+                        {/* Header de la conversation — cliquable vers le profil de l'autre participant */}
                         <div className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0">
                             {/* Retour mobile */}
                             <Button
@@ -417,29 +416,63 @@ export default function MessagesContent() {
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
 
-                            {/* Miniature véhicule */}
-                            {(() => {
-                                const photo = selectedConv.vehicule?.photos?.find(p => p.is_primary) ?? selectedConv.vehicule?.photos?.[0]
-                                const url = vehiclePhotoUrl(photo?.path)
-                                return (
-                                    <div className="w-10 h-10 rounded-lg bg-muted overflow-hidden relative shrink-0">
+                            {/* Bloc cliquable — redirige vers le profil de l'autre participant */}
+                            <button
+                                onClick={() => router.push(`/profil/${selectedConv.other_participant.id}`)}
+                                className="flex items-center gap-3 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity cursor-pointer"
+                            >
+                                {/* Avatar du participant */}
+                                <div className="w-10 h-10 rounded-full bg-muted overflow-hidden relative shrink-0">
+                                    {selectedConv.other_participant.avatar
+                                        ? <Image src={selectedConv.other_participant.avatar} alt="avatar" fill className="object-cover" unoptimized />
+                                        : <span className="flex items-center justify-center h-full text-sm font-semibold text-muted-foreground">
+                                            {selectedConv.other_participant.fullname.charAt(0).toUpperCase()}
+                                        </span>
+                                    }
+                                </div>
+
+                                <div className="min-w-0">
+                                    <p className="font-semibold text-sm truncate">
+                                        {selectedConv.other_participant.fullname}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate capitalize">
+                                        {selectedConv.other_participant.role}
+                                    </p>
+                                </div>
+                            </button>
+                        </div>
+
+                        {/* Bannière véhicule — contexte de la conversation, cliquable vers l'annonce */}
+                        {selectedConv.vehicule && (() => {
+                            const photo = selectedConv.vehicule.photos?.find(p => p.is_primary) ?? selectedConv.vehicule.photos?.[0]
+                            const url = vehiclePhotoUrl(photo?.path)
+                            return (
+                                <a
+                                    href={`/vehicles/${selectedConv.vehicule.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-3 px-4 py-2.5 bg-muted/40 border-b border-border hover:bg-muted/70 transition-colors shrink-0"
+                                >
+                                    <div className="w-14 h-10 rounded-lg bg-muted overflow-hidden relative shrink-0">
                                         {url
                                             ? <Image src={url} alt="véhicule" fill className="object-cover" unoptimized />
                                             : <Car className="h-4 w-4 text-muted-foreground m-auto mt-3" />
                                         }
                                     </div>
-                                )
-                            })()}
-
-                            <div className="min-w-0">
-                                <p className="font-semibold text-sm truncate">
-                                    {selectedConv.other_participant.fullname}
-                                </p>
-                                <p className="text-xs text-muted-foreground truncate">
-                                    {selectedConv.vehicule?.description?.marque} {selectedConv.vehicule?.description?.modele}
-                                </p>
-                            </div>
-                        </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-medium truncate">
+                                            {selectedConv.vehicule.description?.marque} {selectedConv.vehicule.description?.modele}
+                                        </p>
+                                        {selectedConv.vehicule.prix && (
+                                            <p className="text-xs text-primary font-semibold">
+                                                {selectedConv.vehicule.prix.toLocaleString("fr-FR")} FCFA
+                                            </p>
+                                        )}
+                                    </div>
+                                    <span className="text-xs text-muted-foreground shrink-0">Voir l'annonce →</span>
+                                </a>
+                            )
+                        })()}
 
                         {/* Messages */}
                         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">

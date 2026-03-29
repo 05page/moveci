@@ -8,17 +8,19 @@ import { vehicule, Avis } from "@/src/types"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { MapPin, Phone, Star, Car, Package } from "lucide-react"
+import { MapPin, Phone, Star, Car, Package, CalendarDays } from "lucide-react"
 import { cn } from "@/src/lib/utils"
 
 interface ProfilVendeur {
     id: string
     fullname: string
+    avatar: string | null
     adresse: string | null
     telephone: string | null
     role: string
     note_moyenne: number
     nb_avis: number
+    membre_since: string | null
 }
 
 interface ProfilData {
@@ -40,7 +42,9 @@ export default function ProfilVendeurPage() {
     const [notFound, setNotFound] = useState(false)
 
     useEffect(() => {
-        api.get<ProfilData>(`/users/${id}/profil`)
+        // fetch direct via le proxy — fonctionne sans token car la route backend est publique
+        fetch(`/api/proxy/users/${id}/profil`)
+            .then(res => res.ok ? res.json() : Promise.reject())
             .then(res => setData(res.data ?? null))
             .catch(() => setNotFound(true))
             .finally(() => setLoading(false))
@@ -103,7 +107,7 @@ export default function ProfilVendeurPage() {
                         </div>
                     </div>
 
-                    {/* Coordonnées — visibles uniquement aux connectés (page protégée via api) */}
+                    {/* Coordonnées */}
                     <div className="mt-5 flex flex-col gap-2">
                         {vendeur.adresse && (
                             <div className="flex items-center gap-2 text-sm text-zinc-600">
@@ -111,17 +115,28 @@ export default function ProfilVendeurPage() {
                                 {vendeur.adresse}
                             </div>
                         )}
+                        {/* Téléphone cliquable pour lancer un appel */}
                         {vendeur.telephone && (
-                            <div className="flex items-center gap-2 text-sm text-zinc-600">
-                                <Phone className="h-4 w-4 text-zinc-400 shrink-0" />
+                            <a
+                                href={`tel:${vendeur.telephone}`}
+                                className="flex items-center gap-2 text-sm text-primary hover:underline"
+                            >
+                                <Phone className="h-4 w-4 shrink-0" />
                                 {vendeur.telephone}
+                            </a>
+                        )}
+                        {vendeur.membre_since && (
+                            <div className="flex items-center gap-2 text-sm text-zinc-400">
+                                <CalendarDays className="h-4 w-4 shrink-0" />
+                                Membre depuis {new Date(vendeur.membre_since).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
                             </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-4xl mx-auto px-4 mt-8 space-y-8">
+            {/* Sections visibles uniquement pour les vendeurs/concessionnaires/auto-écoles */}
+            {vendeur.role !== "client" && <div className="max-w-4xl mx-auto px-4 mt-8 space-y-8">
                 {/* Véhicules disponibles */}
                 <section>
                     <div className="flex items-center gap-2 mb-4">
@@ -232,7 +247,7 @@ export default function ProfilVendeurPage() {
                         </div>
                     )}
                 </section>
-            </div>
+            </div>}
         </div>
     )
 }

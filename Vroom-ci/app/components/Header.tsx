@@ -125,7 +125,7 @@ const Header = () => {
                                     <div className="relative">
                                         <MessageCircle className="h-4 w-4" />
                                         {unreadMessageCount > 0 && (
-                                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                                                 {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
                                             </span>
                                         )}

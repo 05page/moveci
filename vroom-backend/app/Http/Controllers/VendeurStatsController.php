@@ -122,18 +122,38 @@ class VendeurStatsController extends Controller
     public function profil(string $id)
     {
         try {
-            $vendeur = User::whereIn('role', ['vendeur', 'concessionnaire', 'auto_ecole'])
-                ->findOrFail($id);
+            $user = User::findOrFail($id);
 
+            // Profil client — données réduites, pas de véhicules ni d'avis
+            if ($user->role === 'client') {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'vendeur'   => [
+                            'id'           => $user->id,
+                            'fullname'     => $user->fullname,
+                            'avatar'       => $user->avatar,
+                            'role'         => $user->role,
+                            'membre_since' => $user->created_at,
+                            'note_moyenne' => 0,
+                            'nb_avis'      => 0,
+                        ],
+                        'vehicules' => [],
+                        'avis'      => [],
+                    ]
+                ]);
+            }
+
+            // Profil vendeur / concessionnaire / auto_ecole — données complètes
             $vehicules = Vehicules::with(['description', 'photos'])
-                ->where('created_by', $vendeur->id)
+                ->where('created_by', $user->id)
                 ->where('statut', Vehicules::STATUS_DISPONIBLE)
                 ->where('status_validation', 'validee')
                 ->latest()
                 ->get();
 
             $avis = Avis::with('client:id,fullname')
-                ->where('vendeur_id', $vendeur->id)
+                ->where('vendeur_id', $user->id)
                 ->latest()
                 ->take(10)
                 ->get();
@@ -142,12 +162,14 @@ class VendeurStatsController extends Controller
                 'success' => true,
                 'data' => [
                     'vendeur' => [
-                        'id'           => $vendeur->id,
-                        'fullname'     => $vendeur->fullname,
-                        'adresse'      => $vendeur->adresse,
-                        'telephone'    => $vendeur->telephone,
-                        'role'         => $vendeur->role,
-                        'note_moyenne' => round((float) $vendeur->note_moyenne, 1),
+                        'id'           => $user->id,
+                        'fullname'     => $user->fullname,
+                        'avatar'       => $user->avatar,
+                        'adresse'      => $user->adresse,
+                        'telephone'    => $user->telephone,
+                        'role'         => $user->role,
+                        'membre_since' => $user->created_at,
+                        'note_moyenne' => round((float) $user->note_moyenne, 1),
                         'nb_avis'      => $avis->count(),
                     ],
                     'vehicules' => $vehicules,
@@ -157,7 +179,7 @@ class VendeurStatsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Vendeur introuvable',
+                'message' => 'Utilisateur introuvable',
             ], 404);
         }
     }
