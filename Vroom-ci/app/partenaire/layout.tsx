@@ -41,6 +41,7 @@ import { useUser } from "@/src/context/UserContext"
 import { useNotification } from "@/src/context/NotificationContext"
 import { getConversations } from "@/src/actions/conversations.actions"
 import { useState, useEffect } from "react"
+import OnboardingWizard from "@/app/components/OnboardingWizard"
 
 // Tous les items de nav avec leur restriction éventuelle par rôle
 const ALL_NAV_ITEMS = [
@@ -120,6 +121,9 @@ export default function PartenaireLayout({
         router.push("/auth")
     }
     return (
+        <>
+        {/* Wizard d'onboarding — s'affiche automatiquement si non terminé */}
+        <OnboardingWizard />
         <SidebarProvider>
             <Sidebar collapsible="icon">
                 <SidebarHeader>
@@ -237,5 +241,6 @@ export default function PartenaireLayout({
                 </main>
             </SidebarInset>
         </SidebarProvider>
+        </>
     )
 }

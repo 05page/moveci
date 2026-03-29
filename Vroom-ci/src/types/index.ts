@@ -9,6 +9,8 @@ export interface User {
   email_verified_at: string;
   account_status: string;
   data: string;
+  // null = onboarding pas encore fait, string ISO = onboarding terminé
+  onboarding_completed_at: string | null;
 }
 
 export type UserRole =
@@ -384,7 +386,7 @@ export interface Conversation {
   updated_at: string
   // Relations chargées par le backend
   other_participant: ConversationParticipant  // l'autre user (pas moi)
-  vehicule?: Pick<vehicule, 'id' | 'description' | 'photos'>
+  vehicule?: Pick<vehicule, 'id' | 'description' | 'photos' | 'prix'>
   last_message?: Pick<Message, 'content' | 'created_at' | 'sender_id'>
   unread_count: number
 }

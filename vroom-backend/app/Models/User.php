@@ -42,6 +42,8 @@ class User extends Authenticatable
         'numero_agrement',
         // admin
         'niveau_acces',
+        // onboarding
+        'onboarding_completed_at',
     ];
 
     protected $hidden = [
@@ -58,6 +60,7 @@ class User extends Authenticatable
             'badge_officiel'           => 'boolean',
             'google_access_token'      => 'array',
             'google_token_expires_at'  => 'datetime',
+            'onboarding_completed_at'  => 'datetime',
         ];
     }
 

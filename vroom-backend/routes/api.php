@@ -40,6 +40,9 @@ Route::post('/register', [AuthController::class, 'register']);
 // Avis vendeur (public — visible sans connexion)
 Route::get('/avis/vendeur/{id}', [AvisController::class, 'avisVendeur']);
 
+// Profil public vendeur/concessionnaire/auto-école — visible sans connexion
+Route::get('/users/{id}/profil', [VendeurStatsController::class, 'profil']);
+
 // Catalogue véhicules (public — visiteurs non connectés)
 // ->where() contraint {id} à n'accepter que des UUIDs valides,
 // évitant que "mes-vehicules" soit capturé par cette route publique
@@ -61,13 +64,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/me/update',               [AuthController::class, 'update']);
     Route::put('/me/contact',              [AuthController::class, 'updatePhoneAndAddress']);
     Route::post('/auth/complete-onboarding', [AuthController::class, 'completeOnboarding']);
+    Route::post('/auth/finish-onboarding',   [AuthController::class, 'finishOnboarding']);
     Route::post('/logout',                 [AuthController::class, 'logout']);
 
     // Véhicules — suggestions basées sur les favoris (avant les routes dynamiques)
     Route::get('/vehicules/suggestions', [VehiculesController::class, 'suggestions']);
 
     // Tendances — agrégats platform-wide ou auto-école
-    Route::get('/tendances', [TendancesController::class, 'index']);
+    Route::get('/tendances', [TendancesCfonontroller::class, 'index']);
 
     // Véhicules — écriture (vendeurs et partenaires)
     Route::prefix('vehicules')->group(function () {
@@ -84,8 +88,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/stats/mes-stats', [VendeurStatsController::class, 'mesStats']);
     });
 
-    // Profil public vendeur/concessionnaire (accessible à tous les connectés)
-    Route::get('/users/{id}/profil', [VendeurStatsController::class, 'profil']);
 
     // Notifications
     Route::prefix('notifications')->group(function () {

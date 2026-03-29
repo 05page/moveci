@@ -221,28 +221,39 @@ class AuthController extends Controller
         try {
             $user = $request->user();
 
-            $validated = $request->validate([
-                'role'      => 'required|in:client,vendeur',
-                'telephone' => 'required|string|max:20',
-                'adresse'   => 'required|string|max:500',
-            ]);
+            // Validation conditionnelle — auto_ecole a des champs différents de vendeur/concessionnaire
+            if ($user->role === 'auto_ecole') {
+                $validated = $request->validate([
+                    'raison_sociale'  => 'required|string|max:255',
+                    'numero_agrement' => 'required|string|max:50',
+                ]);
+            } else {
+                $validated = $request->validate([
+                    'telephone' => 'required|string|max:20',
+                    'adresse'   => 'required|string|max:500',
+                ]);
+            }
 
             DB::beginTransaction();
 
             $user->update($validated);
 
-            // Géocoder l'adresse pour remplir lat/lng automatiquement
-            $coords = (new GeocodingService())->geocode($validated['adresse']);
-            if ($coords) {
-                $user->update($coords);
+            // Géocoder uniquement si le rôle envoie une adresse (pas auto_ecole)
+            if (isset($validated['adresse'])) {
+                $coords = (new GeocodingService())->geocode($validated['adresse']);
+                if ($coords) {
+                    $user->update($coords);
+                }
             }
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'user'    => $user,
-                'role'    => $user->role,
+                'data' => [
+                    'user'    => $user,
+                    'role'    => $user->role,
+                ]
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -252,6 +263,22 @@ class AuthController extends Controller
                 'error'   => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Marque l'onboarding comme terminé pour un vendeur ou partenaire.
+     * Appelé depuis le wizard frontend sur la dernière étape.
+     */
+    public function finishOnboarding(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $user->update(['onboarding_completed_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => ["user"=> $user->fresh()],
+        ]);
     }
 
     public function getInfoUser(Request $request)
