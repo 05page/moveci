@@ -8,6 +8,7 @@ export interface User {
   adresse: string;
   email_verified_at: string;
   account_status: string;
+  statut: 'actif' | 'suspendu' | 'banni' | 'en_attente';
   data: string;
   // null = onboarding pas encore fait, string ISO = onboarding terminé
   onboarding_completed_at: string | null;
