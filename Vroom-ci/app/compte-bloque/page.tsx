@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import { Button } from "@/components/ui/button"
 import { ShieldX, ShieldAlert } from "lucide-react"
 import { useSearchParams } from "next/navigation"
