@@ -12,6 +12,7 @@ import {
     HelpCircle,
     Home,
     LayoutDashboard,
+    KeyRound,
     LogOut,
     MapPin,
     Menu,
@@ -59,6 +60,7 @@ const Header = () => {
     const authLinks = isAuthenticated ? [
         ...(!isVendeur ? [
             { href: "/client/favorites", label: "Favoris", icon: Heart },
+            { href: "/client/reservations", label: "Réservations", icon: KeyRound },
             { href: "/client/formations", label: "Formations", icon: BookOpen },
             { href: "/client/suggestions", label: "Suggestions", icon: Sparkles },
         ] : []),

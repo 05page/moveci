@@ -311,6 +311,20 @@ export interface RendezVous {
   updated_at: string
 }
 
+export interface Reservation {
+  id: string
+  vehicule_id: string
+  client_id: string
+  statut: 'en_attente' | 'confirmee' | 'annulee' | 'expiree'
+  expires_at: string
+  annulations_count: number
+  cancelled_at?: string | null
+  vehicule?: vehicule
+  client?: { id: string; fullname: string; email: string; telephone?: string | null }
+  created_at: string
+  updated_at: string
+}
+
 export interface MesNotifs {
   notifications: Notifications[]
 }

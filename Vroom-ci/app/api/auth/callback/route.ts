@@ -6,10 +6,16 @@ import { NextRequest, NextResponse } from "next/server"
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get("token")
   const role = request.nextUrl.searchParams.get("role")
+  const statut = request.nextUrl.searchParams.get("statut") ?? "actif"
   const needsOnboarding = request.nextUrl.searchParams.get("needs_onboarding") === "1"
 
   if (!token) {
     return NextResponse.redirect(new URL("/auth?error=no_token", request.url))
+  }
+
+  // Utilisateur banni ou suspendu → page bloquée directement
+  if (statut === "suspendu" || statut === "banni") {
+    return NextResponse.redirect(new URL(`/compte-bloque?raison=${statut}`, request.url))
   }
 
   // Nouveau user Google → onboarding avant le dashboard
@@ -24,6 +30,13 @@ export async function GET(request: NextRequest) {
     maxAge: 60 * 60 * 24 * 7,
   })
   response.cookies.set("user_role", role || "client", {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  })
+  response.cookies.set("user_statut", statut, {
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

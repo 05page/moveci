@@ -1,5 +1,7 @@
 <?php
 
+use App\Jobs\ExpireReservations;
+use App\Jobs\SendReservationReminders;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -21,3 +23,5 @@ Schedule::command('tendances:check')->hourly();
  */
 Schedule::command('transactions:expirer')->hourly();
 Schedule::command('sanctum:pruned-expired --hours=168')->daily();
+Schedule::job(new ExpireReservations())->daily();
+Schedule::job(new SendReservationReminders())->daily();

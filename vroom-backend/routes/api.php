@@ -21,6 +21,7 @@ use App\Http\Controllers\SignalementController;
 use App\Http\Controllers\VehiculesController;
 use App\Http\Controllers\VendeurStatsController;
 use App\Http\Controllers\VersementInscriptionController;
+use App\Http\Controllers\ReservationController;
 // À créer :
 // use App\Http\Controllers\CatalogueController;
 // use App\Http\Controllers\FormationController;
@@ -53,14 +54,16 @@ Route::prefix('vehicules')->group(function () {
 });
 
 // ── Authentifié ───────────────────────────────────────────
+// /me sans check.statut — un user banni doit quand même récupérer son statut
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/me', [AuthController::class, 'getInfoUser']);
+});
+
+Route::middleware(['auth:sanctum', 'check.statut'])->group(function () {
 
     // Géolocalisation — mise à jour position (authentifié)
     Route::post('/geo/position',  [GeolocalisationController::class, 'updatePosition']);
     Route::post('/geo/geocode',   [GeolocalisationController::class, 'geocodeAdresse']);
-
-    // Profil
-    Route::get('/me',                      [AuthController::class, 'getInfoUser']);
     Route::put('/me/update',               [AuthController::class, 'update']);
     Route::put('/me/contact',              [AuthController::class, 'updatePhoneAndAddress']);
     Route::post('/auth/complete-onboarding', [AuthController::class, 'completeOnboarding']);
@@ -71,7 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/vehicules/suggestions', [VehiculesController::class, 'suggestions']);
 
     // Tendances — agrégats platform-wide ou auto-école
-    Route::get('/tendances', [TendancesCfonontroller::class, 'index']);
+    Route::get('/tendances', [TendancesController::class, 'index']);
 
     // Véhicules — écriture (vendeurs et partenaires)
     Route::prefix('vehicules')->group(function () {
@@ -185,6 +188,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/clients/{clientId}/notes',       [CrmController::class, 'storeNote']);
         Route::put('/notes/{noteId}',                  [CrmController::class, 'updateNote']);
         Route::delete('/notes/{noteId}',               [CrmController::class, 'destroyNote']);
+    });
+
+    // Réservations
+    Route::prefix('reservations')->group(function () {
+        Route::get('/',          [ReservationController::class, 'index']);
+        Route::post('/',         [ReservationController::class, 'store']);
+        Route::get('/{id}',      [ReservationController::class, 'show']);
+        Route::post('/{id}/cancel', [ReservationController::class, 'cancel']);
     });
 
     // Transactions conclues

@@ -134,6 +134,9 @@ const VehicleDetailPage = () => {
     const [alerteLoading, setAlerteLoading] = useState(false)
     const [alerteForm, setAlerteForm] = useState({ prix_max: "", carburant: "" })
 
+    // Réservation
+    const [reserverLoading, setReserverLoading] = useState(false)
+
     // ── Chargement du véhicule ─────────────────────────────────────────────────
     useEffect(() => {
         const id = params?.id as string
@@ -235,6 +238,23 @@ const VehicleDetailPage = () => {
             toast.error("Impossible d'ouvrir la conversation")
         } finally {
             setContactLoading(false)
+        }
+    }
+
+    // ── Réserver un véhicule ──────────────────────────────────────────────────
+    const handleReserver = async () => {
+        if (!requireAuth()) return
+        setReserverLoading(true)
+        try {
+            await api.post("/reservations", { vehicule_id: vehiculeData?.id })
+            toast.success("Véhicule réservé avec succès !")
+            // Met à jour le statut localement pour griser le bouton sans recharger
+            setVehiculeData(prev => prev ? { ...prev, statut: "réservé" } : prev)
+        } catch (e: unknown) {
+            const msg = (e as { message?: string })?.message ?? "Une erreur est survenue"
+            toast.error(msg)
+        } finally {
+            setReserverLoading(false)
         }
     }
 
@@ -479,7 +499,7 @@ const VehicleDetailPage = () => {
                 </div>
             </div>
 
-            {/* ── Titre + type ────────────────────────────────────────────────── */}
+            {/* ── Titre + type ────────────── ──────────────────────────────────── */}
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-900">
@@ -506,6 +526,24 @@ const VehicleDetailPage = () => {
                     <CalendarPlus className="h-4 w-4" />
                     Prendre RDV
                 </Button>
+
+                {/* Réserver — uniquement pour les ventes disponibles, masqué si proprio */}
+                {vehiculeData.post_type === "vente" &&
+                    vehiculeData.statut === "disponible" &&
+                    (!vehiculeData.date_disponibilite || new Date(vehiculeData.date_disponibilite) <= new Date()) &&
+                    user?.id !== vehiculeData.creator?.id && (
+                    <Button
+                        onClick={handleReserver}
+                        disabled={reserverLoading}
+                        className="flex-1 min-w-30 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl gap-2 cursor-pointer"
+                    >
+                        {reserverLoading
+                            ? <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            : <KeyRound className="h-4 w-4" />
+                        }
+                        Réserver
+                    </Button>
+                )}
 
                 {/* Contacter le vendeur — masqué si l'user est le proprio */}
                 {vehiculeData.creator && user?.id !== vehiculeData.creator.id && (

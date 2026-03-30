@@ -9,6 +9,15 @@ export default function middleware(req: NextRequest){
         return NextResponse.redirect(new URL('/auth', req.url))
     }
 
+    // Bloquer les comptes suspendus/bannis sur toutes les routes protégées
+    const userStatut = req.cookies.get("user_statut")?.value
+    if (userStatut === "suspendu" || userStatut === "banni") {
+        if (path !== "/compte-bloque") {
+            return NextResponse.redirect(new URL(`/compte-bloque?raison=${userStatut}`, req.url))
+        }
+        return NextResponse.next()
+    }
+
     const onboardingPending = req.cookies.get("onboarding_pending")?.value === "1"
 
     if(onboardingPending) {

@@ -68,6 +68,7 @@ class AuthController extends Controller
                 'token'            => $token,
                 'data'             => $user,
                 'role'             => $user->role ?? 'client',
+                'statut'           => $user->statut ?? 'actif',
                 'needs_onboarding' => $needsOnboarding ? '1' : '0',
             ]);
 
