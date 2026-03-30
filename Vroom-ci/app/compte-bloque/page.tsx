@@ -1,13 +1,12 @@
 "use client"
 
-export const dynamic = 'force-dynamic'
-
 import { Button } from "@/components/ui/button"
 import { ShieldX, ShieldAlert } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { Suspense } from "react"
 
-export default function CompteBloque() {
+function CompteBloquePage() {
     const searchParams = useSearchParams()
     const raison = searchParams.get("raison")
     const isBanni = raison === "banni"
@@ -38,5 +37,13 @@ export default function CompteBloque() {
                 </Link>
             )}
         </div>
+    )
+}
+
+export default function CompteBloque() {
+    return (
+        <Suspense>
+            <CompteBloquePage />
+        </Suspense>
     )
 }
