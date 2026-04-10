@@ -66,11 +66,17 @@ export default function FormationsClientPage() {
     const [loading, setLoading]                     = useState(true)
     const [inscriptionLoading, setInscriptionLoading] = useState<string | null>(null)
     const [filtrePermis, setFiltrePermis]           = useState("Tous")
+    const [filtreVille, setFiltreVille]             = useState("")
+    const [budgetMax, setBudgetMax]                 = useState<number>(0)
 
     const fetchData = useCallback(() => {
         Promise.allSettled([getFormations(), getMesInscriptions()])
             .then(([formRes, inscRes]) => {
-                if (formRes.status === "fulfilled") setFormations(formRes.value?.data ?? [])
+                if (formRes.status === "fulfilled") {
+                    const data = formRes.value?.data ?? []
+                    setFormations(data)
+                    setBudgetMax(Math.max(...data.map(f => Number(f.prix)), 0))
+                }
                 if (inscRes.status === "fulfilled") setMesInscriptions(inscRes.value?.data ?? [])
             })
             .finally(() => setLoading(false))
@@ -88,10 +94,17 @@ export default function FormationsClientPage() {
         [mesInscriptions]
     )
 
+    // Prix max réel pour le slider (ne change pas quand l'utilisateur filtre)
+    const prixMax = useMemo(() => Math.max(...formations.map(f => Number(f.prix)), 0), [formations])
+
     const formationsFiltrees = useMemo(() => {
-        if (filtrePermis === "Tous") return formations
-        return formations.filter(f => f.type_permis === filtrePermis)
-    }, [formations, filtrePermis])
+        return formations.filter(f => {
+            if (filtrePermis !== "Tous" && f.type_permis !== filtrePermis) return false
+            if (Number(f.prix) > budgetMax) return false
+            if (filtreVille.trim() && !f.auto_ecole?.adresse_showroom?.toLowerCase().includes(filtreVille.trim().toLowerCase())) return false
+            return true
+        })
+    }, [formations, filtrePermis, budgetMax, filtreVille])
 
     const handleInscrire = async (formationId: string) => {
         setInscriptionLoading(formationId)
@@ -244,9 +257,43 @@ export default function FormationsClientPage() {
                         </button>
                     ))}
                 </div>
+                {/* Filtre localisation */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1 max-w-sm">
+                        <input
+                            type="text"
+                            value={filtreVille}
+                            onChange={(e) => setFiltreVille(e.target.value)}
+                            placeholder="Filtrer par ville (ex: Cocody, Yopougon…)"
+                            className="w-full h-10 pl-4 pr-4 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-zinc-300"
+                        />
+                    </div>
+
+                    {/* Filtre budget */}
+                    {prixMax > 0 && (
+                        <div className="flex items-center gap-3 flex-1 max-w-sm">
+                            <span className="text-xs text-muted-foreground shrink-0">Budget max</span>
+                            <input
+                                type="range"
+                                min={0}
+                                max={prixMax}
+                                step={5000}
+                                value={budgetMax}
+                                onChange={(e) => setBudgetMax(Number(e.target.value))}
+                                className="flex-1 accent-zinc-900"
+                            />
+                            <span className="text-xs font-semibold text-zinc-700 shrink-0 w-24 text-right">
+                                {budgetMax.toLocaleString("fr-FR")} FCFA
+                            </span>
+                        </div>
+                    )}
+                </div>
+
                 <p className="text-xs text-muted-foreground">
                     {formationsFiltrees.length} formation{formationsFiltrees.length > 1 ? "s" : ""}
                     {filtrePermis !== "Tous" && ` · Permis ${filtrePermis}`}
+                    {filtreVille.trim() && ` · "${filtreVille}"`}
+                    {budgetMax < prixMax && ` · ≤ ${budgetMax.toLocaleString("fr-FR")} FCFA`}
                 </p>
             </div>
 
