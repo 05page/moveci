@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -47,13 +47,23 @@ export default function AdminSettings() {
     const [showNewPassword, setShowNewPassword]     = useState(false)
     const [saving, setSaving]                       = useState(false)
 
-    // Champs du profil pré-remplis depuis le contexte utilisateur
+    // Champs du profil — initialisés vides, remplis quand user arrive du contexte
     const [form, setForm] = useState({
-        fullname:  user?.fullname  ?? "",
-        email:     user?.email     ?? "",
-        telephone: user?.telephone ?? "",
-        adresse:   user?.adresse   ?? "",
+        fullname:  "",
+        email:     "",
+        telephone: "",
+        adresse:   "",
     })
+
+    useEffect(() => {
+        if (!user) return
+        setForm({
+            fullname:  user.fullname  ?? "",
+            email:     user.email     ?? "",
+            telephone: user.telephone ?? "",
+            adresse:   user.adresse   ?? "",
+        })
+    }, [user])
 
     // Préférences de notification (état local — pas encore d'endpoint dédié)
     const [prefs, setPrefs] = useState({

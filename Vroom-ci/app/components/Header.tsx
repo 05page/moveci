@@ -17,7 +17,6 @@ import {
     MapPin,
     Menu,
     MessageCircle,
-    Sparkles,
     User as UserIcon,
     Users,
     X,
@@ -62,7 +61,6 @@ const Header = () => {
             { href: "/client/favorites", label: "Favoris", icon: Heart },
             { href: "/client/reservations", label: "Réservations", icon: KeyRound },
             { href: "/client/formations", label: "Auto-Ecole", icon: BookOpen },
-            { href: "/client/suggestions", label: "Suggestions", icon: Sparkles },
         ] : []),
         {
             href: isVendeur ? "/vendeur/rdv" : "/client/rdv",
