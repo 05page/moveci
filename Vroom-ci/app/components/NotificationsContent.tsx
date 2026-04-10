@@ -134,25 +134,23 @@ function NotificationItem({ notification, onRead, role }: { notification: Notifi
 
     return (
         <Card onClick={handleClick} className={`rounded-2xl shadow-sm border border-border/40 hover:shadow-md transition-all duration-300 cursor-pointer group ${!notification.is_read ? 'bg-primary/5 border-primary/20' : 'bg-card/50'}`}>
-            <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-xl ${getIconBgByType(notification.type)} flex items-center justify-center shrink-0`}>
+            <CardContent className="p-3 md:p-4">
+                <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl ${getIconBgByType(notification.type)} flex items-center justify-center shrink-0`}>
                         {getIconByType(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                            <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                    <h4 className="font-bold text-sm text-foreground truncate">{notification.title}</h4>
-                                    {!notification.is_read && (
-                                        <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
-                                    )}
-                                </div>
-                                <p className="text-sm text-muted-foreground line-clamp-2">{notification.message}</p>
-                            </div>
+                            <h4 className="font-bold text-sm text-foreground leading-snug break-words pr-1">
+                                {notification.title}
+                            </h4>
+                            {!notification.is_read && (
+                                <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1" />
+                            )}
                         </div>
+                        <p className="text-sm text-muted-foreground mt-1 break-words">{notification.message}</p>
                         <div className="flex items-center gap-2 mt-2">
-                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
                             <span className="text-xs text-muted-foreground">
                                 {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: fr })}
                             </span>

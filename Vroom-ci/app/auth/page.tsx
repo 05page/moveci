@@ -151,8 +151,6 @@ const AuthContent = () => {
                 toast.success("Demande envoyée ! Votre compte est en attente de validation par notre équipe.")
                 router.push("/auth/en-attente")
             } else {
-                const data = await res.json()
-                console.log("data reçu:", data)
                 toast.success(data.message || "Compte créé avec succès !")
                 router.push(getDashBoard(data.role as UserRole))
             }
