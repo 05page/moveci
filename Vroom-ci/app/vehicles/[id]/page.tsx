@@ -516,6 +516,42 @@ const VehicleDetailPage = () => {
                 </Badge>
             </div>
 
+            {/* ── Date de disponibilité — visible immédiatement ───────────────── */}
+            {vehiculeData.date_disponibilite && (
+                <div className={`flex items-center gap-3 p-3 rounded-xl border ${
+                    new Date(vehiculeData.date_disponibilite) > new Date()
+                        ? "bg-amber-50 border-amber-200"
+                        : "bg-green-50 border-green-200"
+                }`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                        new Date(vehiculeData.date_disponibilite) > new Date()
+                            ? "bg-amber-100"
+                            : "bg-green-100"
+                    }`}>
+                        <Calendar className={`h-4 w-4 ${
+                            new Date(vehiculeData.date_disponibilite) > new Date()
+                                ? "text-amber-600"
+                                : "text-green-600"
+                        }`} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                            {vehiculeData.post_type === "location" ? "Disponible à la location" : "Disponible à partir du"}
+                        </p>
+                        <p className={`text-sm font-bold ${
+                            new Date(vehiculeData.date_disponibilite) > new Date()
+                                ? "text-amber-700"
+                                : "text-green-700"
+                        }`}>
+                            {new Date(vehiculeData.date_disponibilite) > new Date()
+                                ? formatDate(vehiculeData.date_disponibilite)
+                                : "Disponible maintenant"
+                            }
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* ── Boutons d'action ────────────────────────────────────────────── */}
             <div className="flex gap-2 flex-wrap">
                 {/* Prendre RDV */}
