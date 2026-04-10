@@ -154,7 +154,7 @@ export function ProfileContent() {
                         >
                             <AvatarImage src="" alt={user?.fullname} />
                             <AvatarFallback className="text-2xl md:text-4xl bg-linear-to-br from-primary to-primary/80 text-primary-foreground font-black">
-                                {user?.fullname?.split(" ").map(n => n[0]).join("").toUpperCase()}
+                                {user?.fullname?.split(" ").map(n => n[0]).slice(0,2).join("").toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
 
@@ -165,12 +165,17 @@ export function ProfileContent() {
                                         <h1 className="text-xl md:text-3xl font-black tracking-tight">{user?.fullname ?? ""}</h1>
                                         <Badge
                                             className={`font-bold rounded-full ${
-                                                user?.role === "client"
-                                                    ? "bg-orange-500 text-primary-foreground"
-                                                    : "bg-accent text-accent-foreground"
+                                                user?.role === "client" ? "bg-orange-500 text-primary-foreground"
+                                                : user?.role === "vendeur" ? "bg-accent text-accent-foreground"
+                                                : user?.role === "admin" ? "bg-red-600 text-white"
+                                                : "bg-blue-600 text-white"
                                             }`}
                                         >
-                                            {user?.role === "vendeur" ? "Vendeur" : "Client"}
+                                            {user?.role === "vendeur" ? "Vendeur"
+                                                : user?.role === "admin" ? "Admin"
+                                                : user?.role === "concessionnaire" ? "Concessionnaire"
+                                                : user?.role === "auto_ecole" ? "Auto-École"
+                                                : "Client"}
                                         </Badge>
                                     </div>
                                     {user?.email_verified_at && (
@@ -189,7 +194,7 @@ export function ProfileContent() {
                                         <Edit className="h-4 w-4 mr-2" />
                                         Modifier le profil
                                     </Button>
-                                    <EditProfil open={open} onOpenChange={setOpen} onSubmit={handleSubmit} />
+                                    {user && <EditProfil open={open} onOpenChange={setOpen} onSubmit={handleSubmit} user={user} />}
                                 </div>
                             </div>
 
@@ -221,6 +226,42 @@ export function ProfileContent() {
                                         <p className="font-semibold text-xs truncate">{user?.adresse ?? "Non défini"}</p>
                                     </div>
                                 </div>
+                                {/* Champs spécifiques partenaires */}
+                                {(user?.role === "concessionnaire" || user?.role === "auto_ecole") && (
+                                    <>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                                                <User className="h-4 w-4 text-blue-600" />
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Raison sociale</p>
+                                                <p className="font-semibold text-xs truncate">{user?.raison_sociale ?? "Non défini"}</p>
+                                            </div>
+                                        </div>
+                                        {user?.role === "concessionnaire" && (
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                                                    <User className="h-4 w-4 text-blue-600" />
+                                                </div>
+                                                <div className="overflow-hidden">
+                                                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">RCCM</p>
+                                                    <p className="font-semibold text-xs truncate">{user?.rccm ?? "Non défini"}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {user?.role === "auto_ecole" && (
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                                                    <User className="h-4 w-4 text-blue-600" />
+                                                </div>
+                                                <div className="overflow-hidden">
+                                                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">N° Agrément</p>
+                                                    <p className="font-semibold text-xs truncate">{user?.numero_agrement ?? "Non défini"}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -12,6 +12,10 @@ export interface User {
   data: string;
   // null = onboarding pas encore fait, string ISO = onboarding terminé
   onboarding_completed_at: string | null;
+  // Champs spécifiques aux partenaires
+  raison_sociale?: string;
+  rccm?: string;
+  numero_agrement?: string;
 }
 
 export type UserRole =
@@ -157,7 +161,7 @@ export interface Formation {
   statut_validation: 'en_attente' | 'validé' | 'rejeté'
   inscriptions_count?: number
   created_at: string
-  auto_ecole?: { id: string; fullname: string; avatar?: string; note_moyenne?: number; taux_reussite?: number }
+  auto_ecole?: { id: string; fullname: string; avatar?: string; note_moyenne?: number; taux_reussite?: number; adresse_showroom?: string }
   description?: DescriptionFormation
 }
 
