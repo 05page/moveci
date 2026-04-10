@@ -27,6 +27,7 @@ import {
     LogIn,
     Building2,
     GitCompare,
+    Sparkles,
 } from "lucide-react"
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
@@ -37,6 +38,7 @@ import { vehicule, User, AllVehicules, VehiculeStats, Favori } from "@/src/types
 import { getVehicules } from "@/src/actions/vehicules.actions"
 import { getFavoris, removeFavori, addFavori } from "@/src/actions/favoris.actions"
 import { useUser } from "@/src/context/UserContext"
+import { api } from "@/src/lib/api"
 import VehicleDetails from "./VehicleDetails"
 import { cn, getPhotoUrl } from "@/src/lib/utils"
 import { FadeIn, SlideIn, StaggerList, StaggerItem } from "@/components/ui/motion-primitives"
@@ -97,6 +99,19 @@ const VehiclesPage = () => {
         getFavoris()
             .then(res => setIsFavori(new Set((res?.data ?? []).map((f: Favori) => f.vehicule_id))))
             .catch(() => {/* silencieux si favoris indisponibles */})
+    }, [user, userLoading])
+
+    // Suggestions personnalisées — uniquement si connecté
+    const [suggestions, setSuggestions] = useState<vehicule[]>([])
+    const [suggestionsSource, setSuggestionsSource] = useState<"favoris" | "populaire" | null>(null)
+    useEffect(() => {
+        if (userLoading || !user) return
+        api.get<{ data: vehicule[]; source: "favoris" | "populaire" }>("/vehicules/suggestions")
+            .then(res => {
+                setSuggestions(res.data?.data ?? [])
+                setSuggestionsSource(res.data?.source ?? null)
+            })
+            .catch(() => {/* silencieux */})
     }, [user, userLoading])
 
     // Écoute le canal public "vehicules" pour afficher les nouveaux véhicules validés en temps réel
@@ -761,6 +776,15 @@ const VehiclesPage = () => {
                                     {stats?.en_location ?? 0}
                                 </Badge>
                             </TabsTrigger>
+                            {user && (
+                                <TabsTrigger
+                                    value="suggestions"
+                                    className="gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+                                >
+                                    <Sparkles className="h-4 w-4" />
+                                    <span className="hidden md:inline">Pour vous</span>
+                                </TabsTrigger>
+                            )}
                         </TabsList>
                     </div>
 
@@ -867,6 +891,44 @@ const VehiclesPage = () => {
                             </StaggerList>
                         )}
                     </TabsContent>
+
+                    {/* ── Suggestions personnalisées ── */}
+                    {user && (
+                        <TabsContent value="suggestions" className="p-4 md:p-6">
+                            {/* Badge source */}
+                            {suggestionsSource && (
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Badge className={`rounded-full font-semibold ${
+                                        suggestionsSource === "favoris"
+                                            ? "bg-purple-500/10 text-purple-700 border-purple-500/20"
+                                            : "bg-amber-500/10 text-amber-700 border-amber-500/20"
+                                    }`}>
+                                        <Sparkles className="h-3 w-3 mr-1" />
+                                        {suggestionsSource === "favoris" ? "Basées sur vos favoris" : "Véhicules populaires"}
+                                    </Badge>
+                                </div>
+                            )}
+                            {suggestions.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 md:py-16 text-center">
+                                    <div className="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center mb-4">
+                                        <Sparkles className="h-8 w-8 text-purple-300" />
+                                    </div>
+                                    <h3 className="text-base font-bold text-zinc-900 mb-2">Aucune suggestion</h3>
+                                    <p className="text-sm text-zinc-500 max-w-sm">
+                                        Ajoutez des véhicules à vos favoris pour recevoir des suggestions personnalisées.
+                                    </p>
+                                </div>
+                            ) : (
+                                <StaggerList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                                    {suggestions.map(v => (
+                                        <StaggerItem key={v.id}>
+                                            <VehicleCard v={v} />
+                                        </StaggerItem>
+                                    ))}
+                                </StaggerList>
+                            )}
+                        </TabsContent>
+                    )}
                 </Tabs>
             </Card>
 
