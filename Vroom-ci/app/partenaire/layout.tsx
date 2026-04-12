@@ -89,26 +89,24 @@ export default function PartenaireLayout({
                 const total = convs.reduce((sum, c) => sum + (c.unread_count ?? 0), 0)
                 setUnreadMessages(total)
 
-                // Abonnement Reverb sur chaque conversation pour détecter les nouveaux messages
+                // Abonnement sur le canal user.{id} pour détecter TOUS les nouveaux messages
+                // (conversations existantes ET nouvelles), sans double-comptage par conversation
                 const { getEcho } = await import("@/src/lib/echo")
                 echoRef = await getEcho()
-                convs.forEach(conv => {
-                    subscribedIds.push(conv.id)
-                    echoRef!
-                        .private(`conversation.${conv.id}`)
-                        .listen(".message.sent", (e: { message: { sender_id: string } }) => {
-                            // N'incrémenter que si le message vient de l'autre participant
-                            if (e.message.sender_id !== user.id) {
-                                setUnreadMessages(prev => prev + 1)
-                            }
-                        })
-                })
+                subscribedIds.push(`user.${user.id}`)
+                echoRef!
+                    .private(`user.${user.id}`)
+                    .listen(".message.sent", (e: { message: { sender_id: string } }) => {
+                        if (e.message.sender_id !== user.id) {
+                            setUnreadMessages(prev => prev + 1)
+                        }
+                    })
             })
             .catch(() => {})
 
         return () => {
             if (echoRef) {
-                subscribedIds.forEach(id => echoRef!.leave(`conversation.${id}`))
+                subscribedIds.forEach(channel => echoRef!.leave(channel))
             }
         }
     }, [user?.id])
