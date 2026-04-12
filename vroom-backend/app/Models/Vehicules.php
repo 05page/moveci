@@ -43,6 +43,7 @@ class Vehicules extends Model
     const VEHICLE_TYPE_NEUF     = 'neuf';
     const VEHICLE_TYPE_OCCASION = 'occasion';
     const STATUS_DISPONIBLE     = 'disponible';
+    const STATUS_A_VENIR     = 'a_venir';
     const STATUS_VENDU          = 'vendu';
     const STATUS_LOUE           = 'loué';
     const STATUS_SUSPENDU       = 'suspendu';
@@ -110,6 +111,12 @@ class Vehicules extends Model
     {
         return $query->where('statut', 'disponible');
     }
+
+    public function scopeAVenir($query)
+    {
+        return $query->where('statut', 'a_venir');
+    }
+
     public function scopeNeuf($query)
     {
         return $query->where('type', 'neuf');

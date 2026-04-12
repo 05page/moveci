@@ -25,3 +25,9 @@ Schedule::command('transactions:expirer')->hourly();
 Schedule::command('sanctum:pruned-expired --hours=168')->daily();
 Schedule::job(new ExpireReservations())->daily();
 Schedule::job(new SendReservationReminders())->daily();
+
+/*
+ * Passe les véhicules 'a_venir' en 'disponible' chaque nuit
+ * dès que leur date_disponibilite est atteinte.
+ */
+Schedule::command('app:passer-vehicules-disponibles')->daily();

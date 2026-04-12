@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignUuid('catalogue_id')->nullable()->constrained('catalogues')->onDelete('set null');
             $table->enum('post_type', ['vente', 'location']);
             $table->enum('type', ['neuf', 'occasion']);
-            $table->enum('statut', ['disponible', 'vendu', 'loué']);
+            $table->enum('statut', ['disponible', 'vendu', 'loué', 'a_venir']);
             $table->decimal('prix', 10, 2);
             $table->decimal('prix_suggere', 10, 2)->nullable();
             $table->boolean('negociable')->default(false);

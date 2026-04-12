@@ -565,7 +565,7 @@ const VehicleDetailPage = () => {
 
                 {/* Réserver — uniquement pour les ventes disponibles, masqué si proprio */}
                 {vehiculeData.post_type === "vente" &&
-                    vehiculeData.statut === "disponible" &&
+                    vehiculeData.statut === "a_venir" &&
                     (!vehiculeData.date_disponibilite || new Date(vehiculeData.date_disponibilite) <= new Date()) &&
                     user?.id !== vehiculeData.creator?.id && (
                     <Button
@@ -705,36 +705,6 @@ const VehicleDetailPage = () => {
                     </div>
                 </div>
             )}
-
-            {/* ── Disponibilité ───────────────────────────────────────────────── */}
-            <div>
-                <h2 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">
-                    {isVente ? "Disponibilité" : "Période de location"}
-                </h2>
-                <Card className="rounded-xl border border-zinc-200 bg-zinc-50 shadow-none">
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className={cn(
-                                "w-9 h-9 rounded-lg flex items-center justify-center",
-                                isVente ? "bg-zinc-200/60" : "bg-blue-50"
-                            )}>
-                                {isVente
-                                    ? <Calendar className="h-4 w-4 text-zinc-600" />
-                                    : <Clock className="h-4 w-4 text-blue-600" />
-                                }
-                            </div>
-                            <div>
-                                <p className="text-xs text-zinc-400">
-                                    {isVente ? "Disponible à partir du" : "Disponible à la location"}
-                                </p>
-                                <p className="font-bold text-sm text-zinc-800">
-                                    {formatDate(vehiculeData.date_disponibilite)}
-                                </p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
 
             {/* ── Vendeur + avis ──────────────────────────────────────────────── */}
             {vehiculeData.creator && (

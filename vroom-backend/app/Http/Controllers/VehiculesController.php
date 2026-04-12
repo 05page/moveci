@@ -17,7 +17,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+
 
 class VehiculesController extends Controller
 {
@@ -30,7 +32,7 @@ class VehiculesController extends Controller
                 'description',
                 'photos',
             ])->whereIn('status_validation', ['validee', 'restauree'])
-                ->where('statut', 'disponible')
+                ->whereIn('statut', ['disponible', 'a_venir'])
                 ->get();
 
             if ($query->count() == 0) {
@@ -73,7 +75,7 @@ class VehiculesController extends Controller
                 'description',
                 'photos',
             ])->whereIn('status_validation', ['validee', 'restauree'])
-                ->where('statut', 'disponible')
+                ->whereIn('statut', ['disponible', 'a_venir'])
                 ->findOrFail($id);
 
             $vehicule->registerView($user, request()->ip());
@@ -196,6 +198,10 @@ class VehiculesController extends Controller
                     'message' => 'Données invalides',
                 ], 400);
             }
+            
+            $statut = isset($validatedData['date_disponibilite']) && $validatedData['date_disponibilite'] > now()
+                ? Vehicules::STATUS_A_VENIR
+                : Vehicules::STATUS_DISPONIBLE;
 
             // Le véhicule est sauvegardé immédiatement — la validation Gemini
             // se fait en arrière-plan via le job ValidateVehiculeWithGemini
@@ -204,7 +210,7 @@ class VehiculesController extends Controller
                 'created_by'         => $user->id,
                 'post_type'          => $validatedData['post_type'],
                 'type'               => $validatedData['type'],
-                'statut'             => Vehicules::STATUS_DISPONIBLE,
+                'statut'             => $statut,
                 'status_validation'  => Vehicules::STATUS_PENDING, // en_attente jusqu'à validation Gemini
                 'prix'               => $validatedData['prix'],
                 'negociable'         => false,
@@ -251,7 +257,7 @@ class VehiculesController extends Controller
                     )->post("{$supabaseUrl}/storage/v1/object/{$bucket}/{$storagePath}");
 
                     if (!$response->successful()) {
-                        \Log::error('Supabase upload failed', [
+                        Log::error('Supabase upload failed', [
                             'status' => $response->status(),
                             'body'   => $response->body(),
                         ]);
@@ -479,7 +485,7 @@ class VehiculesController extends Controller
             // Pas de favoris → fallback sur les véhicules les plus vus
             $vehicules = Vehicules::with(['description', 'photos'])
                 ->where('status_validation', 'validee')
-                ->where('statut', 'disponible')
+                ->whereIn('statut', ['disponible', 'a_venir'])
                 ->orderByDesc('views_count')
                 ->limit(8)
                 ->get();
@@ -498,7 +504,7 @@ class VehiculesController extends Controller
         $suggestions = Vehicules::with(['description', 'photos'])
             ->join('vehicules_description', 'vehicules.id', '=', 'vehicules_description.vehicule_id')
             ->where('vehicules.status_validation', 'validee')
-            ->where('vehicules.statut', 'disponible')
+            ->whereIn('vehicules.statut', ['disponible', 'a_venir'])
             ->whereNotIn('vehicules.id', $favoriIds)
             ->where(function ($q) use ($marques, $carburant) {
                 $q->whereIn('vehicules_description.marque', $marques);
@@ -515,7 +521,7 @@ class VehiculesController extends Controller
         if ($suggestions->count() < 4) {
             $extra = Vehicules::with(['description', 'photos'])
                 ->where('status_validation', 'validee')
-                ->where('statut', 'disponible')
+                ->whereIn('statut', ['disponible', 'a_venir'])
                 ->whereNotIn('id', array_merge($favoriIds, $suggestions->pluck('id')->toArray()))
                 ->orderByDesc('views_count')
                 ->limit(8 - $suggestions->count())

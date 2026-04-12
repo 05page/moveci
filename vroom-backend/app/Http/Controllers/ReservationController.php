@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+use function Symfony\Component\Clock\now;
+
 class ReservationController extends Controller
 {
     public function store(Request $request): JsonResponse
@@ -21,18 +23,18 @@ class ReservationController extends Controller
         try {
             $vehicule = Vehicules::findOrFail($vehiculeId);
 
-            if ($vehicule->statut !== Vehicules::STATUS_DISPONIBLE) {
+            if ($vehicule->statut !== Vehicules::STATUS_A_VENIR) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Ce véhicule n\'est pas disponible à la réservation.'
                 ], 422);
             }
 
-            // Vérifie que la date de disponibilité n'est pas dans le futur
-            if ($vehicule->date_disponibilite && $vehicule->date_disponibilite > now()) {
+            // La réservation n'est possible que si le véhicule n'est pas encore disponible
+            if ($vehicule->date_disponibilite === null || $vehicule->date_disponibilite < now()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ce véhicule ne sera disponible que le ' . $vehicule->date_disponibilite->format('d/m/Y') . '.'
+                    'message' => 'impossible de réserver ce véhicule car il est déjà disponible'
                 ], 422);
             }
 
