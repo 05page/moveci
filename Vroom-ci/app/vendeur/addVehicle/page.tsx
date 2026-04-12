@@ -138,6 +138,7 @@ export default function AddVehiclePage() {
     const [currentStep, setCurrentStep] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const [periodeChoisie, setPeriodeChoisie] = useState<"maintenant" | "1_semaine" | "2_semaines" | "1_mois" | "personnalisee" | null>(null)
 
     const [formData, setFormData] = useState<FormData>({
         typePublication: "",
@@ -847,15 +848,66 @@ export default function AddVehiclePage() {
             <CardContent className="p-4 md:p-6 pt-4">
                 {formData.typePublication === "vente" ? (
                     <div className="space-y-4">
-                        <div className="flex justify-center">
-                            <Calendar
-                                mode="single"
-                                selected={formData.dateDisponibilite}
-                                onSelect={(date: Date | undefined) => updateFormData("dateDisponibilite", date)}
-                                disabled={(date: Date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                className="rounded-xl border border-border/40"
-                            />
+                        {/* Sélection rapide de période */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {([
+                                { id: "maintenant", label: "Maintenant", days: 0 },
+                                { id: "1_semaine", label: "1 semaine", days: 7 },
+                                { id: "2_semaines", label: "2 semaines", days: 14 },
+                                { id: "1_mois", label: "1 mois", days: 30 },
+                            ] as const).map(({ id, label, days }) => (
+                                <button
+                                    key={id}
+                                    type="button"
+                                    onClick={() => {
+                                        setPeriodeChoisie(id)
+                                        const date = new Date()
+                                        date.setDate(date.getDate() + days)
+                                        updateFormData("dateDisponibilite", date)
+                                    }}
+                                    className={cn(
+                                        "rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
+                                        periodeChoisie === id
+                                            ? "bg-primary text-white border-primary"
+                                            : "border-border/40 hover:bg-muted"
+                                    )}
+                                >
+                                    {label}
+                                </button>
+                            ))}
                         </div>
+
+                        {/* Option date personnalisée */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setPeriodeChoisie("personnalisee")
+                                updateFormData("dateDisponibilite", undefined)
+                            }}
+                            className={cn(
+                                "w-full rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
+                                periodeChoisie === "personnalisee"
+                                    ? "bg-primary text-white border-primary"
+                                    : "border-border/40 hover:bg-muted"
+                            )}
+                        >
+                            Date personnalisée
+                        </button>
+
+                        {/* Calendar — uniquement si "personnalisée" sélectionné */}
+                        {periodeChoisie === "personnalisee" && (
+                            <div className="flex justify-center">
+                                <Calendar
+                                    mode="single"
+                                    selected={formData.dateDisponibilite}
+                                    onSelect={(date: Date | undefined) => updateFormData("dateDisponibilite", date)}
+                                    disabled={(date: Date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                    className="rounded-xl border border-border/40"
+                                />
+                            </div>
+                        )}
+
+                        {/* Badge récapitulatif */}
                         {formData.dateDisponibilite && (
                             <div className="text-center">
                                 <Badge variant="outline" className="bg-zinc-900/10 text-zinc-700 border-zinc-900/20 rounded-full px-4 py-1.5">

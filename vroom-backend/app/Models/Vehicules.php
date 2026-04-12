@@ -43,7 +43,8 @@ class Vehicules extends Model
     const VEHICLE_TYPE_NEUF     = 'neuf';
     const VEHICLE_TYPE_OCCASION = 'occasion';
     const STATUS_DISPONIBLE     = 'disponible';
-    const STATUS_A_VENIR     = 'a_venir';
+    const STATUS_A_VENIR        = 'a_venir';
+    const STATUS_RESERVE        = 'réservé';
     const STATUS_VENDU          = 'vendu';
     const STATUS_LOUE           = 'loué';
     const STATUS_SUSPENDU       = 'suspendu';

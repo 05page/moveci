@@ -107,6 +107,7 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
     const [currentStep, setCurrentStep] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const [periodeChoisie, setPeriodeChoisie] = useState<"maintenant" | "1_semaine" | "2_semaines" | "1_mois" | "personnalisee" | null>(null)
 
     const [formData, setFormData] = useState<FormData>({
         typePublication: "",
@@ -645,15 +646,66 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
 
                                 {formData.typePublication === "vente" ? (
                                     <div className="space-y-3">
-                                        <div className="flex justify-center">
-                                            <Calendar
-                                                mode="single"
-                                                selected={formData.dateDisponibilite}
-                                                onSelect={(date: Date | undefined) => updateFormData("dateDisponibilite", date)}
-                                                disabled={(date: Date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                                className="rounded-xl border border-border/40"
-                                            />
+                                        {/* Sélection rapide de période */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                            {([
+                                                { id: "maintenant", label: "Maintenant", days: 0 },
+                                                { id: "1_semaine", label: "1 semaine", days: 7 },
+                                                { id: "2_semaines", label: "2 semaines", days: 14 },
+                                                { id: "1_mois", label: "1 mois", days: 30 },
+                                            ] as const).map(({ id, label, days }) => (
+                                                <button
+                                                    key={id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setPeriodeChoisie(id)
+                                                        const date = new Date()
+                                                        date.setDate(date.getDate() + days)
+                                                        updateFormData("dateDisponibilite", date)
+                                                    }}
+                                                    className={cn(
+                                                        "rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
+                                                        periodeChoisie === id
+                                                            ? "bg-[#efbf04] text-black border-[#efbf04]"
+                                                            : "border-border/40 hover:bg-muted"
+                                                    )}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
                                         </div>
+
+                                        {/* Option date personnalisée */}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setPeriodeChoisie("personnalisee")
+                                                updateFormData("dateDisponibilite", undefined)
+                                            }}
+                                            className={cn(
+                                                "w-full rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
+                                                periodeChoisie === "personnalisee"
+                                                    ? "bg-[#efbf04] text-black border-[#efbf04]"
+                                                    : "border-border/40 hover:bg-muted"
+                                            )}
+                                        >
+                                            Date personnalisée
+                                        </button>
+
+                                        {/* Calendar — uniquement si "personnalisée" sélectionné */}
+                                        {periodeChoisie === "personnalisee" && (
+                                            <div className="flex justify-center">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={formData.dateDisponibilite}
+                                                    onSelect={(date: Date | undefined) => updateFormData("dateDisponibilite", date)}
+                                                    disabled={(date: Date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                                    className="rounded-xl border border-border/40"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {/* Badge récapitulatif */}
                                         {formData.dateDisponibilite && (
                                             <div className="text-center">
                                                 <Badge variant="outline" className="bg-[#efbf04]/10 text-[#efbf04] border-[#efbf04]/20 rounded-full px-3 py-1">

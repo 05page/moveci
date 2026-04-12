@@ -76,7 +76,7 @@ class ReservationController extends Controller
 
             // Transaction DB : on crée la réservation ET on met le véhicule en "réservé" atomiquement
             $reservation = DB::transaction(function () use ($vehicule, $vehiculeId, $user, $expiresAt) {
-                $vehicule->update(['statut' => 'réservé']);
+                $vehicule->update(['statut' => Vehicules::STATUS_RESERVE]);
 
                 return Reservation::create([
                     'vehicule_id' => $vehiculeId,

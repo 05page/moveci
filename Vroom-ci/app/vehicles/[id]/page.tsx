@@ -563,10 +563,9 @@ const VehicleDetailPage = () => {
                     Prendre RDV
                 </Button>
 
-                {/* Réserver — uniquement pour les ventes disponibles, masqué si proprio */}
+                {/* Réserver — uniquement si le véhicule n'est pas encore disponible, masqué si proprio */}
                 {vehiculeData.post_type === "vente" &&
                     vehiculeData.statut === "a_venir" &&
-                    (!vehiculeData.date_disponibilite || new Date(vehiculeData.date_disponibilite) <= new Date()) &&
                     user?.id !== vehiculeData.creator?.id && (
                     <Button
                         onClick={handleReserver}
