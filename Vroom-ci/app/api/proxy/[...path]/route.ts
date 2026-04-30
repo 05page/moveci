@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 async function proxyToLaravel(request: NextRequest) {
   // Reconstruire le path : /api/proxy/stats → /stats
   const url = new URL(request.url)
-  const path = url.pathname.replace(/^\/api\/proxy/, "")
+  const path = url.pathname.replace(/^\/api\/proxy/, "/api")
   const search = url.search // conserver les query params
 
   const backendUrl = `${process.env.BACKEND_URL}${path}${search}`
