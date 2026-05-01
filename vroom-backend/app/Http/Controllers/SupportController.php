@@ -22,24 +22,32 @@ class SupportController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'sujet'    => 'required|string|max:150',
-            'message'  => 'required|string|max:2000',
-            'priorite' => 'sometimes|in:basse,normale,haute,urgente',
-        ]);
+        try {
+            $validated = $request->validate([
+                'sujet'    => 'required|string|max:150',
+                'message'  => 'required|string|max:2000',
+                'priorite' => 'sometimes|in:basse,normale,haute,urgente',
+            ]);
 
-        $ticket = SupportTicket::create([
-            'user_id'  => Auth::id(),
-            'sujet'    => $validated['sujet'],
-            'message'  => $validated['message'],
-            'priorite' => $validated['priorite'] ?? 'normale',
-        ]);
+            $ticket = SupportTicket::create([
+                'user_id'  => Auth::id(),
+                'sujet'    => $validated['sujet'],
+                'message'  => $validated['message'],
+                'priorite' => $validated['priorite'] ?? 'normale',
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Ticket créé avec succès.',
-            'data'    => $ticket,
-        ], 201);
+            return response()->json([
+                'success' => true,
+                'message' => 'Ticket créé avec succès.',
+                'data'    => $ticket,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'envoi de votre ticket',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
