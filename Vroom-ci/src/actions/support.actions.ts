@@ -14,7 +14,7 @@ export async function soumettreTicket(data: {
   message: string
   priorite: string
 }) {
-  return api.post<{ success: boolean; data: SupportTicket }>("/support", data)
+  return api.post<{ success: boolean; data: SupportTicket }>("/support/post-tickets", data)
 }
 
 /**

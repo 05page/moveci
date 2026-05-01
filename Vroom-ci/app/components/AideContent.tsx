@@ -22,12 +22,11 @@ import { fr } from "date-fns/locale"
 import { getMesTickets, soumettreTicket } from "@/src/actions/support.actions"
 import type { SupportTicket } from "@/src/types"
 
-// ─── Config statuts ───────────────────────────────────────────────────────────
 
 /** Couleurs et labels pour chaque statut de ticket */
 const STATUT_CONFIG: Record<SupportTicket["statut"], { label: string; className: string }> = {
-    ouvert:   { label: "Ouvert",    className: "bg-blue-100 text-blue-700 border-blue-200" },
-    en_cours: { label: "En cours",  className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+    "ouvert":   { label: "Ouvert",    className: "bg-blue-100 text-blue-700 border-blue-200" },
+    "en_cours": { label: "En cours",  className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
     "résolu": { label: "Résolu",    className: "bg-green-100 text-green-700 border-green-200" },
     "fermé":  { label: "Fermé",     className: "bg-zinc-100 text-zinc-500 border-zinc-200" },
 }
@@ -40,14 +39,10 @@ const PRIORITE_CONFIG: Record<SupportTicket["priorite"], { label: string; classN
     urgente:  { label: "Urgente",  className: "bg-red-100 text-red-700 border-red-200" },
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 /** Formate une date en relatif lisible ("il y a 2 heures") */
 function timeAgo(date: string) {
     return formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr })
 }
-
-// ─── Skeleton liste des tickets ───────────────────────────────────────────────
 
 function TicketsSkeleton() {
     return (
@@ -65,20 +60,14 @@ function TicketsSkeleton() {
     )
 }
 
-// ─── Composant principal ──────────────────────────────────────────────────────
-
 export default function AideContent() {
-    // ── État formulaire ──────────────────────────────────────────────────────
     const [sujet, setSujet]       = useState("")
     const [message, setMessage]   = useState("")
     const [priorite, setPriorite] = useState<string>("normale")
     const [sending, setSending]   = useState(false)
-
-    // ── État liste des tickets ────────────────────────────────────────────────
     const [tickets, setTickets]       = useState<SupportTicket[]>([])
     const [loadingTickets, setLoadingTickets] = useState(true)
 
-    // ── Chargement initial ───────────────────────────────────────────────────
     useEffect(() => {
         getMesTickets()
             .then(res => {
@@ -88,7 +77,6 @@ export default function AideContent() {
             .finally(() => setLoadingTickets(false))
     }, [])
 
-    // ── Soumission du formulaire ─────────────────────────────────────────────
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
@@ -112,6 +100,8 @@ export default function AideContent() {
                 setTickets(prev => [newTicket, ...prev])
             }
 
+            console.log(newTicket);
+
             toast.success("Votre demande a bien été envoyée")
 
             // Reset du formulaire
@@ -128,7 +118,6 @@ export default function AideContent() {
     return (
         <div className="pt-20 px-4 md:px-6 max-w-3xl mx-auto mb-12 space-y-6">
 
-            {/* ── En-tête ─────────────────────────────────────────────────── */}
             <div className="rounded-2xl bg-zinc-900 p-6 md:p-8 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
                     <HelpCircle className="h-6 w-6 text-white" />
@@ -139,7 +128,6 @@ export default function AideContent() {
                 </div>
             </div>
 
-            {/* ── Formulaire nouvelle demande ──────────────────────────────── */}
             <Card className="border-border/60">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -177,7 +165,6 @@ export default function AideContent() {
                                 disabled={sending}
                                 className="resize-none"
                             />
-                            {/* Compteur de caractères — visible seulement si proche du minimum */}
                             {message.length < 20 && message.length > 0 && (
                                 <p className="text-xs text-muted-foreground text-right">
                                     {message.length}/20
