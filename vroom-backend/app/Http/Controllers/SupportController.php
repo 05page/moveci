@@ -56,11 +56,19 @@ class SupportController extends Controller
      */
     public function mesTickets(): JsonResponse
     {
-        $tickets = SupportTicket::where('user_id', Auth::id())
-            ->latest()
-            ->get();
+        try {
+            $tickets = SupportTicket::where('user_id', Auth::id())
+                ->latest()
+                ->get();
 
-        return response()->json(['success' => true, 'data' => $tickets]);
+            return response()->json(['success' => true, 'data' => $tickets]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération de vos tickets',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
