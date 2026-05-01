@@ -220,8 +220,8 @@ Route::middleware(['auth:sanctum', 'check.statut'])->group(function () {
 
     // ── Support — tous les users authentifiés ──────────────
     Route::prefix('support')->group(function () {
+        Route::post('/post-tickets', [SupportController::class, 'store']);
         Route::get('/mes-tickets', [SupportController::class, 'mesTickets']);
-        Route::post('/', [SupportController::class, 'store']);
     });
 
     // ── Admin ─────────────────────────────────────────────
