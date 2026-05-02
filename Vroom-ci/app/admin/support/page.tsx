@@ -30,8 +30,6 @@ import { fr } from "date-fns/locale"
 import { getAdminTickets, repondreTicket } from "@/src/actions/support.actions"
 import type { SupportTicket } from "@/src/types"
 
-// ─── Config badges ────────────────────────────────────────────────────────────
-
 /** Couleurs et labels pour les statuts */
 const STATUT_CONFIG: Record<SupportTicket["statut"], { label: string; className: string }> = {
     ouvert:   { label: "Ouvert",    className: "bg-blue-100 text-blue-700 border-blue-200" },
@@ -48,23 +46,61 @@ const PRIORITE_CONFIG: Record<SupportTicket["priorite"], { label: string; classN
     urgente:  { label: "Urgente",  className: "bg-red-100 text-red-700 border-red-200" },
 }
 
+const DEFAULT_STATUT_CONFIG = { label: "Statut inconnu", className: "bg-zinc-100 text-zinc-500 border-zinc-200" }
+const DEFAULT_PRIORITE_CONFIG = { label: "Priorité inconnue", className: "bg-zinc-100 text-zinc-500 border-zinc-200" }
+
+function normalizeValue(value: string) {
+    return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+}
+
+function resolveStatutConfig(statut: unknown) {
+    if (typeof statut !== "string") return DEFAULT_STATUT_CONFIG
+
+    switch (normalizeValue(statut)) {
+        case "ouvert":
+            return STATUT_CONFIG.ouvert
+        case "en_cours":
+        case "encours":
+            return STATUT_CONFIG.en_cours
+        case "resolu":
+            return STATUT_CONFIG["résolu"]
+        case "ferme":
+            return STATUT_CONFIG["fermé"]
+        default:
+            return DEFAULT_STATUT_CONFIG
+    }
+}
+
+function resolvePrioriteConfig(priorite: unknown) {
+    if (typeof priorite !== "string") return DEFAULT_PRIORITE_CONFIG
+
+    switch (normalizeValue(priorite)) {
+        case "basse":
+            return PRIORITE_CONFIG.basse
+        case "normale":
+            return PRIORITE_CONFIG.normale
+        case "haute":
+            return PRIORITE_CONFIG.haute
+        case "urgente":
+            return PRIORITE_CONFIG.urgente
+        default:
+            return DEFAULT_PRIORITE_CONFIG
+    }
+}
+
 /** Tabs disponibles : valeur → label affiché + filtre API */
 const TABS = [
-    { value: "tous",     label: "Tous",      filtre: undefined },
-    { value: "ouvert",   label: "Ouverts",   filtre: "ouvert" },
-    { value: "en_cours", label: "En cours",  filtre: "en_cours" },
-    { value: "resolu",   label: "Résolus",   filtre: "resolu" },
-    { value: "ferme",    label: "Fermés",    filtre: "ferme" },
+    { value: "tous", label: "Tous", filtre: undefined },
+    { value: "ouvert", label: "Ouverts", filtre: "ouvert" },
+    { value: "en_cours", label: "En cours", filtre: "en_cours" },
+    { value: "resolu", label: "Résolus", filtre: "résolu" },
+    { value: "ferme", label: "Fermés", filtre: "fermé" },
 ] as const
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Formate une date en relatif court ("il y a 5 min") */
 function timeAgo(date: string) {
     return formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr })
 }
-
-// ─── Skeleton table ───────────────────────────────────────────────────────────
 
 function TableSkeleton() {
     return (
@@ -83,28 +119,20 @@ function TableSkeleton() {
     )
 }
 
-// ─── Composant principal ──────────────────────────────────────────────────────
-
 export default function AdminSupportPage() {
-    // ── State liste ──────────────────────────────────────────────────────────
-    const [tickets, setTickets]   = useState<SupportTicket[]>([])
-    const [loading, setLoading]   = useState(true)
+    const [tickets, setTickets] = useState<SupportTicket[]>([])
+    const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<typeof TABS[number]["value"]>("tous")
-
-    // ── State Sheet de réponse ────────────────────────────────────────────────
-    /** Ticket actuellement ouvert dans le Sheet */
     const [selected, setSelected] = useState<SupportTicket | null>(null)
-    /** Texte de la réponse en cours de rédaction */
-    const [reponse, setReponse]   = useState("")
-    const [sending, setSending]   = useState(false)
+    const [reponse, setReponse] = useState("")
+    const [sending, setSending] = useState(false)
 
-    // ── Chargement des tickets selon l'onglet actif ──────────────────────────
     const fetchTickets = useCallback(async () => {
         setLoading(true)
         const tab = TABS.find(t => t.value === activeTab)
         try {
             const res = await getAdminTickets(tab?.filtre)
-            setTickets((res.data as unknown as { data: SupportTicket[] })?.data ?? [])
+            setTickets(res.data ?? [])
         } catch {
             toast.error("Impossible de charger les tickets")
         } finally {
@@ -114,10 +142,8 @@ export default function AdminSupportPage() {
 
     useEffect(() => { fetchTickets() }, [fetchTickets])
 
-    // ── Ouvrir le Sheet sur un ticket ────────────────────────────────────────
     const openSheet = (ticket: SupportTicket) => {
         setSelected(ticket)
-        // Pré-remplir si une réponse existe déjà
         setReponse(ticket.reponse_admin ?? "")
     }
 
@@ -126,15 +152,12 @@ export default function AdminSupportPage() {
         setReponse("")
     }
 
-    // ── Envoyer la réponse admin ─────────────────────────────────────────────
     const handleRepondre = async () => {
         if (!selected || !reponse.trim()) return
 
         setSending(true)
         try {
             await repondreTicket(selected.id, reponse.trim())
-
-            // Mettre à jour le ticket dans la liste sans recharger
             setTickets(prev =>
                 prev.map(t =>
                     t.id === selected.id
@@ -151,12 +174,8 @@ export default function AdminSupportPage() {
         }
     }
 
-    // ── Rendu ────────────────────────────────────────────────────────────────
-
     return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
-
-            {/* En-tête */}
             <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center shrink-0">
                     <HeadphonesIcon className="h-5 w-5 text-white" />
@@ -167,7 +186,6 @@ export default function AdminSupportPage() {
                 </div>
             </div>
 
-            {/* Tabs filtres */}
             <Tabs value={activeTab} onValueChange={v => setActiveTab(v as typeof activeTab)}>
                 <TabsList className="h-9">
                     {TABS.map(tab => (
@@ -178,7 +196,6 @@ export default function AdminSupportPage() {
                 </TabsList>
             </Tabs>
 
-            {/* Table */}
             <div className="border border-border/60 rounded-xl overflow-hidden">
                 <Table>
                     <TableHeader>
@@ -205,46 +222,35 @@ export default function AdminSupportPage() {
                             </TableRow>
                         ) : (
                             tickets.map(ticket => {
-                                const statutCfg  = STATUT_CONFIG[ticket.statut]
-                                const prioriteCfg = PRIORITE_CONFIG[ticket.priorite]
+                                const statutCfg = resolveStatutConfig(ticket.statut)
+                                const prioriteCfg = resolvePrioriteConfig(ticket.priorite)
 
                                 return (
                                     <TableRow key={ticket.id} className="hover:bg-muted/20">
-                                        {/* Utilisateur */}
                                         <TableCell>
                                             <div>
                                                 <p className="text-sm font-medium">{ticket.user?.fullname ?? "—"}</p>
                                                 <p className="text-xs text-muted-foreground">{ticket.user?.email}</p>
                                             </div>
                                         </TableCell>
-
-                                        {/* Sujet */}
                                         <TableCell>
                                             <p className="text-sm max-w-[280px] truncate">{ticket.sujet}</p>
                                         </TableCell>
-
-                                        {/* Priorité */}
                                         <TableCell>
                                             <Badge className={`border text-xs ${prioriteCfg.className}`}>
                                                 {prioriteCfg.label}
                                             </Badge>
                                         </TableCell>
-
-                                        {/* Statut */}
                                         <TableCell>
                                             <Badge className={`border text-xs ${statutCfg.className}`}>
                                                 {statutCfg.label}
                                             </Badge>
                                         </TableCell>
-
-                                        {/* Date */}
                                         <TableCell>
                                             <span className="text-xs text-muted-foreground">
                                                 {timeAgo(ticket.created_at)}
                                             </span>
                                         </TableCell>
-
-                                        {/* Action */}
                                         <TableCell className="text-right">
                                             <Button
                                                 variant="outline"
@@ -264,7 +270,6 @@ export default function AdminSupportPage() {
                 </Table>
             </div>
 
-            {/* ── Sheet de réponse ──────────────────────────────────────────── */}
             <Sheet open={!!selected} onOpenChange={open => { if (!open) closeSheet() }}>
                 <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
                     <SheetHeader className="mb-6">
@@ -276,7 +281,6 @@ export default function AdminSupportPage() {
 
                     {selected && (
                         <div className="space-y-5">
-                            {/* Infos utilisateur */}
                             <div className="p-4 rounded-xl bg-muted/40 space-y-1">
                                 <p className="text-sm font-semibold">{selected.user?.fullname ?? "Utilisateur inconnu"}</p>
                                 <p className="text-xs text-muted-foreground">{selected.user?.email}</p>
@@ -287,24 +291,21 @@ export default function AdminSupportPage() {
                                 )}
                             </div>
 
-                            {/* Détails du ticket */}
                             <div className="space-y-3">
-                                {/* Sujet + badges */}
                                 <div className="space-y-1.5">
                                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Sujet</p>
                                     <p className="text-sm font-medium">{selected.sujet}</p>
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <Badge className={`border text-xs ${PRIORITE_CONFIG[selected.priorite].className}`}>
-                                            {PRIORITE_CONFIG[selected.priorite].label}
+                                        <Badge className={`border text-xs ${resolvePrioriteConfig(selected.priorite).className}`}>
+                                            {resolvePrioriteConfig(selected.priorite).label}
                                         </Badge>
-                                        <Badge className={`border text-xs ${STATUT_CONFIG[selected.statut].className}`}>
-                                            {STATUT_CONFIG[selected.statut].label}
+                                        <Badge className={`border text-xs ${resolveStatutConfig(selected.statut).className}`}>
+                                            {resolveStatutConfig(selected.statut).label}
                                         </Badge>
                                         <span className="text-xs text-muted-foreground">{timeAgo(selected.created_at)}</span>
                                     </div>
                                 </div>
 
-                                {/* Message complet */}
                                 <div className="space-y-1.5">
                                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Message</p>
                                     <p className="text-sm leading-relaxed whitespace-pre-wrap bg-muted/40 rounded-xl p-3">
@@ -313,7 +314,6 @@ export default function AdminSupportPage() {
                                 </div>
                             </div>
 
-                            {/* Zone de réponse */}
                             <div className="space-y-2">
                                 <Label htmlFor="reponse-admin">
                                     Votre réponse

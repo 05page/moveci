@@ -34,7 +34,10 @@ class SupportController extends Controller
                 'sujet'    => $validated['sujet'],
                 'message'  => $validated['message'],
                 'priorite' => $validated['priorite'] ?? 'normale',
+                'statut'   => SupportTicket::STATUT_OUVERT,
             ]);
+
+            $ticket = $ticket->fresh();
 
             return response()->json([
                 'success' => true,
@@ -81,7 +84,13 @@ class SupportController extends Controller
 
         // Filtre par statut si le query param est présent
         if ($request->has('statut') && $request->statut !== 'all') {
-            $query->where('statut', $request->statut);
+            $statut = $request->statut;
+            $statutMapping = [
+                'resolu' => SupportTicket::STATUT_RESOLU,
+                'ferme'  => SupportTicket::STATUT_FERME,
+            ];
+
+            $query->where('statut', $statutMapping[$statut] ?? $statut);
         }
 
         $tickets = $query->latest()->get();

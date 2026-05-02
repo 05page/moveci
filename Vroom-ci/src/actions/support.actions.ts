@@ -14,7 +14,7 @@ export async function soumettreTicket(data: {
   message: string
   priorite: string
 }) {
-  return api.post<{ success: boolean; data: SupportTicket }>("/support/post-tickets", data)
+  return api.post<SupportTicket>("/support/post-tickets", data)
 }
 
 /**
@@ -22,7 +22,7 @@ export async function soumettreTicket(data: {
  * Triés du plus récent au plus ancien.
  */
 export async function getMesTickets() {
-  return api.get<{ success: boolean; data: SupportTicket[] }>("/support/mes-tickets")
+  return api.get<SupportTicket[]>("/support/mes-tickets")
 }
 
 /**
@@ -32,7 +32,7 @@ export async function getMesTickets() {
  */
 export async function getAdminTickets(statut?: string) {
   const qs = statut ? `?statut=${statut}` : ""
-  return api.get<{ success: boolean; data: SupportTicket[] }>(`/admin/support${qs}`)
+  return api.get<SupportTicket[]>(`/admin/support${qs}`)
 }
 
 /**
@@ -42,5 +42,5 @@ export async function getAdminTickets(statut?: string) {
  * @param reponse - Texte de la réponse admin
  */
 export async function repondreTicket(id: string, reponse: string) {
-  return api.post<{ success: boolean; data: SupportTicket }>(`/admin/support/${id}/repondre`, { reponse })
+  return api.post<SupportTicket>(`/admin/support/${id}/repondre`, { reponse })
 }

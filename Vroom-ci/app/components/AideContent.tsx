@@ -22,11 +22,10 @@ import { fr } from "date-fns/locale"
 import { getMesTickets, soumettreTicket } from "@/src/actions/support.actions"
 import type { SupportTicket } from "@/src/types"
 
-
 /** Couleurs et labels pour chaque statut de ticket */
 const STATUT_CONFIG: Record<SupportTicket["statut"], { label: string; className: string }> = {
-    "ouvert":   { label: "Ouvert",    className: "bg-blue-100 text-blue-700 border-blue-200" },
-    "en_cours": { label: "En cours",  className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+    ouvert:   { label: "Ouvert",    className: "bg-blue-100 text-blue-700 border-blue-200" },
+    en_cours: { label: "En cours",  className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
     "résolu": { label: "Résolu",    className: "bg-green-100 text-green-700 border-green-200" },
     "fermé":  { label: "Fermé",     className: "bg-zinc-100 text-zinc-500 border-zinc-200" },
 }
@@ -37,6 +36,48 @@ const PRIORITE_CONFIG: Record<SupportTicket["priorite"], { label: string; classN
     normale:  { label: "Normale",  className: "bg-blue-100 text-blue-700 border-blue-200" },
     haute:    { label: "Haute",    className: "bg-orange-100 text-orange-700 border-orange-200" },
     urgente:  { label: "Urgente",  className: "bg-red-100 text-red-700 border-red-200" },
+}
+
+const DEFAULT_STATUT_CONFIG = { label: "Statut inconnu", className: "bg-zinc-100 text-zinc-500 border-zinc-200" }
+const DEFAULT_PRIORITE_CONFIG = { label: "Priorité inconnue", className: "bg-zinc-100 text-zinc-500 border-zinc-200" }
+
+function normalizeValue(value: string) {
+    return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+}
+
+function resolveStatutConfig(statut: unknown) {
+    if (typeof statut !== "string") return DEFAULT_STATUT_CONFIG
+
+    switch (normalizeValue(statut)) {
+        case "ouvert":
+            return STATUT_CONFIG.ouvert
+        case "en_cours":
+        case "encours":
+            return STATUT_CONFIG.en_cours
+        case "resolu":
+            return STATUT_CONFIG["résolu"]
+        case "ferme":
+            return STATUT_CONFIG["fermé"]
+        default:
+            return DEFAULT_STATUT_CONFIG
+    }
+}
+
+function resolvePrioriteConfig(priorite: unknown) {
+    if (typeof priorite !== "string") return DEFAULT_PRIORITE_CONFIG
+
+    switch (normalizeValue(priorite)) {
+        case "basse":
+            return PRIORITE_CONFIG.basse
+        case "normale":
+            return PRIORITE_CONFIG.normale
+        case "haute":
+            return PRIORITE_CONFIG.haute
+        case "urgente":
+            return PRIORITE_CONFIG.urgente
+        default:
+            return DEFAULT_PRIORITE_CONFIG
+    }
 }
 
 /** Formate une date en relatif lisible ("il y a 2 heures") */
@@ -61,17 +102,17 @@ function TicketsSkeleton() {
 }
 
 export default function AideContent() {
-    const [sujet, setSujet]       = useState("")
-    const [message, setMessage]   = useState("")
-    const [priorite, setPriorite] = useState<string>("normale")
-    const [sending, setSending]   = useState(false)
-    const [tickets, setTickets]       = useState<SupportTicket[]>([])
+    const [sujet, setSujet] = useState("")
+    const [message, setMessage] = useState("")
+    const [priorite, setPriorite] = useState<SupportTicket["priorite"]>("normale")
+    const [sending, setSending] = useState(false)
+    const [tickets, setTickets] = useState<SupportTicket[]>([])
     const [loadingTickets, setLoadingTickets] = useState(true)
 
     useEffect(() => {
         getMesTickets()
             .then(res => {
-                setTickets((res.data as unknown as { data: SupportTicket[] })?.data ?? [])
+                setTickets(res.data ?? [])
             })
             .catch(() => toast.error("Impossible de charger vos demandes"))
             .finally(() => setLoadingTickets(false))
@@ -93,14 +134,12 @@ export default function AideContent() {
         setSending(true)
         try {
             const res = await soumettreTicket({ sujet: sujet.trim(), message: message.trim(), priorite })
-            const newTicket = (res as unknown as { data: SupportTicket })?.data
+            const newTicket = res.data
 
             if (newTicket) {
                 // Ajouter le nouveau ticket en tête de liste sans recharger
                 setTickets(prev => [newTicket, ...prev])
             }
-
-            console.log(newTicket);
 
             toast.success("Votre demande a bien été envoyée")
 
@@ -117,7 +156,6 @@ export default function AideContent() {
 
     return (
         <div className="pt-20 px-4 md:px-6 max-w-3xl mx-auto mb-12 space-y-6">
-
             <div className="rounded-2xl bg-zinc-900 p-6 md:p-8 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
                     <HelpCircle className="h-6 w-6 text-white" />
@@ -137,7 +175,6 @@ export default function AideContent() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Sujet */}
                         <div className="space-y-1.5">
                             <Label htmlFor="sujet">Sujet</Label>
                             <Input
@@ -150,7 +187,6 @@ export default function AideContent() {
                             />
                         </div>
 
-                        {/* Message */}
                         <div className="space-y-1.5">
                             <Label htmlFor="message">
                                 Message
@@ -172,10 +208,13 @@ export default function AideContent() {
                             )}
                         </div>
 
-                        {/* Priorité */}
                         <div className="space-y-1.5">
                             <Label htmlFor="priorite">Priorité</Label>
-                            <Select value={priorite} onValueChange={setPriorite} disabled={sending}>
+                            <Select
+                                value={priorite}
+                                onValueChange={value => setPriorite(value as SupportTicket["priorite"])}
+                                disabled={sending}
+                            >
                                 <SelectTrigger id="priorite">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -198,7 +237,6 @@ export default function AideContent() {
                 </CardContent>
             </Card>
 
-            {/* ── Liste de mes demandes ────────────────────────────────────── */}
             <Card className="border-border/60">
                 <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
@@ -222,15 +260,14 @@ export default function AideContent() {
                     ) : (
                         <div className="space-y-3">
                             {tickets.map(ticket => {
-                                const statutCfg  = STATUT_CONFIG[ticket.statut]
-                                const prioriteCfg = PRIORITE_CONFIG[ticket.priorite]
+                                const statutCfg = resolveStatutConfig(ticket.statut)
+                                const prioriteCfg = resolvePrioriteConfig(ticket.priorite)
 
                                 return (
                                     <div
                                         key={ticket.id}
                                         className="p-4 border border-border/60 rounded-xl space-y-2 hover:bg-muted/30 transition-colors"
                                     >
-                                        {/* Ligne statut + sujet */}
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <Badge className={`border text-xs shrink-0 ${statutCfg.className}`}>
                                                 {statutCfg.label}
@@ -241,17 +278,14 @@ export default function AideContent() {
                                             <span className="font-medium text-sm">{ticket.sujet}</span>
                                         </div>
 
-                                        {/* Date */}
                                         <p className="text-xs text-muted-foreground">
                                             {timeAgo(ticket.created_at)}
                                         </p>
 
-                                        {/* Message original (tronqué) */}
                                         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                                             {ticket.message}
                                         </p>
 
-                                        {/* Réponse admin — encadré bleu clair */}
                                         {ticket.reponse_admin && (
                                             <div className="mt-2 p-3 rounded-lg bg-blue-50 border border-blue-100 space-y-1">
                                                 <p className="text-xs font-semibold text-blue-700">
