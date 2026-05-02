@@ -16,9 +16,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 
 class VehiculesController extends Controller
@@ -189,7 +190,7 @@ class VehiculesController extends Controller
                 'equipements' => 'nullable|array',
 
                 'photos' => 'nullable|array',
-                'photos.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'photos.*' => 'image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
             ]);
 
             if (!$validatedData) {
@@ -237,39 +238,24 @@ class VehiculesController extends Controller
                 'equipements' => $validatedData['equipements'] ?? null,
             ]);
 
-            //Uploader les photos vers Supabase Storage
+            // Uploader les photos sur le disque public Laravel
+            // et sauvegarder le chemin relatif en base.
             if ($request->hasFile('photos')) {
-                $supabaseUrl = config('services.supabase.url');
-                $supabaseKey = config('services.supabase.service_key');
-                $bucket      = config('services.supabase.bucket');
-
                 foreach ($request->file('photos') as $index => $photo) {
-                    $filename    = uniqid('photo_', true) . '.' . $photo->getClientOriginalExtension();
-                    $storagePath = 'vehicules/' . $filename;
+                    $storagePath = $photo->store('vehicules', 'public');
 
-                    // Envoi du fichier vers l'API REST de Supabase Storage
-                    $response = Http::withHeaders([
-                        'Authorization' => "Bearer {$supabaseKey}",
-                        'Content-Type'  => $photo->getMimeType(),
-                    ])->withBody(
-                        file_get_contents($photo->getRealPath()),
-                        $photo->getMimeType()
-                    )->post("{$supabaseUrl}/storage/v1/object/{$bucket}/{$storagePath}");
-
-                    if (!$response->successful()) {
-                        Log::error('Supabase upload failed', [
-                            'status' => $response->status(),
-                            'body'   => $response->body(),
+                    if (!$storagePath) {
+                        Log::error('Local storage upload failed', [
+                            'vehicule_id' => $vehicule->id,
+                            'index'       => $index,
+                            'filename'    => $photo->getClientOriginalName(),
                         ]);
-                        return response()->json(['message' => 'Erreur upload photo: ' . $response->body()], 500);
+                        return response()->json(['message' => 'Erreur upload photo (stockage local)'], 500);
                     }
-
-                    // URL publique directement accessible sans authentification
-                    $publicUrl = "{$supabaseUrl}/storage/v1/object/public/{$bucket}/{$storagePath}";
 
                     VehiculesPhotos::create([
                         'vehicule_id' => $vehicule->id,
-                        'path'        => $publicUrl,
+                        'path'        => $storagePath,
                         'is_primary'  => $index === 0,
                         'position'    => $index + 1,
                     ]);
@@ -301,6 +287,13 @@ class VehiculesController extends Controller
                     'photos'      => $vehicule->photos,
                 ],
             ], 201);
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors'  => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([

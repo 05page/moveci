@@ -171,6 +171,16 @@ export default function AddVehiclePage() {
     const [photos, setPhotos] = useState<File[]>([])
     const [photoUrls, setPhotoUrls] = useState<string[]>([])
 
+    const allowedPhotoMimeTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
+        "image/gif",
+        "image/svg+xml",
+        "image/webp",
+    ]
+    const allowedPhotoExtensions = ["jpg", "jpeg", "png", "gif", "svg", "webp"]
+
     const updateFormData = <K extends keyof FormData>(field: K, value: FormData[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }))
     }
@@ -190,10 +200,14 @@ export default function AddVehiclePage() {
             toast.error("Maximum 10 photos autorisées")
             return
         }
-        const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif", "image/svg+xml"];
-        const validFiles = files.filter((file => allowedTypes.includes(file.type)))
-        if(validFiles.length < files.length){
-            toast.error("Format non autorisé")
+
+        const validFiles = files.filter((file) => {
+            const ext = file.name.split(".").pop()?.toLowerCase() ?? ""
+            return allowedPhotoMimeTypes.includes(file.type) || allowedPhotoExtensions.includes(ext)
+        })
+
+        if (validFiles.length < files.length) {
+            toast.error("Certaines photos ont ete ignorees (formats autorises: JPG, PNG, GIF, SVG, WEBP)")
         }
 
         setPhotos(prev => [...prev, ...validFiles])
@@ -305,8 +319,21 @@ export default function AddVehiclePage() {
             })
             const data = await res.json()
             if (!res.ok) {
-                toast.error(data.message + data.errors || "Erreur lors de la publication", { id: toastId })
-                console.log(data)
+                let details = ""
+                if (typeof data?.errors === "string") {
+                    details = data.errors
+                } else if (data?.errors && typeof data.errors === "object") {
+                    const first = Object.values(data.errors).find((value) => Array.isArray(value) && value.length > 0)
+                    if (Array.isArray(first) && first.length > 0) {
+                        details = String(first[0])
+                    }
+                }
+
+                const message = [typeof data?.message === "string" ? data.message : "Erreur lors de la publication", details]
+                    .filter(Boolean)
+                    .join(" - ")
+
+                toast.error(message, { id: toastId })
                 return
             }
             toast.success("Véhicule publié !", {
@@ -738,11 +765,11 @@ export default function AddVehiclePage() {
                     >
                         <ImagePlus className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                         <p className="text-sm font-medium">Cliquez pour ajouter des photos</p>
-                        <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WEBP</p>
+                        <p className="text-xs text-muted-foreground mt-1">JPG, PNG, GIF, SVG, WEBP</p>
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept="image/*"
+                            accept=".jpg,.jpeg,.png,.gif,.svg,.webp,image/*"
                             multiple
                             className="hidden"
                             onChange={handlePhotoAdd}
@@ -757,7 +784,7 @@ export default function AddVehiclePage() {
                                     <button
                                         type="button"
                                         onClick={e => { e.stopPropagation(); removePhoto(i) }}
-                                        className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="absolute top-2 right-2 w-6 h-6 bg-black/70 rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                                     >
                                         <X className="h-3 w-3 text-white" />
                                     </button>

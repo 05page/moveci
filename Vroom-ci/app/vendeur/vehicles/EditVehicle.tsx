@@ -147,6 +147,16 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
     const [photos, setPhotos] = useState<File[]>([])
     const [photoUrls, setPhotoUrls] = useState<string[]>([])
 
+    const allowedPhotoMimeTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
+        "image/gif",
+        "image/svg+xml",
+        "image/webp",
+    ]
+    const allowedPhotoExtensions = ["jpg", "jpeg", "png", "gif", "svg", "webp"]
+
     useEffect(() => {
         if (!isOpen) return
         setCurrentStep(1)
@@ -192,8 +202,18 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
             toast.error("Maximum 10 photos autorisées")
             return
         }
-        setPhotos(prev => [...prev, ...files])
-        setPhotoUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+
+        const validFiles = files.filter((file) => {
+            const ext = file.name.split(".").pop()?.toLowerCase() ?? ""
+            return allowedPhotoMimeTypes.includes(file.type) || allowedPhotoExtensions.includes(ext)
+        })
+
+        if (validFiles.length < files.length) {
+            toast.error("Certaines photos ont ete ignorees (formats autorises: JPG, PNG, GIF, SVG, WEBP)")
+        }
+
+        setPhotos(prev => [...prev, ...validFiles])
+        setPhotoUrls(prev => [...prev, ...validFiles.map(f => URL.createObjectURL(f))])
     }
 
     const removePhoto = (index: number) => {
@@ -598,11 +618,11 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
                                     >
                                         <ImagePlus className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                                         <p className="text-xs font-medium">Cliquez pour ajouter des photos</p>
-                                        <p className="text-[10px] text-muted-foreground mt-0.5">JPG, PNG, WEBP</p>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">JPG, PNG, GIF, SVG, WEBP</p>
                                         <input
                                             ref={fileInputRef}
                                             type="file"
-                                            accept="image/*"
+                                            accept=".jpg,.jpeg,.png,.gif,.svg,.webp,image/*"
                                             multiple
                                             className="hidden"
                                             onChange={handlePhotoAdd}
@@ -617,9 +637,9 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
                                                     <button
                                                         type="button"
                                                         onClick={e => { e.stopPropagation(); removePhoto(i) }}
-                                                        className="absolute top-1 right-1 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        className="absolute top-1.5 right-1.5 w-6 h-6 md:w-5 md:h-5 bg-black/70 rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                                                     >
-                                                        <X className="h-2.5 w-2.5 text-white" />
+                                                        <X className="h-3 w-3 md:h-2.5 md:w-2.5 text-white" />
                                                     </button>
                                                     {i === 0 && (
                                                         <Badge className="absolute bottom-1 left-1 bg-zinc-900 text-white text-[8px] rounded-full px-1.5 py-0">
