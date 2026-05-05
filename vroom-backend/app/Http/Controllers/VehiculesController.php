@@ -155,7 +155,7 @@ class VehiculesController extends Controller
                 ])],
                 'prix' => 'required|numeric',
                 'date_disponibilite' => 'nullable|date',
-
+                'negociable' => 'sometimes|boolean',
                 'marque' => 'required|string|max:500',
                 'modele' => 'required|string|max:500',
                 'annee' => 'nullable|digits:4|integer',
@@ -199,7 +199,7 @@ class VehiculesController extends Controller
                     'message' => 'Données invalides',
                 ], 400);
             }
-            
+
             $statut = isset($validatedData['date_disponibilite']) && $validatedData['date_disponibilite'] > now()
                 ? Vehicules::STATUS_A_VENIR
                 : Vehicules::STATUS_DISPONIBLE;
@@ -214,7 +214,7 @@ class VehiculesController extends Controller
                 'statut'             => $statut,
                 'status_validation'  => Vehicules::STATUS_PENDING, // en_attente jusqu'à validation Gemini
                 'prix'               => $validatedData['prix'],
-                'negociable'         => false,
+                'negociable'         => $request->boolean('negociable'),
                 'date_disponibilite' => $validatedData['date_disponibilite'] ?? now(),
             ]);
 
@@ -324,7 +324,7 @@ class VehiculesController extends Controller
                 ])],
                 'prix' => 'sometimes|required|numeric',
                 'date_disponibilite' => 'sometimes|date',
-
+                'negociable' => 'sometimes|boolean',
                 'marque' => 'sometimes|required|string|max:500',
                 'modele' => 'sometimes|required|string|max:500',
                 'annee' => 'sometimes|digits:4|integer',
@@ -372,7 +372,7 @@ class VehiculesController extends Controller
                 'statut' => Vehicules::STATUS_DISPONIBLE,
                 'status_validation' => Vehicules::STATUS_PENDING,
                 'prix' => $validatedData['prix'],
-                'negociable' => false,
+                'negociable' => $request->boolean('negociable'),
                 'date_disponibilite' => now(),
             ]);
 
