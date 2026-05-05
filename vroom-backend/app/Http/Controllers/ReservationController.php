@@ -93,11 +93,7 @@ class ReservationController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Une erreur est survenue.',
-                'error'   => $e->getMessage()
-            ], 500);
+            return $this->serverError($e, 'Erreur lors de la réservation. Réessayez dans quelques instants.');
         }
     }
 
@@ -127,11 +123,7 @@ class ReservationController extends Controller
                 'message' => 'Réservation introuvable.'
             ], 404);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Une erreur est survenue.',
-                'error'   => $e->getMessage()
-            ], 500);
+            return $this->serverError($e, 'Erreur lors du chargement de la réservation. Réessayez dans quelques instants.');
         }
     }
 
@@ -157,11 +149,7 @@ class ReservationController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Une erreur est survenue.',
-                'error'   => $e->getMessage()
-            ], 500);
+            return $this->serverError($e, 'Erreur lors du chargement des réservations. Réessayez dans quelques instants.');
         }
     }
 
@@ -225,11 +213,7 @@ class ReservationController extends Controller
                 'message' => 'Réservation introuvable.'
             ], 404);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Une erreur est survenue.',
-                'error'   => $e->getMessage()
-            ], 500);
+            return $this->serverError($e, "Erreur lors de l'annulation de la réservation. Réessayez dans quelques instants.");
         }
     }
 }

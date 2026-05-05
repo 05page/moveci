@@ -45,11 +45,7 @@ class SupportController extends Controller
                 'data'    => $ticket,
             ], 201);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'envoi de votre ticket',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->serverError($e, "Erreur lors de l'envoi de votre ticket. Réessayez dans quelques instants.");
         }
     }
 
@@ -66,11 +62,7 @@ class SupportController extends Controller
 
             return response()->json(['success' => true, 'data' => $tickets]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération de vos tickets',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->serverError($e, 'Erreur lors de la récupération de vos tickets. Réessayez dans quelques instants.');
         }
     }
 

@@ -72,7 +72,7 @@ class TransactionConclueController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return $this->serverError($e, 'Erreur lors de la confirmation vendeur. Réessayez dans quelques instants.');
         }
     }
 
@@ -121,7 +121,7 @@ class TransactionConclueController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return $this->serverError($e, 'Erreur lors de la confirmation client. Réessayez dans quelques instants.');
         }
     }
 
@@ -211,7 +211,7 @@ class TransactionConclueController extends Controller
             return response()->json(['success' => true, 'message' => 'Transaction refusée']);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return $this->serverError($e, 'Erreur lors du refus de la transaction. Réessayez dans quelques instants.');
         }
     }
 

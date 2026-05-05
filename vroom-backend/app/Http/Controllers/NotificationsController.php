@@ -29,11 +29,7 @@ class NotificationsController extends Controller
                 ],
             ], 200);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération des notifications',
-                'error'   => $e->getMessage(),
-            ], 500);
+            return $this->serverError($e, 'Erreur lors de la récupération des notifications. Réessayez dans quelques instants.');
         }
     }
 
@@ -65,11 +61,7 @@ class NotificationsController extends Controller
                 'message' => 'Notification introuvable',
             ], 404);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la mise à jour',
-                'error'   => $e->getMessage(),
-            ], 500);
+            return $this->serverError($e, 'Erreur lors de la mise à jour de la notification. Réessayez dans quelques instants.');
         }
     }
 
@@ -96,11 +88,7 @@ class NotificationsController extends Controller
                 'message' => $unread->count() . ' notification(s) marquée(s) comme lues',
             ], 200);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la mise à jour des notifications',
-                'error'   => $e->getMessage(),
-            ], 500);
+            return $this->serverError($e, 'Erreur lors de la mise à jour des notifications. Réessayez dans quelques instants.');
         }
     }
 }

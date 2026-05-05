@@ -45,11 +45,7 @@ class InteractionController extends Controller
                 'data' => $favorites,
             ], 200);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération de l\'utilisateur',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->serverError($e, 'Erreur lors du chargement des favoris. Réessayez dans quelques instants.');
         }
     }
 
@@ -89,11 +85,7 @@ class InteractionController extends Controller
                 'data' => $groupedAlerts,
             ], 200);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération de l\'utilisateur',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->serverError($e, 'Erreur lors du chargement des alertes. Réessayez dans quelques instants.');
         }
     }
 
@@ -129,7 +121,6 @@ class InteractionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération de l’alerte',
-                'error'   => $e->getMessage(),
             ], 500);
         }
     }
@@ -219,7 +210,6 @@ class InteractionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la création de l\'alerte',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -266,7 +256,6 @@ class InteractionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de l\'ajout au favori',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -304,7 +293,6 @@ class InteractionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la suppression du favori',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -397,7 +385,6 @@ class InteractionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors du signalement',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -454,7 +441,6 @@ class InteractionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors du blocage',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -492,7 +478,6 @@ class InteractionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors du déblocage',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -536,7 +521,6 @@ class InteractionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }

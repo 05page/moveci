@@ -150,7 +150,6 @@ class AbonnementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la souscription',
-                'error'   => $e->getMessage(),
             ], 500);
         }
     }

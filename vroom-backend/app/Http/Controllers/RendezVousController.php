@@ -40,7 +40,7 @@ class RendezVousController extends Controller
 
             return response()->json(['success' => true, 'data' => $rdvs], 200);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            return $this->serverError($e, 'Erreur lors du chargement de vos rendez-vous. Réessayez dans quelques instants.');
         }
     }
 
@@ -57,7 +57,7 @@ class RendezVousController extends Controller
 
             return response()->json(['success' => true, 'data' => $rdvs], 200);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            return $this->serverError($e, 'Erreur lors du chargement des rendez-vous reçus. Réessayez dans quelques instants.');
         }
     }
 
@@ -115,7 +115,7 @@ class RendezVousController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            return $this->serverError($e, "Erreur lors de l'envoi de la demande de rendez-vous. Réessayez dans quelques instants.");
         }
     }
 
@@ -168,7 +168,7 @@ class RendezVousController extends Controller
             return response()->json(['success' => false, 'message' => 'Rendez-vous introuvable'], 404);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            return $this->serverError($e, 'Erreur lors de la confirmation du rendez-vous. Réessayez dans quelques instants.');
         }
     }
 
@@ -196,7 +196,7 @@ class RendezVousController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Rendez-vous introuvable'], 404);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            return $this->serverError($e, 'Erreur lors du refus du rendez-vous. Réessayez dans quelques instants.');
         }
     }
 
@@ -242,7 +242,7 @@ class RendezVousController extends Controller
             return response()->json(['success' => false, 'message' => 'Rendez-vous introuvable'], 404);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            return $this->serverError($e, "Erreur lors de l'annulation du rendez-vous. Réessayez dans quelques instants.");
         }
     }
 
@@ -312,7 +312,7 @@ class RendezVousController extends Controller
             return response()->json(['success' => false, 'message' => 'Rendez-vous introuvable'], 404);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            return $this->serverError($e, 'Erreur lors de la finalisation du rendez-vous. Réessayez dans quelques instants.');
         }
     }
 }

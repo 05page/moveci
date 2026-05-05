@@ -61,7 +61,7 @@ class VehiculesController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la récupération des véhicules: ' . $e->getMessage(),
+                'message' => 'Erreur lors de la récupération des véhicules. Réessayez dans quelques instants.',
             ], 500);
         }
     }
@@ -94,7 +94,6 @@ class VehiculesController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération du véhicule',
-                'error'   => $e->getMessage(),
             ], 500);
         }
     }
@@ -134,7 +133,6 @@ class VehiculesController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération des véhicules',
-                'errors' => $e->getMessage(),
             ], 500);
         }
     }
@@ -291,15 +289,19 @@ class VehiculesController extends Controller
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Données invalides',
                 'errors'  => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Erreur lors de la création du véhicule', [
+                'user_id' => Auth::id(),
+                'exception' => $e,
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la création du véhicule',
-                'errors' =>  $e->getMessage(),
+                'message' => "Impossible de publier l'annonce pour le moment. Réessayez dans quelques instants.",
             ], 500);
         }
     }
@@ -419,10 +421,15 @@ class VehiculesController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Erreur lors de la modification du véhicule', [
+                'user_id' => Auth::id(),
+                'vehicule_id' => $id,
+                'exception' => $e,
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la modification du véhicule',
-                'errors' =>  $e->getMessage(),
+                'message' => "Impossible de modifier le véhicule pour le moment. Réessayez dans quelques instants.",
             ], 500);
         }
     }
@@ -450,7 +457,6 @@ class VehiculesController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la suppression du véhicule',
-                'errors'  => $e->getMessage(),
             ], 500);
         }
     }

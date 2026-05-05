@@ -147,7 +147,7 @@ class FormationController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return $this->serverError($e, 'Erreur lors du traitement de la formation. Réessayez dans quelques instants.');
         }
     }
 
@@ -180,7 +180,7 @@ class FormationController extends Controller
             return response()->json(['success' => true, 'data' => $formation->load('description')]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return $this->serverError($e, 'Erreur lors du traitement de la formation. Réessayez dans quelques instants.');
         }
     }
 

@@ -86,7 +86,6 @@ class moderationsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération des modérations',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -115,7 +114,6 @@ class moderationsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération des modérations',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -198,7 +196,6 @@ class moderationsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la suspension du post',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -269,7 +266,6 @@ class moderationsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la restauration',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -346,7 +342,6 @@ class moderationsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la restauration',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -429,7 +424,6 @@ class moderationsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la suspension',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -514,7 +508,6 @@ class moderationsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors du bannissement',
-                'error' => $e->getMessage()
             ], 500);
         }
     }

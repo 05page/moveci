@@ -110,7 +110,6 @@ class VendeurStatsController extends Controller
             return response()->json([
                 'success'=> false,
                 'message'=> "Erreur survenue",
-                'errors'=> $e->getMessage()
             ]);
     }
 
@@ -184,4 +183,3 @@ class VendeurStatsController extends Controller
         }
     }
 }
-

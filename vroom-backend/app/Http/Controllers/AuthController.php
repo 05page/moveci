@@ -74,10 +74,7 @@ class AuthController extends Controller
 
             return redirect($redirectUrl);
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Error during authentication',
-                'message' => $e->getMessage()
-            ], 500);
+            return $this->serverError($e, "Impossible de terminer l'authentification. Réessayez dans quelques instants.");
         }
     }
 
@@ -127,11 +124,7 @@ class AuthController extends Controller
                 'user'    => $user,
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la connexion',
-                'error'   => $e->getMessage(),
-            ], 500);
+            return $this->serverError($e, 'Erreur lors de la connexion. Réessayez dans quelques instants.');
         }
     }
 
@@ -209,11 +202,7 @@ class AuthController extends Controller
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la mise à jour',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverError($e, 'Erreur lors de la mise à jour. Réessayez dans quelques instants.');
         }
     }
 
@@ -258,11 +247,7 @@ class AuthController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la complétion du profil',
-                'error'   => $e->getMessage(),
-            ], 500);
+            return $this->serverError($e, 'Erreur lors de la complétion du profil. Réessayez dans quelques instants.');
         }
     }
 
@@ -328,11 +313,7 @@ class AuthController extends Controller
                 'data' => $user,
             ], 200);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la mise à jour de l\'utilisateur',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->serverError($e, "Erreur lors de la mise à jour de l'utilisateur. Réessayez dans quelques instants.");
         }
     }
 
