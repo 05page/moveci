@@ -159,34 +159,103 @@ class User extends Authenticatable
     }
 
     // ── Helpers rôle 
-    public function isClient(): bool        { return $this->role === self::CLIENT; }
-    public function isVendeur(): bool       { return $this->role === self::VENDEUR; }
-    public function isConcessionnaire(): bool { return $this->role === self::CONCESSIONNAIRE; }
-    public function isAutoEcole(): bool     { return $this->role === self::AUTO_ECOLE; }
-    public function isAdmin(): bool         { return $this->role === self::ADMIN; }
+    public function isClient(): bool
+    {
+        return $this->role === self::CLIENT;
+    }
+    public function isVendeur(): bool
+    {
+        return $this->role === self::VENDEUR;
+    }
+    public function isConcessionnaire(): bool
+    {
+        return $this->role === self::CONCESSIONNAIRE;
+    }
+    public function isAutoEcole(): bool
+    {
+        return $this->role === self::AUTO_ECOLE;
+    }
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ADMIN;
+    }
 
     // ── Helpers statut 
-    public function suspendre(): void { $this->statut = self::SUSPENDU; $this->save(); }
-    public function bannir(): void    { $this->statut = self::BANNI;    $this->save(); }
-    public function restaurer(): void { $this->statut = self::ACTIF;    $this->save(); }
-    public function enAttente(): void { $this->statut = self::EN_ATTENTE;    $this->save(); }
+    public function suspendre(): void
+    {
+        $this->statut = self::SUSPENDU;
+        $this->save();
+    }
+    public function bannir(): void
+    {
+        $this->statut = self::BANNI;
+        $this->save();
+    }
+    public function restaurer(): void
+    {
+        $this->statut = self::ACTIF;
+        $this->save();
+    }
+    public function enAttente(): void
+    {
+        $this->statut = self::EN_ATTENTE;
+        $this->save();
+    }
 
-    public function isSuspendu(): bool { return $this->statut === self::SUSPENDU; }
-    public function isBanni(): bool    { return $this->statut === self::BANNI; }
-    public function isActif(): bool    { return $this->statut === self::ACTIF; }
-    public function isAttente(): bool  { return $this->statut === self::EN_ATTENTE; }
+    public function isSuspendu(): bool
+    {
+        return $this->statut === self::SUSPENDU;
+    }
+    public function isBanni(): bool
+    {
+        return $this->statut === self::BANNI;
+    }
+    public function isActif(): bool
+    {
+        return $this->statut === self::ACTIF;
+    }
+    public function isAttente(): bool
+    {
+        return $this->statut === self::EN_ATTENTE;
+    }
 
     // ── Scopes rôles
-    public function scopeClients($query)           { return $query->where('role', self::CLIENT); }
-    public function scopeVendeurs($query)          { return $query->where('role', self::VENDEUR); }
-    public function scopeConcessionnaires($query)  { return $query->where('role', self::CONCESSIONNAIRE); }
-    public function scopeAutoEcoles($query)        { return $query->where('role', self::AUTO_ECOLE); }
-    public function scopeAdmins($query)            { return $query->where('role', self::ADMIN); }
+    public function scopeClients($query)
+    {
+        return $query->where('role', self::CLIENT);
+    }
+    public function scopeVendeurs($query)
+    {
+        return $query->where('role', self::VENDEUR);
+    }
+    public function scopeConcessionnaires($query)
+    {
+        return $query->where('role', self::CONCESSIONNAIRE);
+    }
+    public function scopeAutoEcoles($query)
+    {
+        return $query->where('role', self::AUTO_ECOLE);
+    }
+    public function scopeAdmins($query)
+    {
+        return $query->where('role', self::ADMIN);
+    }
 
     // ── Scopes statut
-    public function scopeActifs($query)     { return $query->where('statut', self::ACTIF); }
-    public function scopeSuspendus($query)  { return $query->where('statut', self::SUSPENDU); }
-    public function scopeBannis($query)     { return $query->where('statut', self::BANNI); }
-    public function scopeEnAttentes($query) { return $query->where('statut', self::EN_ATTENTE); }
-    
+    public function scopeActifs($query)
+    {
+        return $query->where('statut', self::ACTIF);
+    }
+    public function scopeSuspendus($query)
+    {
+        return $query->where('statut', self::SUSPENDU);
+    }
+    public function scopeBannis($query)
+    {
+        return $query->where('statut', self::BANNI);
+    }
+    public function scopeEnAttentes($query)
+    {
+        return $query->where('statut', self::EN_ATTENTE);
+    }
 }

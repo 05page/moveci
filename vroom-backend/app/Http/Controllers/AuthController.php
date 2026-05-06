@@ -134,7 +134,7 @@ class AuthController extends Controller
             'fullname'      => 'required|string|max:255',
             'email'         => 'required|email|unique:users,email',
             'password'      => 'required|string|min:8|confirmed',
-            'role'          => 'required|in:client,vendeur,concessionnaire,auto_ecole',
+            'role'          => 'required|in:client,vendeur,concessionnaire,auto_ecole,admin',
             'telephone'     => 'sometimes|string|max:20',
             'adresse'       => 'sometimes|string|max:500',
             // champs concessionnaire / auto_ecole
