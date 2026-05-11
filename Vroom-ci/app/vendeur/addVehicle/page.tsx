@@ -4,7 +4,7 @@ import { useState, useRef, Fragment } from "react"
 import Image from "next/image"
 import { toast } from "sonner"
 import { cn } from "@/src/lib/utils"
-
+import {useRouter} from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -133,7 +133,7 @@ const EQUIPEMENTS = [
 ]
 
 const CARD = "rounded-2xl md:rounded-3xl shadow-xl border border-border/40 overflow-hidden bg-card/50 backdrop-blur-sm"
-
+const router = useRouter()
 export default function AddVehiclePage() {
     const [currentStep, setCurrentStep] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -340,6 +340,8 @@ export default function AddVehiclePage() {
                 id: toastId,
                 description: `Prix suggéré : ${data.data?.prix_suggere?.toLocaleString("fr-FR")} FCFA — ${data.data?.explication_prix}`
             })
+            router.push("/vendeur/vehicles")
+            
         } catch (error) {
             toast.error("Erreur de connexion au serveur", { id: toastId })
         } finally {

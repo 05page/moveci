@@ -110,7 +110,7 @@ class VehiculesController extends Controller
             ])
                 ->where('created_by', $user->id)
                 ->whereIn('status_validation', ['validee', 'restauree', 'en_attente', 'rejetee'])
-                ->whereIn('statut', ['disponible', 'vendu', 'loué'])
+                ->whereIn('statut', ['disponible', 'a_venir', 'vendu', 'loué'])
                 ->get();
 
             $stats = [
@@ -198,7 +198,11 @@ class VehiculesController extends Controller
                 ], 400);
             }
 
-            $statut = isset($validatedData['date_disponibilite']) && $validatedData['date_disponibilite'] > now()
+            $dateDisponibilite = isset($validatedData['date_disponibilite'])
+                ? Carbon::parse($validatedData['date_disponibilite'])->startOfDay()
+                : now()->startOfDay();
+
+            $statut = $dateDisponibilite->isFuture()
                 ? Vehicules::STATUS_A_VENIR
                 : Vehicules::STATUS_DISPONIBLE;
 
@@ -213,7 +217,7 @@ class VehiculesController extends Controller
                 'status_validation'  => Vehicules::STATUS_PENDING, // en_attente jusqu'à validation Gemini
                 'prix'               => $validatedData['prix'],
                 'negociable'         => $request->boolean('negociable'),
-                'date_disponibilite' => $validatedData['date_disponibilite'] ?? now(),
+                'date_disponibilite' => $dateDisponibilite,
             ]);
 
             $vehiculeDescription = VehiculesDescription::create([
