@@ -40,7 +40,15 @@ export async function POST(request: NextRequest) {
     body,
   })
 
-  const data = await res.json()
+  // Si Laravel retourne du HTML (crash, 500...), res.json() throw → on log et on propage
+  let data: unknown
+  try {
+    data = await res.json()
+  } catch {
+    const text = await res.text().catch(() => "(unreadable)")
+    console.error("[broadcasting/auth] Backend non-JSON response:", res.status, text.slice(0, 500))
+    return NextResponse.json({ message: "Erreur broadcasting backend" }, { status: 502 })
+  }
 
   // On retourne la réponse de Laravel telle quelle (contient la signature du canal)
   return NextResponse.json(data, { status: res.status })

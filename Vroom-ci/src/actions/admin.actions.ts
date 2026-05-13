@@ -98,7 +98,7 @@ export const validerVehicule = (id: string | number) =>
 
 /** Rejette un véhicule avec un motif obligatoire. */
 export const rejeterVehicule = (id: string | number, data: { motif: string }) =>
-  api.post<vehicule>(`/admin/vehicules/${id}/rejeter`, data)
+  api.post<vehicule>(`/admin/vehicules/${id}/rejeter`, {details: data.motif})
 
 // ---------------------------------------------------------------------------
 // Signalements
