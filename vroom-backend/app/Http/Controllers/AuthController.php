@@ -54,8 +54,11 @@ class AuthController extends Controller
             $needsOnboarding = $user->wasRecentlyCreated || $user->role === null;
 
             // Mail de bienvenue uniquement pour les nouveaux comptes Google
+            // Le try/catch isole l'envoi — un échec SMTP ne bloque pas la connexion
             if ($user->wasRecentlyCreated) {
-                Mail::to($user->email)->queue(new WelcomeMail($user));
+                try {
+                    Mail::to($user->email)->queue(new WelcomeMail($user));
+                } catch (\Exception) {}
             }
 
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -155,7 +158,9 @@ class AuthController extends Controller
             'numero_agrement' => $request->numero_agrement,
         ]);
 
-        Mail::to($user->email)->queue(new WelcomeMail($user));
+        try {
+            Mail::to($user->email)->queue(new WelcomeMail($user));
+        } catch (\Exception) {}
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
