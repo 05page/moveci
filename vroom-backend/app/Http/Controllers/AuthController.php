@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use App\Mail\WelcomeMail;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
@@ -21,45 +23,40 @@ class AuthController extends Controller
         }
 
         return Socialite::driver('google')
-            ->scopes([
-                'https://www.googleapis.com/auth/calendar.events'
-            ])
-            ->with([
-                'access_type' => 'offline',
-                'prompt' => 'consent',
-            ])
             ->stateless()
             ->redirect();
     }
 
     public function callback(string $provider)
     {
+        $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
+
+        // L'utilisateur a cliqué "Annuler" sur l'écran Google → on le renvoie sur /auth
+        if (request()->has('error')) {
+            return redirect($frontendUrl . '/auth');
+        }
+
         try {
             $socialUser = Socialite::driver('google')->stateless()->user();
-            //dd($socialUser->token, $socialUser->refreshToken, $socialUser->expiresIn);
-            $tokenData = [
-                'access_token' => $socialUser->token,
-                'refresh_token' => $socialUser->refreshToken,
-                'expires_in' => $socialUser->expiresIn ?? 3600,
-                'created' => time(),
-            ];
             $user = User::updateOrCreate(
                 ['google_id' => $socialUser->id],
                 [
-                    'fullname'                => $socialUser->name,
-                    'email'                   => $socialUser->email,
-                    'avatar'                  => $socialUser->avatar,
-                    'auth_provider'           => 'google',
-                    'password'                => Hash::make(Str::random(24)),
-                    'google_access_token'     => $tokenData,
-                    'google_refresh_token'    => $socialUser->refreshToken,
-                    'google_token_expires_at' => now()->addSeconds($tokenData['expires_in']),
-                    'email_verified_at'       => now(),
+                    'fullname'          => $socialUser->name,
+                    'email'             => $socialUser->email,
+                    'avatar'            => $socialUser->avatar,
+                    'auth_provider'     => 'google',
+                    'password'          => Hash::make(Str::random(24)),
+                    'email_verified_at' => now(),
                 ]
             );
 
             // Nouveau user Google = pas encore de rôle → onboarding requis
             $needsOnboarding = $user->wasRecentlyCreated || $user->role === null;
+
+            // Mail de bienvenue uniquement pour les nouveaux comptes Google
+            if ($user->wasRecentlyCreated) {
+                Mail::to($user->email)->queue(new WelcomeMail($user));
+            }
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -73,8 +70,8 @@ class AuthController extends Controller
             ]);
 
             return redirect($redirectUrl);
-        } catch (\Exception $e) {
-            return $this->serverError($e, "Impossible de terminer l'authentification. Réessayez dans quelques instants.");
+        } catch (\Exception) {
+            return redirect($frontendUrl . '/auth?error=auth_failed');
         }
     }
 
@@ -157,6 +154,8 @@ class AuthController extends Controller
             'rccm'            => $request->rccm,
             'numero_agrement' => $request->numero_agrement,
         ]);
+
+        Mail::to($user->email)->queue(new WelcomeMail($user));
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
