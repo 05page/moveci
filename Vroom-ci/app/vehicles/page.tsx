@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,7 +10,6 @@ import {
     Car,
     Plus,
     Filter,
-    Settings2,
     Tag,
     KeyRound,
     Search,
@@ -30,7 +29,6 @@ import {
     Sparkles,
 } from "lucide-react"
 import Link from "next/link"
-import { Separator } from "@/components/ui/separator"
 import Image from "next/image"
 import { useEffect, useState, useMemo } from "react"
 import { toast } from "sonner";
@@ -43,6 +41,7 @@ import VehicleDetails from "./VehicleDetails"
 import { cn, getPhotoUrl } from "@/src/lib/utils"
 import { FadeIn, SlideIn, StaggerList, StaggerItem } from "@/components/ui/motion-primitives"
 import { useRouter } from "next/navigation"
+
 interface Filters {
     search: string
     carburant: string
@@ -73,6 +72,7 @@ const VehiclesPage = () => {
     const navigate = () => {
         router.push('/vendeur/addVehicle')
     }
+
     /** Ajoute ou retire un véhicule de la sélection de comparaison (max 3). */
     const toggleCompare = (id: string) => {
         setCompareIds(prev => {
@@ -81,6 +81,7 @@ const VehiclesPage = () => {
             return [...prev, id]
         })
     }
+
     // Charge les véhicules au montage — accessible sans connexion
     useEffect(() => {
         setIsLoading(true)
@@ -172,6 +173,7 @@ const VehiclesPage = () => {
             setFavLoading(null)
         }
     }
+
     const isVendeur = user?.role === "vendeur"
 
     const [filters, setFilters] = useState<Filters>({
@@ -251,9 +253,10 @@ const VehiclesPage = () => {
         const primaryPhoto = v.photos?.find(p => p.is_primary) ?? v.photos?.[0]
         const imageUrl = primaryPhoto ? getPhotoUrl(primaryPhoto.path) : null
         return (
-            <Card className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+            <Card className="rounded-2xl shadow-sm border border-zinc-200 bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
                 <CardContent className="p-0">
-                    <div className="h-40 bg-linear-to-br from-zinc-100 to-zinc-50 flex items-center justify-center relative overflow-hidden">
+                    {/* Photo — h-48 pour plus de respiration */}
+                    <div className="h-48 bg-linear-to-br from-zinc-100 to-zinc-50 flex items-center justify-center relative overflow-hidden">
                         {imageUrl
                             ? <Image src={imageUrl} alt={`${v.description?.marque} ${v.description?.modele}`} fill className="object-cover" unoptimized />
                             : <Car className="h-12 w-12 text-zinc-300" />
@@ -273,10 +276,11 @@ const VehiclesPage = () => {
                             <Heart className={cn("h-4 w-4 transition-colors", isFavori.has(v.id) ? "fill-red-500 text-red-500" : "text-zinc-500")} />
                         </button>
                     </div>
-                    <div className="p-4 space-y-3">
-                        <div>
+                    {/* Infos — sans Separator pour garder l'espace aéré */}
+                    <div className="p-4">
+                        <div className="mb-3">
                             <h3 className="font-bold text-base text-zinc-900">{v.description?.marque} {v.description?.modele}</h3>
-                            <p className="text-xs text-zinc-500">{v.description?.annee} &middot; {v.description?.kilometrage} km &middot; {v.description?.carburant}</p>
+                            <p className="text-xs text-zinc-500 mt-0.5">{v.description?.annee} &middot; {v.description?.kilometrage} km &middot; {v.description?.carburant}</p>
                             {v.creator && (
                                 <Link
                                     href={`/profil/${v.creator.id}`}
@@ -287,8 +291,7 @@ const VehiclesPage = () => {
                                 </Link>
                             )}
                         </div>
-                        <p className="text-lg font-black text-zinc-900">{v.prix?.toLocaleString()} <span className="text-xs font-normal text-zinc-500">FCFA</span></p>
-                        <Separator />
+                        <p className="text-lg font-black text-zinc-900 mb-3">{v.prix?.toLocaleString()} <span className="text-xs font-normal text-zinc-500">FCFA</span></p>
                         <div className="flex items-center justify-between text-xs text-zinc-500">
                             <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> {v.views_count} vues</span>
                             <div className="flex items-center gap-1.5">
@@ -332,665 +335,565 @@ const VehiclesPage = () => {
         )
     }
 
+    // ── Skeleton de chargement ──
     if (isLoading) {
         return (
-            <div className="pt-20 px-4 md:px-6 space-y-4 md:space-y-6 max-w-6xl mx-auto mb-12">
-                <Card className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 overflow-hidden bg-white">
-                    <CardContent className="p-4 md:p-6">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex items-center gap-3 md:gap-4">
-                                <Skeleton className="h-12 w-12 md:h-14 md:w-14 rounded-2xl" />
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-3">
-                                        <Skeleton className="h-7 w-36 md:h-8 md:w-48" />
-                                        <Skeleton className="h-6 w-12 rounded-full" />
-                                    </div>
-                                    <Skeleton className="h-3 w-48 md:h-4 md:w-64" />
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <Skeleton className="h-9 w-28 md:w-40 rounded-xl" />
-                                <Skeleton className="h-9 w-20 md:w-28 rounded-xl" />
-                                <Skeleton className="h-9 w-9 rounded-xl" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Skeleton className="h-12 w-full rounded-2xl" />
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                    {[1, 2, 3, 4].map((i) => (
-                        <Card key={i} className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 bg-white">
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <Skeleton className="w-10 h-10 rounded-xl" />
-                                    <div className="space-y-2">
-                                        <Skeleton className="h-6 w-12" />
-                                        <Skeleton className="h-3 w-16 md:w-24" />
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+            <div className="pt-20 px-4 md:px-6 max-w-5xl mx-auto mb-16 space-y-8">
+                {/* Header skeleton */}
+                <div className="space-y-2">
+                    <Skeleton className="h-7 w-48" />
+                    <Skeleton className="h-4 w-72" />
                 </div>
 
-                <Card className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 overflow-hidden bg-white">
-                    <div className="p-4 border-b border-zinc-200">
-                        <div className="flex gap-2">
-                            {[1, 2, 3].map((i) => (
-                                <Skeleton key={i} className="h-10 w-24 md:w-32 rounded-lg" />
-                            ))}
+                {/* Search skeleton */}
+                <Skeleton className="h-10 w-full rounded-xl" />
+
+                {/* Cards skeleton */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="rounded-2xl border border-zinc-200 overflow-hidden bg-white">
+                            <Skeleton className="h-48 w-full rounded-none" />
+                            <div className="p-4 space-y-2">
+                                <Skeleton className="h-5 w-3/4" />
+                                <Skeleton className="h-3 w-1/2" />
+                                <Skeleton className="h-6 w-1/3 mt-1" />
+                            </div>
                         </div>
-                    </div>
-                    <div className="p-4 md:p-6">
-                        <div className="flex flex-col items-center justify-center py-12 md:py-16">
-                            <Skeleton className="h-16 w-16 rounded-full mb-4" />
-                            <Skeleton className="h-5 w-56 mb-2" />
-                            <Skeleton className="h-4 w-40" />
-                        </div>
-                    </div>
-                </Card>
+                    ))}
+                </div>
             </div>
         )
     }
 
     return (
         <FadeIn>
-        <div className="pt-20 px-4 md:px-6 space-y-4 md:space-y-6 max-w-6xl mx-auto mb-12">
-            {/* Header */}
-            <SlideIn direction="left">
-            <Card className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 overflow-hidden animate-in fade-in slide-in-from-bottom duration-500 bg-white">
-                <CardContent className="p-4 md:p-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3 md:gap-4">
-                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-zinc-100 flex items-center justify-center shrink-0">
-                                <Car className="h-6 w-6 md:h-7 md:w-7 text-zinc-700" />
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2 md:gap-3">
-                                    <h1 className="text-xl md:text-3xl font-black tracking-tight text-zinc-900">
-                                        {isVendeur ? "Mes Véhicules" : "Véhicules disponibles"}
-                                    </h1>
-                                    <Badge className="bg-zinc-900 text-white font-bold rounded-full">
-                                        {vehiculesList.length}
-                                    </Badge>
-                                </div>
-                                <p className="text-xs md:text-sm text-zinc-500 mt-1">
-                                    {isVendeur
-                                        ? "Gérez vos annonces de véhicules en vente et en location"
-                                        : "Parcourez les véhicules disponibles à la vente et à la location"
-                                    }
-                                </p>
-                            </div>
-                        </div>
+        <div className="pt-20 px-4 md:px-6 max-w-5xl mx-auto mb-16 space-y-8">
 
+            {/* ── Header ── */}
+            <SlideIn direction="left">
+            <section className="space-y-3">
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+                            {isVendeur ? "Mes Véhicules" : "Véhicules disponibles"}
+                        </h1>
+                        {/* Stats inline — pas de cards séparées */}
+                        <div className="flex items-center gap-3 mt-1.5 text-sm text-zinc-500 flex-wrap">
+                            <span>{stats?.total_vehicules ?? 0} au total</span>
+                            <span className="text-zinc-300">·</span>
+                            <span className="flex items-center gap-1">
+                                <Tag className="h-3.5 w-3.5 text-green-500" />
+                                {stats?.en_vente ?? 0} en vente
+                            </span>
+                            <span className="text-zinc-300">·</span>
+                            <span className="flex items-center gap-1">
+                                <KeyRound className="h-3.5 w-3.5 text-blue-500" />
+                                {stats?.en_location ?? 0} en location
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                        {isVendeur && (
+                            <Button
+                                size="sm"
+                                className="rounded-lg cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white"
+                                onClick={() => navigate()}
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                <span className="hidden sm:inline">Publier un véhicule</span>
+                                <span className="sm:hidden">Publier</span>
+                            </Button>
+                        )}
+                        <Button
+                            variant={showFilters ? "default" : "outline"}
+                            size="sm"
+                            className={`rounded-lg cursor-pointer ${showFilters ? "bg-zinc-900 hover:bg-zinc-800 text-white" : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"}`}
+                            onClick={() => setShowFilters(!showFilters)}
+                        >
+                            <Filter className="h-4 w-4 mr-2" />
+                            Filtrer
+                            {activeFilterCount > 0 && (
+                                <Badge className="ml-1.5 bg-zinc-700 text-white rounded-full text-[10px] px-1.5 py-0">
+                                    {activeFilterCount}
+                                </Badge>
+                            )}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Bannière non-connecté — visible uniquement pour les visiteurs anonymes */}
+                {!user && (
+                    <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <Building2 className="h-4 w-4 text-amber-600 shrink-0" />
+                            <p className="text-sm text-amber-800 truncate">
+                                Parcourez librement — Connectez-vous pour contacter les vendeurs et prendre rendez-vous.
+                            </p>
+                        </div>
+                        <Link href="/auth" className="shrink-0">
+                            <Button size="sm" className="rounded-lg bg-amber-500 hover:bg-amber-600 text-white cursor-pointer gap-1.5">
+                                <LogIn className="h-3.5 w-3.5" />
+                                Se connecter
+                            </Button>
+                        </Link>
+                    </div>
+                )}
+            </section>
+            </SlideIn>
+
+            {/* ── Search Bar ── */}
+            <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+                <Input
+                    placeholder="Rechercher par marque ou modèle..."
+                    value={filters.search}
+                    onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                    className="pl-10 pr-10 h-10 rounded-xl border-zinc-200 bg-zinc-50/50 text-sm placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-zinc-300"
+                />
+                {filters.search && (
+                    <button
+                        onClick={() => setFilters({ ...filters, search: "" })}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                )}
+            </div>
+
+            {/* ── Filters Panel ── */}
+            {showFilters && (
+                <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <SlidersHorizontal className="h-4 w-4 text-zinc-500" />
+                            <span className="text-sm font-semibold text-zinc-900">Filtres avancés</span>
+                        </div>
                         <div className="flex gap-2">
-                            {isVendeur && (
-                                <Button size="sm" className="rounded-xl cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white" onClick={() => navigate()}>
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    <span className="hidden sm:inline">Publier un véhicule</span>
-                                    <span className="sm:hidden">Publier</span>
+                            {activeFilterCount > 0 && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="rounded-lg cursor-pointer text-zinc-500 hidden sm:flex text-xs"
+                                    onClick={resetFilters}
+                                >
+                                    <X className="h-3.5 w-3.5 mr-1" />
+                                    Réinitialiser
                                 </Button>
                             )}
                             <Button
-                                variant={showFilters ? "default" : "outline"}
-                                size="sm"
-                                className={`rounded-xl cursor-pointer ${showFilters ? "bg-zinc-900 hover:bg-zinc-800 text-white" : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"}`}
-                                onClick={() => setShowFilters(!showFilters)}
+                                variant="ghost"
+                                size="icon"
+                                className="rounded-lg cursor-pointer h-8 w-8"
+                                onClick={() => setShowFilters(false)}
                             >
-                                <Filter className="h-4 w-4 mr-2" />
-                                Filtrer
-                                {activeFilterCount > 0 && (
-                                    <Badge className="ml-1.5 bg-zinc-700 text-white rounded-full text-[10px] px-1.5 py-0">
-                                        {activeFilterCount}
-                                    </Badge>
-                                )}
-                            </Button>
-                            <Button variant="outline" size="sm" className="rounded-xl cursor-pointer border-zinc-200 text-zinc-700 hover:bg-zinc-50">
-                                <Settings2 className="h-4 w-4" />
+                                <X className="h-4 w-4" />
                             </Button>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
-            </SlideIn>
 
-            {/* Bannière non-connecté — visible uniquement pour les visiteurs anonymes */}
-            {!user && (
-                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-amber-50 border border-amber-200 animate-in fade-in slide-in-from-top duration-300">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                        <Building2 className="h-4 w-4 text-amber-600 shrink-0" />
-                        <p className="text-sm text-amber-800 truncate">
-                            Parcourez librement — Connectez-vous pour contacter les vendeurs et prendre rendez-vous.
-                        </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Marque */}
+                        <div className="space-y-2 sm:col-span-2 lg:col-span-4">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <Car className="h-3.5 w-3.5" />
+                                Marque
+                            </label>
+                            <div className="flex flex-wrap gap-1.5">
+                                {marquesDisponibles.map(m => (
+                                    <button
+                                        key={m}
+                                        onClick={() => setFilters({ ...filters, marque: m })}
+                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${filters.marque === m
+                                            ? "bg-zinc-900 text-white"
+                                            : "bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200"
+                                            }`}
+                                    >
+                                        {m}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Carburant */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <Fuel className="h-3.5 w-3.5" />
+                                Carburant
+                            </label>
+                            <div className="flex flex-wrap gap-1.5">
+                                {CARBURANTS.map((c) => (
+                                    <button
+                                        key={c}
+                                        onClick={() => setFilters({ ...filters, carburant: c })}
+                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${filters.carburant === c
+                                            ? "bg-zinc-900 text-white"
+                                            : "bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200"
+                                            }`}
+                                    >
+                                        {c}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Statut */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                Statut
+                            </label>
+                            <div className="flex flex-wrap gap-1.5">
+                                {STATUTS.map((s) => (
+                                    <button
+                                        key={s}
+                                        onClick={() => setFilters({ ...filters, statut: s })}
+                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${filters.statut === s
+                                            ? "bg-zinc-900 text-white"
+                                            : "bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200"
+                                            }`}
+                                    >
+                                        {s}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Prix */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <CircleDollarSign className="h-3.5 w-3.5" />
+                                Prix (FCFA)
+                            </label>
+                            <div className="flex gap-2">
+                                <Input
+                                    type="number"
+                                    placeholder="Min"
+                                    value={filters.prixMin}
+                                    onChange={(e) => setFilters({ ...filters, prixMin: e.target.value })}
+                                    className="rounded-lg h-8 bg-zinc-50 border-zinc-200 text-xs"
+                                />
+                                <Input
+                                    type="number"
+                                    placeholder="Max"
+                                    value={filters.prixMax}
+                                    onChange={(e) => setFilters({ ...filters, prixMax: e.target.value })}
+                                    className="rounded-lg h-8 bg-zinc-50 border-zinc-200 text-xs"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Année */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <Calendar className="h-3.5 w-3.5" />
+                                Année
+                            </label>
+                            <div className="flex gap-2">
+                                <Input
+                                    type="number"
+                                    placeholder="De"
+                                    value={filters.anneeMin}
+                                    onChange={(e) => setFilters({ ...filters, anneeMin: e.target.value })}
+                                    className="rounded-lg h-8 bg-zinc-50 border-zinc-200 text-xs"
+                                />
+                                <Input
+                                    type="number"
+                                    placeholder="À"
+                                    value={filters.anneeMax}
+                                    onChange={(e) => setFilters({ ...filters, anneeMax: e.target.value })}
+                                    className="rounded-lg h-8 bg-zinc-50 border-zinc-200 text-xs"
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <Link href="/auth" className="shrink-0">
-                        <Button size="sm" className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white cursor-pointer gap-1.5">
-                            <LogIn className="h-3.5 w-3.5" />
-                            Se connecter
-                        </Button>
-                    </Link>
+
+                    {/* Active filters summary + mobile reset */}
+                    {activeFilterCount > 0 && (
+                        <div className="pt-3 border-t border-zinc-100 flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-semibold text-zinc-400">Actifs :</span>
+                            {filters.search && (
+                                <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-50 text-zinc-700 border-zinc-200">
+                                    Recherche: {filters.search}
+                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, search: "" })} />
+                                </Badge>
+                            )}
+                            {filters.marque !== "Toutes" && (
+                                <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-50 text-zinc-700 border-zinc-200">
+                                    {filters.marque}
+                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, marque: "Toutes" })} />
+                                </Badge>
+                            )}
+                            {filters.carburant !== "Tous" && (
+                                <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-50 text-zinc-700 border-zinc-200">
+                                    {filters.carburant}
+                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, carburant: "Tous" })} />
+                                </Badge>
+                            )}
+                            {filters.statut !== "Tous" && (
+                                <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-50 text-zinc-700 border-zinc-200">
+                                    {filters.statut}
+                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, statut: "Tous" })} />
+                                </Badge>
+                            )}
+                            {(filters.prixMin || filters.prixMax) && (
+                                <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-50 text-zinc-700 border-zinc-200">
+                                    Prix: {filters.prixMin || "0"} - {filters.prixMax || "..."}
+                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, prixMin: "", prixMax: "" })} />
+                                </Badge>
+                            )}
+                            {(filters.anneeMin || filters.anneeMax) && (
+                                <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-50 text-zinc-700 border-zinc-200">
+                                    Année: {filters.anneeMin || "..."} - {filters.anneeMax || "..."}
+                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, anneeMin: "", anneeMax: "" })} />
+                                </Badge>
+                            )}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="rounded-lg cursor-pointer text-zinc-500 sm:hidden ml-auto text-xs"
+                                onClick={resetFilters}
+                            >
+                                <X className="h-3.5 w-3.5 mr-1" />
+                                Réinitialiser
+                            </Button>
+                        </div>
+                    )}
                 </div>
             )}
 
-            {/* Search Bar */}
-            <Card className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 bg-white animate-in fade-in slide-in-from-bottom duration-500">
-                <CardContent className="p-3 md:p-4">
-                    <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
-                        <Input
-                            placeholder="Rechercher par marque ou modèle..."
-                            value={filters.search}
-                            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                            className="pl-12 pr-10 h-11 md:h-12 rounded-xl md:rounded-2xl border-zinc-200 bg-zinc-50/50 text-sm md:text-base placeholder:text-zinc-400 focus-visible:ring-zinc-300 focus-visible:border-zinc-400"
-                        />
-                        {filters.search && (
-                            <button
-                                onClick={() => setFilters({ ...filters, search: "" })}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Filters Panel */}
-            {showFilters && (
-                <Card className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 overflow-hidden animate-in fade-in slide-in-from-top duration-300 bg-white">
-                    <CardHeader className="p-4 md:pb-4 border-b border-zinc-200">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center shrink-0">
-                                    <SlidersHorizontal className="h-5 w-5 text-zinc-600" />
-                                </div>
-                                <div>
-                                    <CardTitle className="text-base md:text-lg font-bold text-zinc-900">Filtres avancés</CardTitle>
-                                    <p className="text-xs md:text-sm text-zinc-500">
-                                        Affinez votre recherche
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                {activeFilterCount > 0 && (
-                                    <Button variant="ghost" size="sm" className="rounded-xl cursor-pointer text-zinc-500 hidden sm:flex" onClick={resetFilters}>
-                                        <X className="h-4 w-4 mr-1" />
-                                        Réinitialiser
-                                    </Button>
-                                )}
-                                <Button variant="ghost" size="icon" className="rounded-xl cursor-pointer" onClick={() => setShowFilters(false)}>
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 md:p-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                            {/* Marque */}
-                            <div className="space-y-3 sm:col-span-2 lg:col-span-4">
-                                <label className="text-sm font-bold flex items-center gap-2 text-zinc-700">
-                                    <Car className="h-4 w-4 text-zinc-500" />
-                                    Marque
-                                </label>
-                                <div className="flex flex-wrap gap-2">
-                                    {marquesDisponibles.map(m => (
-                                        <button
-                                            key={m}
-                                            onClick={() => setFilters({ ...filters, marque: m })}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filters.marque === m
-                                                ? "bg-zinc-900 text-white shadow-md"
-                                                : "bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200"
-                                                }`}
-                                        >
-                                            {m}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Carburant */}
-                            <div className="space-y-3">
-                                <label className="text-sm font-bold flex items-center gap-2 text-zinc-700">
-                                    <Fuel className="h-4 w-4 text-zinc-500" />
-                                    Carburant
-                                </label>
-                                <div className="flex flex-wrap gap-2">
-                                    {CARBURANTS.map((c) => (
-                                        <button
-                                            key={c}
-                                            onClick={() => setFilters({ ...filters, carburant: c })}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filters.carburant === c
-                                                ? "bg-zinc-900 text-white shadow-md"
-                                                : "bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200"
-                                                }`}
-                                        >
-                                            {c}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Statut */}
-                            <div className="space-y-3">
-                                <label className="text-sm font-bold flex items-center gap-2 text-zinc-700">
-                                    <CheckCircle2 className="h-4 w-4 text-zinc-500" />
-                                    Statut
-                                </label>
-                                <div className="flex flex-wrap gap-2">
-                                    {STATUTS.map((s) => (
-                                        <button
-                                            key={s}
-                                            onClick={() => setFilters({ ...filters, statut: s })}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filters.statut === s
-                                                ? "bg-zinc-900 text-white shadow-md"
-                                                : "bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200"
-                                                }`}
-                                        >
-                                            {s}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Prix */}
-                            <div className="space-y-3">
-                                <label className="text-sm font-bold flex items-center gap-2 text-zinc-700">
-                                    <CircleDollarSign className="h-4 w-4 text-zinc-500" />
-                                    Prix (FCFA)
-                                </label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        type="number"
-                                        placeholder="Min"
-                                        value={filters.prixMin}
-                                        onChange={(e) => setFilters({ ...filters, prixMin: e.target.value })}
-                                        className="rounded-xl h-9 bg-zinc-50 border-zinc-200"
-                                    />
-                                    <Input
-                                        type="number"
-                                        placeholder="Max"
-                                        value={filters.prixMax}
-                                        onChange={(e) => setFilters({ ...filters, prixMax: e.target.value })}
-                                        className="rounded-xl h-9 bg-zinc-50 border-zinc-200"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Année */}
-                            <div className="space-y-3">
-                                <label className="text-sm font-bold flex items-center gap-2 text-zinc-700">
-                                    <Calendar className="h-4 w-4 text-zinc-500" />
-                                    Année
-                                </label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        type="number"
-                                        placeholder="De"
-                                        value={filters.anneeMin}
-                                        onChange={(e) => setFilters({ ...filters, anneeMin: e.target.value })}
-                                        className="rounded-xl h-9 bg-zinc-50 border-zinc-200"
-                                    />
-                                    <Input
-                                        type="number"
-                                        placeholder="À"
-                                        value={filters.anneeMax}
-                                        onChange={(e) => setFilters({ ...filters, anneeMax: e.target.value })}
-                                        className="rounded-xl h-9 bg-zinc-50 border-zinc-200"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Active filters summary + mobile reset */}
-                        {activeFilterCount > 0 && (
-                            <div className="mt-4 md:mt-6 pt-4 border-t border-zinc-200 flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-bold text-zinc-500">Filtres actifs :</span>
-                                {filters.search && (
-                                    <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-100 text-zinc-700 border-zinc-300">
-                                        Recherche: {filters.search}
-                                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, search: "" })} />
-                                    </Badge>
-                                )}
-                                {filters.marque !== "Toutes" && (
-                                    <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-100 text-zinc-700 border-zinc-300">
-                                        {filters.marque}
-                                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, marque: "Toutes" })} />
-                                    </Badge>
-                                )}
-                                {filters.carburant !== "Tous" && (
-                                    <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-100 text-zinc-700 border-zinc-300">
-                                        {filters.carburant}
-                                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, carburant: "Tous" })} />
-                                    </Badge>
-                                )}
-                                {filters.statut !== "Tous" && (
-                                    <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-100 text-zinc-700 border-zinc-300">
-                                        {filters.statut}
-                                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, statut: "Tous" })} />
-                                    </Badge>
-                                )}
-                                {(filters.prixMin || filters.prixMax) && (
-                                    <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-100 text-zinc-700 border-zinc-300">
-                                        Prix: {filters.prixMin || "0"} - {filters.prixMax || "..."}
-                                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, prixMin: "", prixMax: "" })} />
-                                    </Badge>
-                                )}
-                                {(filters.anneeMin || filters.anneeMax) && (
-                                    <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-100 text-zinc-700 border-zinc-300">
-                                        Année: {filters.anneeMin || "..."} - {filters.anneeMax || "..."}
-                                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, anneeMin: "", anneeMax: "" })} />
-                                    </Badge>
-                                )}
-                                <Button variant="ghost" size="sm" className="rounded-xl cursor-pointer text-zinc-500 sm:hidden ml-auto" onClick={resetFilters}>
-                                    <X className="h-4 w-4 mr-1" />
-                                    Réinitialiser
-                                </Button>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                <Card className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 bg-white hover:shadow-md transition-all animate-in fade-in slide-in-from-left duration-500">
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-zinc-100 rounded-xl flex items-center justify-center shrink-0">
-                                <Car className="h-5 w-5 text-zinc-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-black text-zinc-900">{stats?.total_vehicules ?? 0}</p>
-                                <p className="text-xs font-semibold text-zinc-500">
-                                    {isVendeur ? "Publiés" : "Disponibles"}
-                                </p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 bg-white hover:shadow-md transition-all animate-in fade-in slide-in-from-bottom duration-500">
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center shrink-0">
-                                <Tag className="h-5 w-5 text-green-500" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-black text-zinc-900">{stats?.en_vente ?? 0}</p>
-                                <p className="text-xs font-semibold text-zinc-500">En vente</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 bg-white hover:shadow-md transition-all animate-in fade-in slide-in-from-bottom duration-500">
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
-                                <KeyRound className="h-5 w-5 text-blue-500" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-black text-zinc-900">{stats?.en_location ?? 0}</p>
-                                <p className="text-xs font-semibold text-zinc-500">En location</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-            </div>
-
-            {/* Vehicles List with Tabs */}
-            <Card className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 overflow-hidden animate-in fade-in slide-in-from-bottom duration-700 bg-white">
-                <Tabs defaultValue="tous" className="w-full">
-                    <div className="p-4 border-b border-zinc-200">
-                        <TabsList className="w-full md:w-auto grid grid-cols-3 md:flex">
-                            <TabsTrigger
-                                value="tous"
-                                className="gap-2 data-[state=active]:bg-zinc-900 data-[state=active]:text-white"
-                            >
-                                <Car className="h-4 w-4" />
-                                <span className="hidden md:inline">Tous</span>
-                                <Badge variant="secondary" className="rounded-full">
-                                    {stats?.total_vehicules ?? 0}
-                                </Badge>
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="vente"
-                                className="gap-2 data-[state=active]:bg-zinc-900 data-[state=active]:text-white"
-                            >
-                                <Tag className="h-4 w-4" />
-                                <span className="hidden md:inline">En vente</span>
-                                <Badge variant="secondary" className="rounded-full">
-                                    {stats?.en_vente ?? 0}
-                                </Badge>
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="location"
-                                className="gap-2 data-[state=active]:bg-zinc-900 data-[state=active]:text-white"
-                            >
-                                <KeyRound className="h-4 w-4" />
-                                <span className="hidden md:inline">En location</span>
-                                <Badge variant="secondary" className="rounded-full">
-                                    {stats?.en_location ?? 0}
-                                </Badge>
-                            </TabsTrigger>
-                            {user && (
-                                <TabsTrigger
-                                    value="suggestions"
-                                    className="gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
-                                >
-                                    <Sparkles className="h-4 w-4" />
-                                    <span className="hidden md:inline">Pour vous</span>
-                                </TabsTrigger>
-                            )}
-                        </TabsList>
-                    </div>
-
-                    <TabsContent value="tous" className="p-4 md:p-6">
-                        {getVehiclesFiltres("tous").length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 md:py-16 text-center">
-                                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-zinc-100 flex items-center justify-center mb-4 md:mb-6">
-                                    <PackageX className="h-8 w-8 md:h-10 md:w-10 text-zinc-300" />
-                                </div>
-                                <h3 className="text-base md:text-lg font-bold text-zinc-900 mb-2">
-                                    {isVendeur ? "Aucun véhicule publié" : "Aucun véhicule disponible"}
-                                </h3>
-                                <p className="text-sm text-zinc-500 max-w-sm mb-6 px-4">
-                                    {isVendeur
-                                        ? "Vous n'avez pas encore publié de véhicule. Commencez par ajouter votre premier véhicule."
-                                        : "Aucun véhicule n'est disponible pour le moment. Revenez plus tard."
-                                    }
-                                </p>
-                                {isVendeur ? (
-                                    <Button className="rounded-xl cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white" onClick={() => navigate()}>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Publier mon premier véhicule
-                                    </Button>
-                                ) : (
-                                    <Button className="rounded-xl cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white">
-                                        <ShoppingBag className="h-4 w-4 mr-2" />
-                                        Explorer les catégories
-                                    </Button>
-                                )}
-                            </div>
-                        ) : (
-                            <StaggerList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                                {getVehiclesFiltres("tous").map(v => (
-                                    <StaggerItem key={v.id}>
-                                        <VehicleCard v={v} />
-                                    </StaggerItem>
-                                ))}
-                            </StaggerList>
-                        )}
-                    </TabsContent>
-
-                    <TabsContent value="vente" className="p-4 md:p-6">
-                        {getVehiclesFiltres("vente").length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 md:py-16 text-center">
-                                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-green-50 flex items-center justify-center mb-4 md:mb-6">
-                                    <Tag className="h-8 w-8 md:h-10 md:w-10 text-green-300" />
-                                </div>
-                                <h3 className="text-base md:text-lg font-bold text-zinc-900 mb-2">
-                                    {isVendeur ? "Aucun véhicule en vente" : "Aucun véhicule en vente disponible"}
-                                </h3>
-                                <p className="text-sm text-zinc-500 max-w-sm mb-6 px-4">
-                                    {isVendeur
-                                        ? "Publiez un véhicule en vente pour le rendre visible aux acheteurs."
-                                        : "Aucun véhicule n'est actuellement proposé à la vente."
-                                    }
-                                </p>
-                                {isVendeur && (
-                                    <Button className="rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white cursor-pointer">
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Mettre un véhicule en vente
-                                    </Button>
-                                )}
-                            </div>
-                        ) : (
-                            <StaggerList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                                {getVehiclesFiltres("vente").map(v => (
-                                    <StaggerItem key={v.id}>
-                                        <VehicleCard v={v} />
-                                    </StaggerItem>
-                                ))}
-                            </StaggerList>
-                        )}
-                    </TabsContent>
-
-                    <TabsContent value="location" className="p-4 md:p-6">
-                        {getVehiclesFiltres("location").length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 md:py-16 text-center">
-                                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-blue-50 flex items-center justify-center mb-4 md:mb-6">
-                                    <KeyRound className="h-8 w-8 md:h-10 md:w-10 text-blue-300" />
-                                </div>
-                                <h3 className="text-base md:text-lg font-bold text-zinc-900 mb-2">
-                                    {isVendeur ? "Aucun véhicule en location" : "Aucun véhicule en location disponible"}
-                                </h3>
-                                <p className="text-sm text-zinc-500 max-w-sm mb-6 px-4">
-                                    {isVendeur
-                                        ? "Proposez un véhicule en location pour le rendre disponible."
-                                        : "Aucun véhicule n'est actuellement proposé à la location."
-                                    }
-                                </p>
-                                {isVendeur && (
-                                    <Button className="rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white cursor-pointer">
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Mettre un véhicule en location
-                                    </Button>
-                                )}
-                            </div>
-                        ) : (
-                            <StaggerList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                                {getVehiclesFiltres("location").map(v => (
-                                    <StaggerItem key={v.id}>
-                                        <VehicleCard v={v} />
-                                    </StaggerItem>
-                                ))}
-                            </StaggerList>
-                        )}
-                    </TabsContent>
-
-                    {/* ── Suggestions personnalisées ── */}
+            {/* ── Tabs véhicules ── */}
+            <Tabs defaultValue="tous" className="w-full">
+                {/* TabsList style underline — pas de Card wrapper */}
+                <TabsList className="bg-transparent border-b border-zinc-200 rounded-none h-auto p-0 gap-0 justify-start w-full">
+                    <TabsTrigger
+                        value="tous"
+                        className="gap-2 rounded-none px-4 py-2.5 text-sm font-medium text-zinc-500 border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                    >
+                        <Car className="h-4 w-4" />
+                        <span className="hidden sm:inline">Tous</span>
+                        <Badge variant="secondary" className="rounded-full text-xs">
+                            {stats?.total_vehicules ?? 0}
+                        </Badge>
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="vente"
+                        className="gap-2 rounded-none px-4 py-2.5 text-sm font-medium text-zinc-500 border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                    >
+                        <Tag className="h-4 w-4" />
+                        <span className="hidden sm:inline">En vente</span>
+                        <Badge variant="secondary" className="rounded-full text-xs">
+                            {stats?.en_vente ?? 0}
+                        </Badge>
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="location"
+                        className="gap-2 rounded-none px-4 py-2.5 text-sm font-medium text-zinc-500 border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                    >
+                        <KeyRound className="h-4 w-4" />
+                        <span className="hidden sm:inline">En location</span>
+                        <Badge variant="secondary" className="rounded-full text-xs">
+                            {stats?.en_location ?? 0}
+                        </Badge>
+                    </TabsTrigger>
                     {user && (
-                        <TabsContent value="suggestions" className="p-4 md:p-6">
-                            {/* Badge source */}
-                            {suggestionsSource && (
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Badge className={`rounded-full font-semibold ${
-                                        suggestionsSource === "favoris"
-                                            ? "bg-purple-500/10 text-purple-700 border-purple-500/20"
-                                            : "bg-amber-500/10 text-amber-700 border-amber-500/20"
-                                    }`}>
-                                        <Sparkles className="h-3 w-3 mr-1" />
-                                        {suggestionsSource === "favoris" ? "Basées sur vos favoris" : "Véhicules populaires"}
-                                    </Badge>
-                                </div>
-                            )}
-                            {suggestions.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-12 md:py-16 text-center">
-                                    <div className="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center mb-4">
-                                        <Sparkles className="h-8 w-8 text-purple-300" />
-                                    </div>
-                                    <h3 className="text-base font-bold text-zinc-900 mb-2">Aucune suggestion</h3>
-                                    <p className="text-sm text-zinc-500 max-w-sm">
-                                        Ajoutez des véhicules à vos favoris pour recevoir des suggestions personnalisées.
-                                    </p>
-                                </div>
-                            ) : (
-                                <StaggerList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                                    {suggestions.map(v => (
-                                        <StaggerItem key={v.id}>
-                                            <VehicleCard v={v} />
-                                        </StaggerItem>
-                                    ))}
-                                </StaggerList>
-                            )}
-                        </TabsContent>
+                        <TabsTrigger
+                            value="suggestions"
+                            className="gap-2 rounded-none px-4 py-2.5 text-sm font-medium text-zinc-500 border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-purple-700 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                        >
+                            <Sparkles className="h-4 w-4" />
+                            <span className="hidden sm:inline">Pour vous</span>
+                        </TabsTrigger>
                     )}
-                </Tabs>
-            </Card>
+                </TabsList>
 
-            {/* Quick Tips Card - vendeur only */}
-            {isVendeur ? (
-                <Card className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 overflow-hidden animate-in fade-in slide-in-from-bottom duration-700 bg-white">
-                    <CardHeader className="p-4 md:p-6 border-b border-zinc-200">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center shrink-0">
-                                    <Search className="h-5 w-5 text-zinc-600" />
+                <TabsContent value="tous" className="mt-6">
+                    {getVehiclesFiltres("tous").length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
+                                <PackageX className="h-8 w-8 text-zinc-300" />
+                            </div>
+                            <h3 className="text-base font-bold text-zinc-900 mb-1.5">
+                                {isVendeur ? "Aucun véhicule publié" : "Aucun véhicule disponible"}
+                            </h3>
+                            <p className="text-sm text-zinc-500 max-w-sm mb-5">
+                                {isVendeur
+                                    ? "Vous n'avez pas encore publié de véhicule. Commencez par ajouter votre premier véhicule."
+                                    : "Aucun véhicule n'est disponible pour le moment. Revenez plus tard."
+                                }
+                            </p>
+                            {isVendeur ? (
+                                <Button className="rounded-lg cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white" onClick={() => navigate()}>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Publier mon premier véhicule
+                                </Button>
+                            ) : (
+                                <Button className="rounded-lg cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white">
+                                    <ShoppingBag className="h-4 w-4 mr-2" />
+                                    Explorer les catégories
+                                </Button>
+                            )}
+                        </div>
+                    ) : (
+                        <StaggerList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                            {getVehiclesFiltres("tous").map(v => (
+                                <StaggerItem key={v.id}>
+                                    <VehicleCard v={v} />
+                                </StaggerItem>
+                            ))}
+                        </StaggerList>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="vente" className="mt-6">
+                    {getVehiclesFiltres("vente").length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
+                                <Tag className="h-8 w-8 text-zinc-300" />
+                            </div>
+                            <h3 className="text-base font-bold text-zinc-900 mb-1.5">
+                                {isVendeur ? "Aucun véhicule en vente" : "Aucun véhicule en vente disponible"}
+                            </h3>
+                            <p className="text-sm text-zinc-500 max-w-sm mb-5">
+                                {isVendeur
+                                    ? "Publiez un véhicule en vente pour le rendre visible aux acheteurs."
+                                    : "Aucun véhicule n'est actuellement proposé à la vente."
+                                }
+                            </p>
+                            {isVendeur && (
+                                <Button className="rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white cursor-pointer">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Mettre un véhicule en vente
+                                </Button>
+                            )}
+                        </div>
+                    ) : (
+                        <StaggerList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                            {getVehiclesFiltres("vente").map(v => (
+                                <StaggerItem key={v.id}>
+                                    <VehicleCard v={v} />
+                                </StaggerItem>
+                            ))}
+                        </StaggerList>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="location" className="mt-6">
+                    {getVehiclesFiltres("location").length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
+                                <KeyRound className="h-8 w-8 text-zinc-300" />
+                            </div>
+                            <h3 className="text-base font-bold text-zinc-900 mb-1.5">
+                                {isVendeur ? "Aucun véhicule en location" : "Aucun véhicule en location disponible"}
+                            </h3>
+                            <p className="text-sm text-zinc-500 max-w-sm mb-5">
+                                {isVendeur
+                                    ? "Proposez un véhicule en location pour le rendre disponible."
+                                    : "Aucun véhicule n'est actuellement proposé à la location."
+                                }
+                            </p>
+                            {isVendeur && (
+                                <Button className="rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white cursor-pointer">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Mettre un véhicule en location
+                                </Button>
+                            )}
+                        </div>
+                    ) : (
+                        <StaggerList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                            {getVehiclesFiltres("location").map(v => (
+                                <StaggerItem key={v.id}>
+                                    <VehicleCard v={v} />
+                                </StaggerItem>
+                            ))}
+                        </StaggerList>
+                    )}
+                </TabsContent>
+
+                {/* ── Suggestions personnalisées ── */}
+                {user && (
+                    <TabsContent value="suggestions" className="mt-6">
+                        {/* Badge source */}
+                        {suggestionsSource && (
+                            <div className="flex items-center gap-2 mb-4">
+                                <Badge className={`rounded-full font-semibold ${
+                                    suggestionsSource === "favoris"
+                                        ? "bg-purple-500/10 text-purple-700 border-purple-500/20"
+                                        : "bg-amber-500/10 text-amber-700 border-amber-500/20"
+                                }`}>
+                                    <Sparkles className="h-3 w-3 mr-1" />
+                                    {suggestionsSource === "favoris" ? "Basées sur vos favoris" : "Véhicules populaires"}
+                                </Badge>
+                            </div>
+                        )}
+                        {suggestions.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                                <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
+                                    <Sparkles className="h-8 w-8 text-zinc-300" />
                                 </div>
-                                <div>
-                                    <CardTitle className="text-base md:text-lg font-bold text-zinc-900">
-                                        Conseils pour vendre
-                                    </CardTitle>
-                                    <p className="text-xs md:text-sm text-zinc-500">
-                                        Optimisez vos annonces
-                                    </p>
-                                </div>
+                                <h3 className="text-base font-bold text-zinc-900 mb-1.5">Aucune suggestion</h3>
+                                <p className="text-sm text-zinc-500 max-w-sm">
+                                    Ajoutez des véhicules à vos favoris pour recevoir des suggestions personnalisées.
+                                </p>
+                            </div>
+                        ) : (
+                            <StaggerList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                                {suggestions.map(v => (
+                                    <StaggerItem key={v.id}>
+                                        <VehicleCard v={v} />
+                                    </StaggerItem>
+                                ))}
+                            </StaggerList>
+                        )}
+                    </TabsContent>
+                )}
+            </Tabs>
+
+            {/* ── Tips vendeur — section légère, pas de Card lourde ── */}
+            {isVendeur && (
+                <div className="rounded-xl border border-zinc-200 bg-white p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Search className="h-4 w-4 text-zinc-400" />
+                        <span className="text-sm font-semibold text-zinc-900">Conseils pour vendre</span>
+                        <span className="text-xs text-zinc-400 ml-1">Optimisez vos annonces</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-zinc-50 border border-zinc-100">
+                            <div className="w-7 h-7 rounded-md bg-zinc-200 flex items-center justify-center shrink-0 mt-0.5">
+                                <span className="text-xs font-black text-zinc-700">1</span>
+                            </div>
+                            <div>
+                                <p className="font-semibold text-sm text-zinc-900">Photos de qualité</p>
+                                <p className="text-xs text-zinc-500 mt-0.5">
+                                    Ajoutez plusieurs photos claires de votre véhicule
+                                </p>
                             </div>
                         </div>
-                    </CardHeader>
-                    <CardContent className="p-4 md:p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="flex items-start gap-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-200">
-                                <div className="w-8 h-8 rounded-lg bg-zinc-200 flex items-center justify-center shrink-0 mt-0.5">
-                                    <span className="text-sm font-black text-zinc-700">1</span>
-                                </div>
-                                <div>
-                                    <p className="font-bold text-sm text-zinc-900">Photos de qualité</p>
-                                    <p className="text-xs text-zinc-500 mt-1">
-                                        Ajoutez plusieurs photos claires de votre véhicule
-                                    </p>
-                                </div>
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-zinc-50 border border-zinc-100">
+                            <div className="w-7 h-7 rounded-md bg-zinc-200 flex items-center justify-center shrink-0 mt-0.5">
+                                <span className="text-xs font-black text-zinc-700">2</span>
                             </div>
-                            <div className="flex items-start gap-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-200">
-                                <div className="w-8 h-8 rounded-lg bg-zinc-200 flex items-center justify-center shrink-0 mt-0.5">
-                                    <span className="text-sm font-black text-zinc-700">2</span>
-                                </div>
-                                <div>
-                                    <p className="font-bold text-sm text-zinc-900">Description détaillée</p>
-                                    <p className="text-xs text-zinc-500 mt-1">
-                                        Décrivez l&apos;état, le kilométrage et les options
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-200">
-                                <div className="w-8 h-8 rounded-lg bg-zinc-200 flex items-center justify-center shrink-0 mt-0.5">
-                                    <span className="text-sm font-black text-zinc-700">3</span>
-                                </div>
-                                <div>
-                                    <p className="font-bold text-sm text-zinc-900">Prix compétitif</p>
-                                    <p className="text-xs text-zinc-500 mt-1">
-                                        Fixez un prix juste par rapport au marché
-                                    </p>
-                                </div>
+                            <div>
+                                <p className="font-semibold text-sm text-zinc-900">Description détaillée</p>
+                                <p className="text-xs text-zinc-500 mt-0.5">
+                                    Décrivez l&apos;état, le kilométrage et les options
+                                </p>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-            ) : null}
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-zinc-50 border border-zinc-100">
+                            <div className="w-7 h-7 rounded-md bg-zinc-200 flex items-center justify-center shrink-0 mt-0.5">
+                                <span className="text-xs font-black text-zinc-700">3</span>
+                            </div>
+                            <div>
+                                <p className="font-semibold text-sm text-zinc-900">Prix compétitif</p>
+                                <p className="text-xs text-zinc-500 mt-0.5">
+                                    Fixez un prix juste par rapport au marché
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {selectedVehicule && (
                 <VehicleDetails
@@ -1003,7 +906,7 @@ const VehiclesPage = () => {
             {/* ── Barre de comparaison flottante ── */}
             {compareIds.length > 0 && (
                 <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-zinc-200 shadow-2xl shadow-black/10 px-4 py-3">
-                    <div className="max-w-6xl mx-auto flex items-center gap-3">
+                    <div className="max-w-5xl mx-auto flex items-center gap-3">
                         {/* Miniatures des véhicules sélectionnés */}
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                             <span className="text-xs font-bold text-zinc-500 shrink-0">Comparer :</span>
@@ -1013,7 +916,7 @@ const VehiclesPage = () => {
                                     if (!v) return null
                                     return (
                                         <div key={id} className="flex items-center gap-1.5 bg-zinc-100 rounded-lg px-2.5 py-1.5">
-                                            <span className="text-xs font-semibold text-zinc-800 truncate max-w-[100px]">
+                                            <span className="text-xs font-semibold text-zinc-800 truncate max-w-25">
                                                 {v.description?.marque} {v.description?.modele}
                                             </span>
                                             <button onClick={() => toggleCompare(id)} className="text-zinc-400 hover:text-zinc-700 cursor-pointer">
@@ -1038,7 +941,7 @@ const VehiclesPage = () => {
                                 <Button
                                     size="sm"
                                     disabled={compareIds.length < 2}
-                                    className="bg-zinc-900 hover:bg-zinc-700 text-white rounded-xl cursor-pointer gap-1.5 text-xs"
+                                    className="bg-zinc-900 hover:bg-zinc-700 text-white rounded-lg cursor-pointer gap-1.5 text-xs"
                                 >
                                     <GitCompare className="h-3.5 w-3.5" />
                                     Comparer ({compareIds.length})

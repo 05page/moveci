@@ -1,11 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: process.cwd(),
-  },
-  // Exclut pusher-js du bundle SSR — trop lourd (6.7MB) et inutile côté serveur
-  // Sans ça, Next.js parse pusher-js à chaque recompilation → ~34s de Fast Refresh
+  // Exclut pusher-js et react-pdf du bundle SSR — évite ~34s de Fast Refresh
   serverExternalPackages: ["pusher-js", "@react-pdf/renderer"],
   images: {
     unoptimized: true,

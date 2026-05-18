@@ -116,6 +116,7 @@ function labelStatut(statut: string) {
         case "rejetee":    return "Rejeté"
         case "en_attente": return "En attente"
         case "restauree":  return "Restauré"
+        case "a_venir":    return "A Venir"
         default:           return statut
     }
 }
