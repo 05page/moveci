@@ -34,6 +34,7 @@ import {
     Phone,
     MapPin,
     ShieldCheck,
+    RefreshCw,
 } from "lucide-react"
 import { toast } from "sonner"
 import { api } from "@/src/lib/api"
@@ -65,6 +66,7 @@ export default function AdminAdminsPage() {
 
     const [admins, setAdmins]       = useState<AdminUser[]>([])
     const [loading, setLoading]     = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [openDialog, setOpenDialog] = useState(false)
     const [form, setForm]           = useState(FORM_INIT)
     const [showPassword, setShowPassword] = useState(false)
@@ -83,6 +85,8 @@ export default function AdminAdminsPage() {
     }, [])
 
     useEffect(() => { fetchAdmins() }, [fetchAdmins])
+
+    const handleRefresh = () => { setRefreshing(true); fetchAdmins() }
 
     const handleCreate = async () => {
         // Validation basique côté client avant d'envoyer
@@ -126,13 +130,24 @@ export default function AdminAdminsPage() {
                         {admins.length} compte{admins.length > 1 ? "s" : ""} administrateur{admins.length > 1 ? "s" : ""}
                     </p>
                 </div>
-                <Button
-                    className="bg-black text-white hover:bg-zinc-800 gap-2"
-                    onClick={() => { setForm(FORM_INIT); setOpenDialog(true) }}
-                >
-                    <Plus className="h-4 w-4" />
-                    Nouvel administrateur
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="rounded-lg border-zinc-200 text-zinc-600 hover:bg-zinc-50 shrink-0"
+                    >
+                        <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                    </Button>
+                    <Button
+                        className="bg-black text-white hover:bg-zinc-800 gap-2"
+                        onClick={() => { setForm(FORM_INIT); setOpenDialog(true) }}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Nouvel administrateur
+                    </Button>
+                </div>
             </div>
 
             {/* Cards des admins */}

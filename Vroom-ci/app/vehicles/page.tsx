@@ -26,17 +26,16 @@ import {
     LogIn,
     Building2,
     GitCompare,
-    Sparkles,
+    RefreshCw,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { toast } from "sonner";
 import { vehicule, User, AllVehicules, VehiculeStats, Favori } from "@/src/types"
 import { getVehicules } from "@/src/actions/vehicules.actions"
 import { getFavoris, removeFavori, addFavori } from "@/src/actions/favoris.actions"
 import { useUser } from "@/src/context/UserContext"
-import { api } from "@/src/lib/api"
 import VehicleDetails from "./VehicleDetails"
 import { cn, getPhotoUrl } from "@/src/lib/utils"
 import { FadeIn, SlideIn, StaggerList, StaggerItem } from "@/components/ui/motion-primitives"
@@ -58,6 +57,7 @@ const STATUTS = ["Tous", "Disponible", "Réservé", "Vendu", "Loué"]
 
 const VehiclesPage = () => {
     const [isLoading, setIsLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [showFilters, setShowFilters] = useState(false)
     const { user, loading: userLoading } = useUser();
     const [vehiculesList, setVehiculesList] = useState<vehicule[]>([])
@@ -82,17 +82,26 @@ const VehiclesPage = () => {
         })
     }
 
-    // Charge les véhicules au montage — accessible sans connexion
-    useEffect(() => {
-        setIsLoading(true)
-        getVehicules()
-            .then(res => {
-                setVehiculesList(res?.data?.vehicules ?? [])
-                setStats(res?.data?.statsVehicules ?? null)
-            })
-            .catch(() => toast.error("Erreur lors du chargement des véhicules"))
-            .finally(() => setIsLoading(false))
+    const fetchVehicules = useCallback(async (silent = false) => {
+        if (!silent) setIsLoading(true)
+        try {
+            const res = await getVehicules()
+            setVehiculesList(res?.data?.vehicules ?? [])
+            setStats(res?.data?.statsVehicules ?? null)
+        } catch {
+            toast.error("Erreur lors du chargement des véhicules")
+        } finally {
+            if (!silent) setIsLoading(false)
+        }
     }, [])
+
+    useEffect(() => { fetchVehicules() }, [fetchVehicules])
+
+    const handleRefresh = async () => {
+        setRefreshing(true)
+        await fetchVehicules(true)
+        setRefreshing(false)
+    }
 
     // Charge les favoris uniquement quand on sait que l'user est connecté
     useEffect(() => {
@@ -100,19 +109,6 @@ const VehiclesPage = () => {
         getFavoris()
             .then(res => setIsFavori(new Set((res?.data ?? []).map((f: Favori) => f.vehicule_id))))
             .catch(() => {/* silencieux si favoris indisponibles */})
-    }, [user, userLoading])
-
-    // Suggestions personnalisées — uniquement si connecté
-    const [suggestions, setSuggestions] = useState<vehicule[]>([])
-    const [suggestionsSource, setSuggestionsSource] = useState<"favoris" | "populaire" | null>(null)
-    useEffect(() => {
-        if (userLoading || !user) return
-        api.get<{ data: vehicule[]; source: "favoris" | "populaire" }>("/vehicules/suggestions")
-            .then(res => {
-                setSuggestions(res.data?.data ?? [])
-                setSuggestionsSource(res.data?.source ?? null)
-            })
-            .catch(() => {/* silencieux */})
     }, [user, userLoading])
 
     // Écoute le canal public "vehicules" pour afficher les nouveaux véhicules validés en temps réel
@@ -405,6 +401,15 @@ const VehiclesPage = () => {
                             </Button>
                         )}
                         <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRefresh}
+                            disabled={refreshing}
+                            className="rounded-lg cursor-pointer border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+                        >
+                            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                        </Button>
+                        <Button
                             variant={showFilters ? "default" : "outline"}
                             size="sm"
                             className={`rounded-lg cursor-pointer ${showFilters ? "bg-zinc-900 hover:bg-zinc-800 text-white" : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"}`}
@@ -695,15 +700,6 @@ const VehiclesPage = () => {
                             {stats?.en_location ?? 0}
                         </Badge>
                     </TabsTrigger>
-                    {user && (
-                        <TabsTrigger
-                            value="suggestions"
-                            className="gap-2 rounded-none px-4 py-2.5 text-sm font-medium text-zinc-500 border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-purple-700 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                        >
-                            <Sparkles className="h-4 w-4" />
-                            <span className="hidden sm:inline">Pour vous</span>
-                        </TabsTrigger>
-                    )}
                 </TabsList>
 
                 <TabsContent value="tous" className="mt-6">
@@ -810,43 +806,6 @@ const VehiclesPage = () => {
                     )}
                 </TabsContent>
 
-                {/* ── Suggestions personnalisées ── */}
-                {user && (
-                    <TabsContent value="suggestions" className="mt-6">
-                        {/* Badge source */}
-                        {suggestionsSource && (
-                            <div className="flex items-center gap-2 mb-4">
-                                <Badge className={`rounded-full font-semibold ${
-                                    suggestionsSource === "favoris"
-                                        ? "bg-purple-500/10 text-purple-700 border-purple-500/20"
-                                        : "bg-amber-500/10 text-amber-700 border-amber-500/20"
-                                }`}>
-                                    <Sparkles className="h-3 w-3 mr-1" />
-                                    {suggestionsSource === "favoris" ? "Basées sur vos favoris" : "Véhicules populaires"}
-                                </Badge>
-                            </div>
-                        )}
-                        {suggestions.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16 text-center">
-                                <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
-                                    <Sparkles className="h-8 w-8 text-zinc-300" />
-                                </div>
-                                <h3 className="text-base font-bold text-zinc-900 mb-1.5">Aucune suggestion</h3>
-                                <p className="text-sm text-zinc-500 max-w-sm">
-                                    Ajoutez des véhicules à vos favoris pour recevoir des suggestions personnalisées.
-                                </p>
-                            </div>
-                        ) : (
-                            <StaggerList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                                {suggestions.map(v => (
-                                    <StaggerItem key={v.id}>
-                                        <VehicleCard v={v} />
-                                    </StaggerItem>
-                                ))}
-                            </StaggerList>
-                        )}
-                    </TabsContent>
-                )}
             </Tabs>
 
             {/* ── Tips vendeur — section légère, pas de Card lourde ── */}

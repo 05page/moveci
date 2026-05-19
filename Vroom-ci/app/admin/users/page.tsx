@@ -58,6 +58,7 @@ import {
     Mail,
     Phone,
     MapPin,
+    RefreshCw,
     Calendar,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -131,6 +132,7 @@ export default function AdminUsersPage() {
     const openId = searchParams.get("open")
     const [users, setUsers]               = useState<AdminUser[]>([])
     const [loading, setLoading]           = useState(true)
+    const [refreshing, setRefreshing]     = useState(false)
     const [page, setPage]                 = useState(1)
     const [totalPages, setTotalPages]     = useState(1)
     const [total, setTotal]               = useState(0)
@@ -163,6 +165,8 @@ export default function AdminUsersPage() {
     }, [page, filterRole, filterStatut])
 
     useEffect(() => { fetchUsers() }, [fetchUsers])
+
+    const handleRefresh = () => { setRefreshing(true); fetchUsers() }
 
     // Ouvre le Sheet de détail si ?open={id} est dans l'URL (depuis les logs)
     useEffect(() => {
@@ -218,8 +222,19 @@ export default function AdminUsersPage() {
                         {total} compte(s) au total
                     </p>
                 </div>
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary">
-                    <Users className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="rounded-lg border-zinc-200 text-zinc-600 hover:bg-zinc-50 shrink-0"
+                    >
+                        <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                    </Button>
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary">
+                        <Users className="h-4 w-4 text-primary" />
+                    </div>
                 </div>
             </div>
 

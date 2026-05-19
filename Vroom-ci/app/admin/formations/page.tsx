@@ -25,7 +25,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { CheckCircle2, XCircle, Eye, Clock, GraduationCap, Users, Euro } from "lucide-react"
+import { CheckCircle2, XCircle, Eye, Clock, GraduationCap, Users, Euro, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import {
     getAdminFormations,
@@ -69,6 +69,7 @@ const FILTRES = [
 export default function AdminFormationsPage() {
     const [formations, setFormations] = useState<AdminFormation[]>([])
     const [loading, setLoading]       = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [filtre, setFiltre]         = useState("")
 
     const [selected, setSelected]           = useState<AdminFormation | null>(null)
@@ -94,6 +95,8 @@ export default function AdminFormationsPage() {
     }, [filtre])
 
     useEffect(() => { load() }, [load])
+
+    const handleRefresh = () => { setRefreshing(true); load() }
 
     // ── Actions ─────────────────────────────────────────────
     const handleValider = async (formation: AdminFormation) => {
@@ -139,11 +142,22 @@ export default function AdminFormationsPage() {
     return (
         <div className="space-y-6">
             {/* En-tête */}
-            <div>
-                <h1 className="text-2xl font-bold">Modération des formations</h1>
-                <p className="text-muted-foreground text-sm mt-1">
-                    Valider ou rejeter les formations soumises par les auto-écoles.
-                </p>
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold">Modération des formations</h1>
+                    <p className="text-muted-foreground text-sm mt-1">
+                        Valider ou rejeter les formations soumises par les auto-écoles.
+                    </p>
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    className="rounded-lg border-zinc-200 text-zinc-600 hover:bg-zinc-50 shrink-0"
+                >
+                    <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                </Button>
             </div>
 
             {/* KPIs */}

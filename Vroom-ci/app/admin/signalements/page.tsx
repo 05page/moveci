@@ -49,6 +49,7 @@ import {
     ChevronRight,
     FileText,
     AlertTriangle,
+    RefreshCw,
 } from "lucide-react"
 import { toast } from "sonner"
 import { traiterSignalement, getSignalementsPaginated } from "@/src/actions/admin.actions"
@@ -98,6 +99,7 @@ export default function AdminSignalementsPage() {
     // ── State liste ──────────────────────────────────────────────────────────
     const [signalements, setSignalements] = useState<SignalementAdmin[]>([])
     const [loading, setLoading]           = useState(true)
+    const [refreshing, setRefreshing]     = useState(false)
     const [page, setPage]                 = useState(1)
     const [totalPages, setTotalPages]     = useState(1)
     const [total, setTotal]               = useState(0)
@@ -139,6 +141,8 @@ export default function AdminSignalementsPage() {
     }, [page, filterStatut])
 
     useEffect(() => { fetchSignalements() }, [fetchSignalements])
+
+    const handleRefresh = () => { setRefreshing(true); fetchSignalements() }
 
     // Ouvre le drawer de détail si ?open={id} est dans l'URL (depuis les logs)
     useEffect(() => {
@@ -249,8 +253,19 @@ export default function AdminSignalementsPage() {
                         </span>
                     </p>
                 </div>
-                <div className="p-2 rounded-lg bg-orange-50">
-                    <ShieldAlert className="h-4 w-4 text-orange-600" />
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="rounded-lg border-zinc-200 text-zinc-600 hover:bg-zinc-50 shrink-0"
+                    >
+                        <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                    </Button>
+                    <div className="p-2 rounded-lg bg-orange-50">
+                        <ShieldAlert className="h-4 w-4 text-orange-600" />
+                    </div>
                 </div>
             </div>
 

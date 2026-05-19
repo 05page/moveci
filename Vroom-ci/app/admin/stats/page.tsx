@@ -2,8 +2,9 @@
 
 export const dynamic = "force-dynamic"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
@@ -15,7 +16,7 @@ import {
     Users, Car, ArrowLeftRight, ShieldAlert, Wallet,
     TrendingUp, UserCheck, UserX, GraduationCap, BookOpen, Award,
     Heart, Star, CheckCircle, Calendar, Fuel,
-    MapPin, MapPinOff, Globe, Warehouse,
+    MapPin, MapPinOff, Globe, Warehouse, RefreshCw,
 } from "lucide-react"
 import { getAdminStats, getAdminStatsMarche, getAdminStatsGeographie } from "@/src/actions/admin.actions"
 import type { StatsMarche, StatsGeographie } from "@/src/types"
@@ -107,24 +108,40 @@ export default function AdminStatsPage() {
     const [loadingMarche, setLoadingMarche] = useState(true)
     const [geo, setGeo]                     = useState<StatsGeographie | null>(null)
     const [loadingGeo, setLoadingGeo]       = useState(true)
+    const [refreshing, setRefreshing]       = useState(false)
 
-    useEffect(() => {
+    const fetchStats = useCallback(() => {
+        setLoading(true)
         getAdminStats()
             .then(r => { if (r.data) setData(r.data as unknown as StatsData) })
             .finally(() => setLoading(false))
     }, [])
 
-    useEffect(() => {
+    const fetchMarche = useCallback(() => {
+        setLoadingMarche(true)
         getAdminStatsMarche()
             .then(r => { if (r.data) setMarche(r.data as unknown as StatsMarche) })
             .finally(() => setLoadingMarche(false))
     }, [])
 
-    useEffect(() => {
+    const fetchGeo = useCallback(() => {
+        setLoadingGeo(true)
         getAdminStatsGeographie()
             .then(r => { if (r.data) setGeo(r.data as unknown as StatsGeographie) })
             .finally(() => setLoadingGeo(false))
     }, [])
+
+    useEffect(() => { fetchStats() }, [fetchStats])
+    useEffect(() => { fetchMarche() }, [fetchMarche])
+    useEffect(() => { fetchGeo() }, [fetchGeo])
+
+    const handleRefresh = () => {
+        setRefreshing(true)
+        fetchStats()
+        fetchMarche()
+        fetchGeo()
+        setTimeout(() => setRefreshing(false), 1000)
+    }
 
     // ── KPIs dérivés ─────────────────────────────────────────────────────────
     const totalUsers = data
@@ -195,9 +212,20 @@ export default function AdminStatsPage() {
 
     return (
         <div className="space-y-8">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Statistiques</h1>
-                <p className="text-sm text-muted-foreground mt-1">Vue globale de l&apos;activité de la plateforme</p>
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Statistiques</h1>
+                    <p className="text-sm text-muted-foreground mt-1">Vue globale de l&apos;activité de la plateforme</p>
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    className="rounded-lg border-zinc-200 text-zinc-600 hover:bg-zinc-50 shrink-0"
+                >
+                    <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                </Button>
             </div>
 
             {/* KPIs */}

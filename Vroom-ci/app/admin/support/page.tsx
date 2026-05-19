@@ -24,7 +24,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { MessageSquare, Loader2, HeadphonesIcon } from "lucide-react"
+import { MessageSquare, Loader2, HeadphonesIcon, RefreshCw } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { fr } from "date-fns/locale"
 import { getAdminTickets, repondreTicket } from "@/src/actions/support.actions"
@@ -122,6 +122,7 @@ function TableSkeleton() {
 export default function AdminSupportPage() {
     const [tickets, setTickets] = useState<SupportTicket[]>([])
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [activeTab, setActiveTab] = useState<typeof TABS[number]["value"]>("tous")
     const [selected, setSelected] = useState<SupportTicket | null>(null)
     const [reponse, setReponse] = useState("")
@@ -141,6 +142,8 @@ export default function AdminSupportPage() {
     }, [activeTab])
 
     useEffect(() => { fetchTickets() }, [fetchTickets])
+
+    const handleRefresh = () => { setRefreshing(true); fetchTickets() }
 
     const openSheet = (ticket: SupportTicket) => {
         setSelected(ticket)
@@ -176,14 +179,25 @@ export default function AdminSupportPage() {
 
     return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center shrink-0">
-                    <HeadphonesIcon className="h-5 w-5 text-white" />
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center shrink-0">
+                        <HeadphonesIcon className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-semibold">Support</h1>
+                        <p className="text-sm text-muted-foreground">Gérez les demandes d&apos;aide des utilisateurs</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-xl font-semibold">Support</h1>
-                    <p className="text-sm text-muted-foreground">Gérez les demandes d&apos;aide des utilisateurs</p>
-                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    className="rounded-lg border-zinc-200 text-zinc-600 hover:bg-zinc-50 shrink-0"
+                >
+                    <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                </Button>
             </div>
 
             <Tabs value={activeTab} onValueChange={v => setActiveTab(v as typeof activeTab)}>

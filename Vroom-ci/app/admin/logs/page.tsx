@@ -27,6 +27,7 @@ import {
     ChevronRight,
     Info,
     Eye,
+    RefreshCw,
 } from "lucide-react"
 import { toast } from "sonner"
 import { getLogs } from "@/src/actions/admin.actions"
@@ -72,6 +73,7 @@ const CIBLE_MAP: Record<string, string> = {
 export default function AdminLogsPage() {
     const [logs, setLogs] = useState<LogEntry[]>([])
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
     const [total, setTotal] = useState(0)
@@ -104,6 +106,8 @@ export default function AdminLogsPage() {
 
     useEffect(() => { fetchLogs() }, [fetchLogs])
 
+    const handleRefresh = () => { setRefreshing(true); fetchLogs() }
+
     return (
         <div className="space-y-6">
             {/* En-tête */}
@@ -114,8 +118,19 @@ export default function AdminLogsPage() {
                         Historique complet des actions administrateur — {total} entrée(s)
                     </p>
                 </div>
-                <div className="p-2 rounded-lg bg-secondary">
-                    <ScrollText className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="rounded-lg border-zinc-200 text-zinc-600 hover:bg-zinc-50 shrink-0"
+                    >
+                        <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                    </Button>
+                    <div className="p-2 rounded-lg bg-secondary">
+                        <ScrollText className="h-4 w-4 text-muted-foreground" />
+                    </div>
                 </div>
             </div>
 

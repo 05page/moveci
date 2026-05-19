@@ -50,6 +50,7 @@ import {
     Calendar,
     Wrench,
     DollarSign,
+    RefreshCw,
 } from "lucide-react"
 import { toast } from "sonner"
 import { getVehicules, validerVehicule, rejeterVehicule } from "@/src/actions/admin.actions"
@@ -95,6 +96,7 @@ const FILTRES = [
     { value: "validee",    label: "Validés" },
     { value: "rejetee",    label: "Rejetés" },
     { value: "restauree",  label: "Restaurés" },
+    { value: "a_venir",  label: "A Venir" },
 ] as const
 
 type FiltreValue = typeof FILTRES[number]["value"]
@@ -126,6 +128,7 @@ const photoUrl = (path: string) => path.startsWith('http') ? path : `${process.e
 export default function AdminVehiculesPage() {
     const [vehicules, setVehicules] = useState<Vehicule[]>([])
     const [loading, setLoading]     = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [filtre, setFiltre]       = useState<FiltreValue>("tous")
     const searchParams = useSearchParams();
     const openId = searchParams.get("open")
@@ -157,6 +160,8 @@ export default function AdminVehiculesPage() {
     }, [])
 
     useEffect(() => { fetchVehicules() }, [fetchVehicules])
+
+    const handleRefresh = () => { setRefreshing(true); fetchVehicules() }
 
     // Quand un véhicule est sélectionné, initialise la photo active sur la photo
     // marquée is_primary, sinon la première de la liste
@@ -234,9 +239,20 @@ export default function AdminVehiculesPage() {
                         Toutes les annonces · {vehicules.length} au total
                     </p>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10">
-                    <Car className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-semibold text-primary">{vehiculesFiltres.length}</span>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="rounded-lg border-zinc-200 text-zinc-600 hover:bg-zinc-50 shrink-0"
+                    >
+                        <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                    </Button>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10">
+                        <Car className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-semibold text-primary">{vehiculesFiltres.length}</span>
+                    </div>
                 </div>
             </div>
 

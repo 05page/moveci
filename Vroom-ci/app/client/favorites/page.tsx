@@ -2,14 +2,13 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     Heart,
     Car,
     Search,
-    Star,
     Tag,
     KeyRound,
     Eye,
@@ -17,6 +16,7 @@ import {
     BellOff,
     Trash2,
     Loader2,
+    RefreshCw,
 } from "lucide-react"
 import { useEffect, useState, useCallback } from "react"
 import { toast } from "sonner"
@@ -32,6 +32,7 @@ const FavoritesPage = () => {
     const [favoris, setFavoris] = useState<Favori[]>([])
     const [alertes, setAlertes] = useState<Alerte[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [removingId, setRemovingId] = useState<string | null>(null)
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [togglingId, setTogglingId] = useState<string | null>(null)
@@ -54,6 +55,12 @@ const FavoritesPage = () => {
     }, [])
 
     useEffect(() => { fetchData() }, [fetchData])
+
+    const handleRefresh = async () => {
+        setRefreshing(true)
+        await fetchData()
+        setRefreshing(false)
+    }
 
     // Recharge quand l'utilisateur revient sur l'onglet
     useRevalidateOnFocus(fetchData)
@@ -235,11 +242,23 @@ const FavoritesPage = () => {
             {/* ── Header ── */}
             <SlideIn direction="left">
             <section className="space-y-1">
-                <div className="flex items-start gap-3">
-                    <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Mes Favoris</h1>
-                    <Badge className="bg-zinc-900 text-white font-bold rounded-full mt-0.5">
-                        {favoris.length}
-                    </Badge>
+                <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Mes Favoris</h1>
+                        <Badge className="bg-zinc-900 text-white font-bold rounded-full mt-0.5">
+                            {favoris.length}
+                        </Badge>
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="rounded-lg border-zinc-200 text-zinc-600 hover:bg-zinc-50 shrink-0"
+                    >
+                        <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${refreshing ? "animate-spin" : ""}`} />
+                        Actualiser
+                    </Button>
                 </div>
                 {/* Stats inline — pas de cards séparées */}
                 <div className="flex items-center gap-3 text-sm text-zinc-500 flex-wrap">
@@ -348,41 +367,6 @@ const FavoritesPage = () => {
                     )}
                 </TabsContent>
             </Tabs>
-
-            {/* ── Suggestions — Card conservée, styling allégé ── */}
-            <Card className="rounded-2xl border border-zinc-200 bg-white">
-                <CardHeader className="border-b border-zinc-100 pb-4">
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
-                                <Star className="h-4 w-4 text-purple-500" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-sm font-semibold text-zinc-900">
-                                    Suggestions pour vous
-                                </CardTitle>
-                                <p className="text-xs text-zinc-400 mt-0.5">
-                                    Basées sur vos favoris et vos recherches
-                                </p>
-                            </div>
-                        </div>
-                        <Button variant="ghost" size="sm" className="rounded-lg cursor-pointer text-xs text-zinc-500">
-                            Voir tout
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                    <div className="flex flex-col items-center justify-center py-10 text-center">
-                        <div className="w-14 h-14 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-3">
-                            <Star className="h-7 w-7 text-zinc-300" />
-                        </div>
-                        <h3 className="text-sm font-semibold text-zinc-900 mb-1">Pas encore de suggestions</h3>
-                        <p className="text-xs text-zinc-500 max-w-xs">
-                            Ajoutez des véhicules à vos favoris pour recevoir des suggestions personnalisées
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
 
         </div>
         </FadeIn>
