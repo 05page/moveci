@@ -138,6 +138,7 @@ export default function AdminSupportPage() {
             toast.error("Impossible de charger les tickets")
         } finally {
             setLoading(false)
+            setRefreshing(false)
         }
     }, [activeTab])
 

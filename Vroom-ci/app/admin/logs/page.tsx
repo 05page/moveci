@@ -101,6 +101,7 @@ export default function AdminLogsPage() {
             toast.error("Impossible de charger le journal")
         } finally {
             setLoading(false)
+            setRefreshing(false)
         }
     }, [page, filterType])
 

@@ -137,6 +137,7 @@ export default function AdminSignalementsPage() {
             toast.error("Impossible de charger les signalements")
         } finally {
             setLoading(false)
+            setRefreshing(false)
         }
     }, [page, filterStatut])
 

@@ -156,6 +156,7 @@ export default function AdminVehiculesPage() {
             toast.error("Impossible de charger les véhicules")
         } finally {
             setLoading(false)
+            setRefreshing(false)
         }
     }, [])
 

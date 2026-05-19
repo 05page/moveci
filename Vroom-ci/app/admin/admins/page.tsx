@@ -81,6 +81,7 @@ export default function AdminAdminsPage() {
             toast.error("Impossible de charger la liste des administrateurs")
         } finally {
             setLoading(false)
+            setRefreshing(false)
         }
     }, [])
 

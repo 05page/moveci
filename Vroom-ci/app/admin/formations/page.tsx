@@ -91,6 +91,7 @@ export default function AdminFormationsPage() {
             toast.error("Impossible de charger les formations")
         } finally {
             setLoading(false)
+            setRefreshing(false)
         }
     }, [filtre])
 

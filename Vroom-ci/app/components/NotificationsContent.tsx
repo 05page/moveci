@@ -71,23 +71,6 @@ function NotificationsLoading() {
     )
 }
 
-const getIconByType = (type: Notifications["type"]) => {
-    switch (type) {
-        case "cancellation":
-            return <CalendarX className="h-5 w-5 text-red-600" />
-        case "system":
-            return <Settings className="h-5 w-5 text-primary" />
-        case "suggestion":
-            return <Car className="h-5 w-5 text-blue-600" />
-        case "alert":
-            return <AlertCircle className="h-5 w-5 text-red-600" />
-        case "success":
-            return <CircleCheck className="h-5 w-5 text-green-700" />
-        default:
-            return <Bell className="h-5 w-5 text-muted-foreground" />
-    }
-}
-
 const getIconBgByType = (type: Notifications["type"]) => {
     switch (type) {
         case "cancellation":
@@ -133,9 +116,9 @@ function NotificationItem({ notification, onRead, role }: { notification: Notifi
         >
             <CardContent className="p-3 md:p-4">
                 <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-xl ${getIconBgByType(notification.type)} flex items-center justify-center shrink-0`}>
+                    {/* <div className={`w-10 h-10 rounded-xl ${getIconBgByType(notification.type)} flex items-center justify-center shrink-0`}>
                         {getIconByType(notification.type)}
-                    </div>
+                    </div> */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                             <h4 className="font-semibold text-sm text-zinc-900 leading-snug break-words pr-1">

@@ -161,6 +161,7 @@ export default function AdminUsersPage() {
             toast.error("Impossible de charger les utilisateurs")
         } finally {
             setLoading(false)
+            setRefreshing(false)
         }
     }, [page, filterRole, filterStatut])
 
