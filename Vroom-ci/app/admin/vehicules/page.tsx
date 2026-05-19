@@ -375,9 +375,14 @@ export default function AdminVehiculesPage() {
                                                         ? "bg-zinc-900 text-white border-zinc-900 text-xs"
                                                         : v.statut === "loué"
                                                         ? "bg-blue-600 text-white border-blue-600 text-xs"
+                                                        : v.statut.toLowerCase() === "a_venir"
+                                                        ? "bg-purple-100 text-purple-700 border-purple-200 text-xs"
                                                         : "bg-zinc-100 text-zinc-600 text-xs"
                                                 }>
-                                                    {v.statut === "vendu" ? "Vendu" : v.statut === "loué" ? "Loué" : v.statut}
+                                                    {v.statut === "vendu" ? "Vendu"
+                                                        : v.statut === "loué" ? "Loué"
+                                                        : v.statut.toLowerCase() === "a_venir" ? "A Venir"
+                                                        : v.statut}
                                                 </Badge>
                                             )}
                                         </div>

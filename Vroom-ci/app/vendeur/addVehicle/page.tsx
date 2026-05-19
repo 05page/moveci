@@ -21,7 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-
+import imageCompression from "browser-image-compression";
 import {
     Tag,
     Car,
@@ -195,7 +195,7 @@ export default function AddVehiclePage() {
         }))
     }
 
-    const handlePhotoAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePhotoAdd = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || [])
         if (photos.length + files.length > 10) {
             toast.error("Maximum 10 photos autorisées")
@@ -211,8 +211,20 @@ export default function AddVehiclePage() {
             toast.error("Certaines photos ont ete ignorees (formats autorises: JPG, PNG, GIF, SVG, WEBP)")
         }
 
-        setPhotos(prev => [...prev, ...validFiles])
-        setPhotoUrls(prev => [...prev, ...validFiles.map(f => URL.createObjectURL(f))])
+        const compressionOptions = {
+            maxSizeMB: 0.8,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true
+        }
+
+        const toastId = toast.loading('Compression des photos...')
+        const compressedFiles = await Promise.all(
+            validFiles.map(file => imageCompression(file, compressionOptions))
+        )
+        toast.dismiss(toastId)
+
+        setPhotos(prev => [...prev, ...compressedFiles])
+        setPhotoUrls(prev => [...prev, ...compressedFiles.map(f => URL.createObjectURL(f))])
     }
 
     const removePhoto = (index: number) => {

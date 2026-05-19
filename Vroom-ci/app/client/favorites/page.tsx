@@ -21,7 +21,6 @@ import { useEffect, useState, useCallback } from "react"
 import { toast } from "sonner"
 import { Favori, Alerte } from "@/src/types"
 import { getFavoris, removeFavori } from "@/src/actions/favoris.actions"
-import { getAlertes, deleteAlerte, updateAlerte } from "@/src/actions/alertes.actions"
 import { useRevalidateOnFocus } from "@/hooks/useRevalidateOnFocus"
 import { useDataRefresh } from "@/hooks/useDataRefresh"
 import { Switch } from "@/components/ui/switch"
@@ -40,12 +39,10 @@ const FavoritesPage = () => {
         try {
             setIsLoading(true)
             // Charge favoris et alertes en parallèle
-            const [favorisRes, alertesRes] = await Promise.all([
+            const [favorisRes] = await Promise.all([
                 getFavoris(),
-                getAlertes(),
             ])
             setFavoris(favorisRes.data ?? [])
-            setAlertes(alertesRes.data ?? [])
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Erreur serveur")
         } finally {
@@ -78,81 +75,6 @@ const FavoritesPage = () => {
             setRemovingId(null)
         }
     }
-
-    // Supprime une alerte et met à jour la liste locale
-    const handleDeleteAlerte = async (id: string) => {
-        setDeletingId(id)
-        try {
-            await deleteAlerte(id)
-            setAlertes(prev => prev.filter(a => a.id !== id))
-            toast.success("Alerte supprimée")
-        } catch {
-            toast.error("Impossible de supprimer l'alerte")
-        } finally {
-            setDeletingId(null)
-        }
-    }
-
-    // Active ou désactive une alerte via PUT /alertes/{id}
-    const handleToggleAlerte = async (alerte: Alerte) => {
-        setTogglingId(alerte.id)
-        try {
-            await updateAlerte(alerte.id, { active: !alerte.active })
-            setAlertes(prev =>
-                prev.map(a => a.id === alerte.id ? { ...a, active: !a.active } : a)
-            )
-        } catch {
-            toast.error("Impossible de modifier l'alerte")
-        } finally {
-            setTogglingId(null)
-        }
-    }
-
-
-    const AlereteCard = ({ a }: { a: Alerte }) => (
-        <Card className="rounded-2xl shadow-sm border border-zinc-200 bg-white hover:shadow-md transition-all duration-300">
-            <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${a.active ? "bg-amber-50" : "bg-zinc-100"}`}>
-                            {a.active
-                                ? <Bell className="h-5 w-5 text-amber-500" />
-                                : <BellOff className="h-5 w-5 text-zinc-400" />
-                            }
-                        </div>
-                        <div>
-                            <p className="font-bold text-sm text-zinc-900">
-                                {[a.marque_cible, a.modele_cible].filter(Boolean).join(" ") || "Tous véhicules"}
-                            </p>
-                            <p className="text-xs text-zinc-500">
-                                {a.prix_max ? `Max ${Number(a.prix_max).toLocaleString()} FCFA` : "Tout prix"}
-                                {a.carburant ? ` · ${a.carburant}` : ""}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                        {/* Toggle actif/inactif */}
-                        <Switch
-                            checked={a.active}
-                            onCheckedChange={() => handleToggleAlerte(a)}
-                            disabled={togglingId === a.id}
-                        />
-                        <button
-                            onClick={() => handleDeleteAlerte(a.id)}
-                            disabled={deletingId === a.id}
-                            className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {deletingId === a.id
-                                ? <Loader2 className="h-4 w-4 text-red-500 animate-spin" />
-                                : <Trash2 className="h-4 w-4 text-red-500" />
-                            }
-                        </button>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    )
-
     const FavoriCard = ({ f }: { f: Favori }) => (
         <Card className="rounded-2xl md:rounded-3xl shadow-sm border border-zinc-200 bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
             <CardContent className="p-0">
@@ -301,31 +223,6 @@ const FavoritesPage = () => {
                     </StaggerList>
                 )}
             </section>
-
-            {/* ── Alertes prix ── */}
-            <section className="space-y-3">
-                <h2 className="text-base font-semibold text-zinc-900 flex items-center gap-2">
-                    <Bell className="h-4 w-4 text-amber-500" />
-                    Alertes prix
-                    <Badge variant="secondary" className="rounded-full text-xs">{alertes.length}</Badge>
-                </h2>
-                {alertes.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
-                            <Bell className="h-8 w-8 text-zinc-300" />
-                        </div>
-                        <h3 className="text-base font-bold text-zinc-900 mb-1.5">Aucune alerte prix</h3>
-                        <p className="text-sm text-zinc-500 max-w-sm">
-                            Créez des alertes depuis la fiche d'un véhicule pour être notifié quand un bien correspond à vos critères.
-                        </p>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        {alertes.map(a => <AlereteCard key={a.id} a={a} />)}
-                    </div>
-                )}
-            </section>
-
         </div>
         </FadeIn>
     )
