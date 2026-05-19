@@ -108,6 +108,7 @@ function badgeStatut(statut: string) {
         case "rejetee":    return "bg-red-100 text-red-700 border-red-200"
         case "en_attente": return "bg-yellow-100 text-yellow-700 border-yellow-200"
         case "restauree":  return "bg-blue-100 text-blue-700 border-blue-200"
+        case "a_venir": return "bg-purple-100 text-purple-700 border-purple-200"
         default:           return "bg-muted text-muted-foreground"
     }
 }

@@ -1,21 +1,13 @@
 "use client"
 import { useRouter } from "next/navigation"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     Bell,
-    BellRing,
-    Calendar,
-    Car,
     CheckCheck,
     Settings,
-    CalendarX,
     Clock,
-    CircleCheck,
-    AlertCircle,
 } from "lucide-react"
 import { Notifications } from "@/src/types"
 import { fr } from "date-fns/locale"
@@ -71,20 +63,6 @@ function NotificationsLoading() {
     )
 }
 
-const getIconBgByType = (type: Notifications["type"]) => {
-    switch (type) {
-        case "cancellation":
-            return "bg-red-500/10"
-        case "system":
-            return "bg-primary/10"
-        case "reminder":
-            return "bg-amber-500/10"
-        case "suggestion":
-            return "bg-blue-500/10"
-        default:
-            return "bg-muted"
-    }
-}
 
 function EmptyState({ icon: Icon, title, description }: { icon: React.ComponentType<{ className?: string }>, title: string, description: string }) {
     return (
@@ -116,9 +94,7 @@ function NotificationItem({ notification, onRead, role }: { notification: Notifi
         >
             <CardContent className="p-3 md:p-4">
                 <div className="flex items-start gap-3">
-                    {/* <div className={`w-10 h-10 rounded-xl ${getIconBgByType(notification.type)} flex items-center justify-center shrink-0`}>
-                        {getIconByType(notification.type)}
-                    </div> */}
+
                     <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                             <h4 className="font-semibold text-sm text-zinc-900 leading-snug break-words pr-1">
@@ -192,104 +168,27 @@ export function NotificationsContent() {
                 <div className="h-px bg-zinc-100" />
             </section>
 
-            {/* Tabs notifications */}
-            <Tabs defaultValue="all" className="w-full">
-                <TabsList className="bg-transparent border-b border-zinc-200 rounded-none h-auto p-0 gap-0 justify-start w-full">
-                    <TabsTrigger
-                        value="all"
-                        className="rounded-none px-4 py-2.5 text-sm font-medium border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-zinc-500 gap-2"
-                    >
-                        <Bell className="h-4 w-4" />
-                        <span>Toutes</span>
-                    </TabsTrigger>
-                    {user?.role === "vendeur" ? (
-                        <TabsTrigger
-                            value="trend"
-                            className="rounded-none px-4 py-2.5 text-sm font-medium border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-zinc-500 gap-2"
-                        >
-                            <Car className="h-4 w-4" />
-                            <span>Tendance</span>
-                        </TabsTrigger>
-                    ) : (
-                        <TabsTrigger
-                            value="suggestions"
-                            className="rounded-none px-4 py-2.5 text-sm font-medium border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-zinc-500 gap-2"
-                        >
-                            <Car className="h-4 w-4" />
-                            <span>Suggestions</span>
-                        </TabsTrigger>
-                    )}
-                    <TabsTrigger
-                        value="reminders"
-                        className="rounded-none px-4 py-2.5 text-sm font-medium border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-zinc-500 gap-2"
-                    >
-                        <Calendar className="h-4 w-4" />
-                        <span>Rappels</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="system"
-                        className="rounded-none px-4 py-2.5 text-sm font-medium border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-zinc-500 gap-2"
-                    >
-                        <Settings className="h-4 w-4" />
-                        <span>Système</span>
-                    </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="all" className="mt-6">
-                    {notifs.length === 0 ? (
-                        <EmptyState
-                            icon={Bell}
-                            title="Aucune notification"
-                            description="Vous n'avez pas encore reçu de notifications. Elles apparaîtront ici lorsque vous en recevrez."
-                        />
-                    ) : (
-                        <div className="space-y-3">
-                            {notifs.map((notification) => (
-                                <NotificationItem
-                                    key={notification.id}
-                                    notification={notification}
-                                    onRead={markAsRead}
-                                    role={user?.role}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </TabsContent>
-
-                {user?.role === "vendeur" ? (
-                    <TabsContent value="trend" className="mt-6">
-                        <EmptyState
-                            icon={Car}
-                            title="Aucune tendance"
-                            description="Découvrez quels types de véhicules attirent le plus d'acheteurs dans votre zone."
-                        />
-                    </TabsContent>
+            {/* Liste des notifications */}
+            <div className="mt-6">
+                {notifs.length === 0 ? (
+                    <EmptyState
+                        icon={Bell}
+                        title="Aucune notification"
+                        description="Vous n'avez pas encore reçu de notifications. Elles apparaîtront ici lorsque vous en recevrez."
+                    />
                 ) : (
-                    <TabsContent value="suggestions" className="mt-6">
-                        <EmptyState
-                            icon={Car}
-                            title="Aucune suggestion"
-                            description="Nous vous proposerons des véhicules correspondant à vos critères et préférences."
-                        />
-                    </TabsContent>
+                    <div className="space-y-3">
+                        {notifs.map((notification) => (
+                            <NotificationItem
+                                key={notification.id}
+                                notification={notification}
+                                onRead={markAsRead}
+                                role={user?.role}
+                            />
+                        ))}
+                    </div>
                 )}
-
-                <TabsContent value="reminders" className="mt-6">
-                    <EmptyState
-                        icon={Calendar}
-                        title="Aucun rappel"
-                        description="Les rappels de vos prochains rendez-vous seront affichés ici."
-                    />
-                </TabsContent>
-
-                <TabsContent value="system" className="mt-6">
-                    <EmptyState
-                        icon={Settings}
-                        title="Aucune notification système"
-                        description="Les mises à jour importantes du système et de votre compte seront affichées ici."
-                    />
-                </TabsContent>
-            </Tabs>
+            </div>
         </div>
     )
 }
