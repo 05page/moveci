@@ -183,16 +183,19 @@ export default function AdminVehiculesPage() {
   }, [vehicules, openId])
 
     // Filtrage local — aucun appel API supplémentaire
-    const vehiculesFiltres = useMemo(() =>
-        filtre === "tous" ? vehicules : vehicules.filter(v => v.status_validation === filtre),
-        [vehicules, filtre]
-    )
+    // "a_venir" est un statut de disponibilité (v.statut), pas de validation
+    const vehiculesFiltres = useMemo(() => {
+        if (filtre === "tous") return vehicules
+        if (filtre === "a_venir") return vehicules.filter(v => v.statut.toLowerCase() === "a_venir")
+        return vehicules.filter(v => v.status_validation === filtre)
+    }, [vehicules, filtre])
 
     // Comptage par statut pour afficher les badges sur les onglets
     const comptages = useMemo(() => {
         const counts: Record<string, number> = { tous: vehicules.length }
         for (const v of vehicules) {
             counts[v.status_validation] = (counts[v.status_validation] ?? 0) + 1
+            if (v.statut.toLowerCase() === "a_venir") counts["a_venir"] = (counts["a_venir"] ?? 0) + 1
         }
         return counts
     }, [vehicules])

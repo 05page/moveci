@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     Heart,
     Car,
@@ -109,10 +108,6 @@ const FavoritesPage = () => {
         }
     }
 
-    const getFavorisFiltres = (type: string): Favori[] => {
-        if (type === "tous") return favoris
-        return favoris.filter(f => f.vehicule?.post_type === type)
-    }
 
     const AlereteCard = ({ a }: { a: Alerte }) => (
         <Card className="rounded-2xl shadow-sm border border-zinc-200 bg-white hover:shadow-md transition-all duration-300">
@@ -280,93 +275,56 @@ const FavoritesPage = () => {
             </section>
             </SlideIn>
 
-            {/* ── Tabs Favoris + Alertes ── */}
-            <Tabs defaultValue="tous" className="w-full">
-                {/* TabsList style underline — pas de Card wrapper */}
-                <TabsList className="bg-transparent border-b border-zinc-200 rounded-none h-auto p-0 gap-0 justify-start w-full">
-                    <TabsTrigger
-                        value="tous"
-                        className="gap-2 rounded-none px-4 py-2.5 text-sm font-medium text-zinc-500 border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                    >
-                        <Heart className="h-4 w-4" />
-                        <span className="hidden sm:inline">Tous</span>
-                        <Badge variant="secondary" className="rounded-full text-xs">{favoris.length}</Badge>
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="vente"
-                        className="gap-2 rounded-none px-4 py-2.5 text-sm font-medium text-zinc-500 border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                    >
-                        <Tag className="h-4 w-4" />
-                        <span className="hidden sm:inline">En vente</span>
-                        <Badge variant="secondary" className="rounded-full text-xs">{favoris.filter(f => f.vehicule?.post_type === "vente").length}</Badge>
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="location"
-                        className="gap-2 rounded-none px-4 py-2.5 text-sm font-medium text-zinc-500 border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                    >
-                        <KeyRound className="h-4 w-4" />
-                        <span className="hidden sm:inline">En location</span>
-                        <Badge variant="secondary" className="rounded-full text-xs">{favoris.filter(f => f.vehicule?.post_type === "location").length}</Badge>
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="alertes"
-                        className="gap-2 rounded-none px-4 py-2.5 text-sm font-medium text-zinc-500 border-b-2 border-transparent data-[state=active]:border-amber-500 data-[state=active]:text-amber-600 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                    >
-                        <Bell className="h-4 w-4" />
-                        <span className="hidden sm:inline">Alertes</span>
-                        <Badge variant="secondary" className="rounded-full text-xs">{alertes.length}</Badge>
-                    </TabsTrigger>
-                </TabsList>
-
-                {["tous", "vente", "location"].map(tab => (
-                    <TabsContent key={tab} value={tab} className="mt-6">
-                        {getFavorisFiltres(tab).length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16 text-center">
-                                <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
-                                    <Heart className="h-8 w-8 text-zinc-300" />
-                                </div>
-                                <h3 className="text-base font-bold text-zinc-900 mb-1.5">
-                                    {tab === "tous" ? "Aucun favori pour le moment" : `Aucun favori en ${tab}`}
-                                </h3>
-                                <p className="text-sm text-zinc-500 max-w-sm mb-5">
-                                    Explorez notre catalogue et ajoutez des véhicules à vos favoris en cliquant sur le coeur
-                                </p>
-                                <Button className="rounded-lg cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white">
-                                    <Search className="h-4 w-4 mr-2" />
-                                    Explorer les véhicules
-                                </Button>
-                            </div>
-                        ) : (
-                            <StaggerList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                                {getFavorisFiltres(tab).map(f => (
-                                    <StaggerItem key={f.id}>
-                                        <FavoriCard f={f} />
-                                    </StaggerItem>
-                                ))}
-                            </StaggerList>
-                        )}
-                    </TabsContent>
-                ))}
-
-                {/* Tab alertes prix */}
-                <TabsContent value="alertes" className="mt-6">
-                    {alertes.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-center">
-                            <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
-                                <Bell className="h-8 w-8 text-zinc-300" />
-                            </div>
-                            <h3 className="text-base font-bold text-zinc-900 mb-1.5">Aucune alerte prix</h3>
-                            <p className="text-sm text-zinc-500 max-w-sm">
-                                Créez des alertes depuis la fiche d'un véhicule pour être notifié quand un bien correspond à vos critères.
-                            </p>
+            {/* ── Favoris ── */}
+            <section>
+                {favoris.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
+                            <Heart className="h-8 w-8 text-zinc-300" />
                         </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {alertes.map(a => <AlereteCard key={a.id} a={a} />)}
+                        <h3 className="text-base font-bold text-zinc-900 mb-1.5">Aucun favori pour le moment</h3>
+                        <p className="text-sm text-zinc-500 max-w-sm mb-5">
+                            Explorez notre catalogue et ajoutez des véhicules à vos favoris en cliquant sur le coeur
+                        </p>
+                        <Button className="rounded-lg cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white">
+                            <Search className="h-4 w-4 mr-2" />
+                            Explorer les véhicules
+                        </Button>
+                    </div>
+                ) : (
+                    <StaggerList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                        {favoris.map(f => (
+                            <StaggerItem key={f.id}>
+                                <FavoriCard f={f} />
+                            </StaggerItem>
+                        ))}
+                    </StaggerList>
+                )}
+            </section>
+
+            {/* ── Alertes prix ── */}
+            <section className="space-y-3">
+                <h2 className="text-base font-semibold text-zinc-900 flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-amber-500" />
+                    Alertes prix
+                    <Badge variant="secondary" className="rounded-full text-xs">{alertes.length}</Badge>
+                </h2>
+                {alertes.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
+                            <Bell className="h-8 w-8 text-zinc-300" />
                         </div>
-                    )}
-                </TabsContent>
-            </Tabs>
+                        <h3 className="text-base font-bold text-zinc-900 mb-1.5">Aucune alerte prix</h3>
+                        <p className="text-sm text-zinc-500 max-w-sm">
+                            Créez des alertes depuis la fiche d'un véhicule pour être notifié quand un bien correspond à vos critères.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {alertes.map(a => <AlereteCard key={a.id} a={a} />)}
+                    </div>
+                )}
+            </section>
 
         </div>
         </FadeIn>
