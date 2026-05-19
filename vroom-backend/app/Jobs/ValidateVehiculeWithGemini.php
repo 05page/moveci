@@ -58,17 +58,21 @@ class ValidateVehiculeWithGemini implements ShouldQueue
 
             "Des photos du véhicule sont jointes. Effectuez ces vérifications dans l'ordre : " .
 
-            "1. TABLEAU DE BORD : Cherchez parmi les photos une photo du tableau de bord montrant le compteur kilométrique. " .
+            "1. MARQUE ET MODÈLE : Identifiez la marque visible sur les photos (logos, badges, calandre). " .
+            "Comparez avec la marque déclarée : {$desc->marque} {$desc->modele}. " .
+            "Si la marque visible est différente, répondez immédiatement valide=false avec l'explication claire. " .
+
+            "2. TABLEAU DE BORD : Cherchez parmi les photos une photo du tableau de bord montrant le compteur kilométrique. " .
             "Si aucune photo de tableau de bord n'est présente, répondez valide=false avec l'explication : " .
             "'Aucune photo du tableau de bord fournie. Veuillez ajouter une photo du tableau de bord montrant clairement le compteur kilométrique.' " .
 
-            "2. KILOMÉTRAGE : Si une photo de tableau de bord est trouvée et que le compteur est lisible, " .
+            "3. KILOMÉTRAGE : Si une photo de tableau de bord est trouvée et que le compteur est lisible, " .
             "comparez le kilométrage visible avec le kilométrage déclaré ({$kilometrage} km). " .
             "Une tolérance de 500 km est acceptable. " .
             "Si la valeur lue diffère de plus de 500 km du kilométrage déclaré, répondez valide=false. " .
             "Si le compteur n'est pas lisible clairement sur la photo, passez à la vérification suivante. " .
 
-            "3. COHÉRENCE GÉNÉRALE : Vérifiez que les photos correspondent bien à la description " .
+            "4. COHÉRENCE GÉNÉRALE : Vérifiez que les photos correspondent bien à la description " .
             "(marque, modèle, état général cohérent avec le kilométrage et l'historique déclaré, " .
             "absence de dommages visibles non déclarés). " .
 
