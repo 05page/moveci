@@ -9,9 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Symfony\Component\HttpFoundation\JsonResponse;
-
-use function Symfony\Component\Clock\now;
+use Illuminate\Http\JsonResponse;
 
 class ReservationController extends Controller
 {
@@ -23,7 +21,7 @@ class ReservationController extends Controller
         try {
             $vehicule = Vehicules::findOrFail($vehiculeId);
 
-            if ($vehicule->statut !== Vehicules::STATUS_A_VENIR) {
+            if (strtolower($vehicule->statut) !== Vehicules::STATUS_A_VENIR) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Ce véhicule n\'est pas disponible à la réservation.'
@@ -31,7 +29,7 @@ class ReservationController extends Controller
             }
 
             // La réservation n'est possible que si le véhicule n'est pas encore disponible
-            if ($vehicule->date_disponibilite === null || $vehicule->date_disponibilite < now()) {
+            if ($vehicule->date_disponibilite === null || $vehicule->date_disponibilite < now()) { // now() = helper Laravel (Carbon)
                 return response()->json([
                     'success' => false,
                     'message' => 'impossible de réserver ce véhicule car il est déjà disponible'
