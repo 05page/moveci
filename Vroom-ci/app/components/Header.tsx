@@ -234,21 +234,37 @@ const Header = () => {
                     </Link>
 
                     <div className="flex items-center gap-1">
-                        {/* Cloche notifications (seulement si connecté) */}
                         {isAuthenticated && (
-                            <Link
-                                href={isVendeur ? "/vendeur/notifications" : "/client/notifications"}
-                                className="w-9 h-9 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all"
-                            >
-                                <div className="relative">
-                                    <Bell className="h-4 w-4" />
-                                    {unreadCount > 0 && (
-                                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                                            {unreadCount > 9 ? "9+" : unreadCount}
-                                        </span>
-                                    )}
-                                </div>
-                            </Link>
+                            <>
+                                {/* Icône messages */}
+                                <Link
+                                    href={isVendeur ? "/vendeur/messages" : "/client/messages"}
+                                    className="w-9 h-9 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all"
+                                >
+                                    <div className="relative">
+                                        <MessageCircle className="h-4 w-4" />
+                                        {unreadMessageCount > 0 && (
+                                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                                                {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+                                            </span>
+                                        )}
+                                    </div>
+                                </Link>
+                                {/* Cloche notifications */}
+                                <Link
+                                    href={isVendeur ? "/vendeur/notifications" : "/client/notifications"}
+                                    className="w-9 h-9 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all"
+                                >
+                                    <div className="relative">
+                                        <Bell className="h-4 w-4" />
+                                        {unreadCount > 0 && (
+                                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                                                {unreadCount > 9 ? "9+" : unreadCount}
+                                            </span>
+                                        )}
+                                    </div>
+                                </Link>
+                            </>
                         )}
 
                         {/* Hamburger / X */}
@@ -328,22 +344,6 @@ const Header = () => {
                             >
                                 <LayoutDashboard className="h-4 w-4 shrink-0" />
                                 {isVendeur ? "Dashboard" : "Mon compte"}
-                            </Link>
-
-                            <Link
-                                href={isVendeur ? "/vendeur/messages" : "/client/messages"}
-                                onClick={() => setMobileOpen(false)}
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50 transition-all"
-                            >
-                                <div className="relative shrink-0">
-                                    <MessageCircle className="h-4 w-4" />
-                                    {unreadMessageCount > 0 && (
-                                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                                            {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
-                                        </span>
-                                    )}
-                                </div>
-                                Messages
                             </Link>
 
                             <Link

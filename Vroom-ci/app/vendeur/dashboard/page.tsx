@@ -593,7 +593,7 @@ const VendeurDashboard = () => {
             <Card className="rounded-2xl md:rounded-3xl shadow-xl border border-border/40 overflow-hidden animate-in fade-in slide-in-from-bottom duration-700 delay-200 bg-card/50 backdrop-blur-sm">
                 <Tabs defaultValue="transactions" className="w-full">
                     <div className="p-4 border-b border-border/40">
-                        <TabsList className="w-full md:w-auto grid grid-cols-2 md:flex">
+                        <TabsList className="w-full md:w-auto grid grid-cols-3 md:flex">
                             <TabsTrigger value="transactions" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
                                 <CircleDollarSign className="h-4 w-4" />
                                 <span className="hidden md:inline">Transactions récentes</span>
