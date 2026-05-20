@@ -274,6 +274,13 @@ class VehiculesController extends Controller
                 'date_envoi' => now(),
             ]);
 
+            Notifications::notifyAdmins(
+                Notifications::TYPE_MODERATION,
+                'Nouvelle annonce à modérer',
+                $vehiculeDescription->marque . ' ' . $vehiculeDescription->modele . ' — soumis par ' . $user->fullname,
+                ['vehicule_id' => $vehicule->id]
+            );
+
             DB::commit();
 
             // Dispatcher le job de validation Gemini en arrière-plan

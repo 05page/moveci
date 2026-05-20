@@ -140,6 +140,13 @@ class FormationController extends Controller
 
             DB::commit();
 
+            Notifications::notifyAdmins(
+                Notifications::TYPE_FORMATION,
+                'Nouvelle formation à valider',
+                $user->fullname . ' a soumis une formation permis ' . $validated['type_permis'],
+                ['formation_id' => $formation->id]
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Formation soumise — en attente de validation admin',

@@ -63,13 +63,19 @@ interface LogEntry {
 // Badge coloré selon le type d'action de modération
 function ActionBadge({ action }: { action: string }) {
     const map: Record<string, { label: string; class: string }> = {
-        VALIDATE_VEHICLE:   { label: "Véhicule validé",    class: "bg-green-100 text-green-700 border-green-200" },
-        REJECT_VEHICLE:     { label: "Véhicule rejeté",    class: "bg-red-100 text-red-700 border-red-200" },
-        SUSPEND_USER:       { label: "Suspension",         class: "bg-orange-100 text-orange-700 border-orange-200" },
-        BAN_USER:           { label: "Bannissement",       class: "bg-red-100 text-red-700 border-red-200" },
-        RESTORE_USER:       { label: "Restauration",       class: "bg-blue-100 text-blue-700 border-blue-200" },
-        VALIDATE_ACCOUNT:   { label: "Compte validé",      class: "bg-green-100 text-green-700 border-green-200" },
-        HANDLE_SIGNALEMENT: { label: "Signalement traité", class: "bg-primary/15 text-primary border-primary/25" },
+        VALIDATE_VEHICLE:     { label: "Véhicule validé",        class: "bg-green-100 text-green-700 border-green-200" },
+        REJECT_VEHICLE:       { label: "Véhicule rejeté",        class: "bg-red-100 text-red-700 border-red-200" },
+        SUSPEND_VEHICLE:      { label: "Véhicule suspendu",      class: "bg-orange-100 text-orange-700 border-orange-200" },
+        DELETE_VEHICLE:       { label: "Véhicule supprimé",      class: "bg-red-100 text-red-700 border-red-200" },
+        RESTORE_VEHICLE:      { label: "Véhicule restauré",      class: "bg-blue-100 text-blue-700 border-blue-200" },
+        FORCE_DELETE_VEHICLE: { label: "Suppression définitive", class: "bg-zinc-900 text-white border-zinc-900" },
+        SUSPEND_USER:         { label: "Utilisateur suspendu",   class: "bg-orange-100 text-orange-700 border-orange-200" },
+        BAN_USER:             { label: "Utilisateur banni",      class: "bg-red-100 text-red-700 border-red-200" },
+        RESTORE_USER:         { label: "Utilisateur restauré",   class: "bg-blue-100 text-blue-700 border-blue-200" },
+        VALIDATE_ACCOUNT:     { label: "Compte validé",          class: "bg-green-100 text-green-700 border-green-200" },
+        HANDLE_SIGNALEMENT:   { label: "Signalement traité",     class: "bg-primary/15 text-primary border-primary/25" },
+        VALIDATE_FORMATION:   { label: "Formation validée",      class: "bg-green-100 text-green-700 border-green-200" },
+        REJECT_FORMATION:     { label: "Formation rejetée",      class: "bg-red-100 text-red-700 border-red-200" },
     }
     const config = map[action] ?? { label: action, class: "bg-secondary text-secondary-foreground" }
     return <Badge className={`text-xs ${config.class}`}>{config.label}</Badge>

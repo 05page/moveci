@@ -96,6 +96,31 @@ class Notifications extends Model
         return !$this->lu;
     }
 
+    /**
+     * Envoie une notification à tous les admins.
+     * Utilisé pour alerter l'équipe de modération des événements nécessitant une action.
+     * Absorbe les erreurs pour ne jamais bloquer l'opération métier appelante.
+     */
+    public static function notifyAdmins(string $type, string $title, string $message, array $data = []): void
+    {
+        try {
+            $adminIds = \App\Models\User::where('role', 'admin')->pluck('id');
+            foreach ($adminIds as $adminId) {
+                static::create([
+                    'user_id'    => $adminId,
+                    'type'       => $type,
+                    'title'      => $title,
+                    'message'    => $message,
+                    'data'       => $data,
+                    'lu'         => false,
+                    'date_envoi' => now(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('notifyAdmins échoué : ' . $e->getMessage());
+        }
+    }
+
     protected static function boot(): void
     {
         parent::boot();

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notifications;
 use App\Models\Signalement;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,6 +39,14 @@ class SignalementController extends Controller
             'motif'             => $validated['motif'],
             'description'       => $validated['description'] ?? null,
         ]);
+
+        $cible = isset($validated['cible_vehicule_id']) ? 'un véhicule' : 'un utilisateur';
+        Notifications::notifyAdmins(
+            Notifications::TYPE_MODERATION,
+            'Nouveau signalement',
+            Auth::user()->fullname . ' a signalé ' . $cible . ' — motif : ' . $validated['motif'],
+            ['signalement_id' => $signalement->id]
+        );
 
         return response()->json([
             'success' => true,

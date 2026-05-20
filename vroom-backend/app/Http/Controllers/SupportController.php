@@ -39,6 +39,13 @@ class SupportController extends Controller
 
             $ticket = $ticket->fresh();
 
+            Notifications::notifyAdmins(
+                Notifications::TYPE_SUPPORT,
+                'Nouveau ticket de support',
+                $ticket->sujet . ' — priorité ' . $ticket->priorite . ' (par ' . Auth::user()->fullname . ')',
+                ['ticket_id' => $ticket->id]
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Ticket créé avec succès.',
