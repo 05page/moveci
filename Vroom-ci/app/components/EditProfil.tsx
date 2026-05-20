@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/src/lib/handleError"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -58,8 +59,8 @@ export function EditProfil({ open, onOpenChange, onSubmit, user }: EditProfilPro
             if (onSubmit) onSubmit()
             onOpenChange(false);
         }catch(error){
-            toast.error("Erreur de connexion au serveur")
-            console.error("Erreur de connexion au serveur", error)
+            toast.error(getErrorMessage(error))
+            console.error(error)
         }
     };
     return (

@@ -1,5 +1,6 @@
 "use client"
 
+import { getErrorMessage } from "@/src/lib/handleError"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -41,7 +42,7 @@ const MesReservations = () => {
             const res = await api.get<Reservation[]>("/reservations")
             setReservations(res.data ?? [])
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Erreur serveur")
+            toast.error(getErrorMessage(error))
         } finally {
             setIsLoading(false)
         }

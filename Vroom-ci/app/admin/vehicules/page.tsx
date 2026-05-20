@@ -51,9 +51,11 @@ import {
     Wrench,
     DollarSign,
     RefreshCw,
+    PauseCircle,
+    Trash2,
 } from "lucide-react"
 import { toast } from "sonner"
-import { getVehicules, validerVehicule, rejeterVehicule } from "@/src/actions/admin.actions"
+import { getVehicules, validerVehicule, rejeterVehicule, suspendreVehicule, supprimerVehicule } from "@/src/actions/admin.actions"
 
 // Interface complète du véhicule avec tous les champs renvoyés par le backend
 interface Vehicule {
@@ -147,6 +149,14 @@ export default function AdminVehiculesPage() {
     const [motif, setMotif]       = useState("")
     const [rejecting, setRejecting] = useState(false)
 
+    // Suspension
+    const [toSuspend, setToSuspend] = useState<Vehicule | null>(null)
+    const [suspending, setSuspending] = useState(false)
+
+    // Suppression
+    const [toDelete, setToDelete] = useState<Vehicule | null>(null)
+    const [deleting, setDeleting] = useState(false)
+
     const fetchVehicules = useCallback(async () => {
         setLoading(true)
         try {
@@ -228,6 +238,38 @@ export default function AdminVehiculesPage() {
             toast.error("Échec du rejet")
         } finally {
             setRejecting(false)
+        }
+    }
+
+    const handleSuspendre = async () => {
+        if (!toSuspend) return
+        setSuspending(true)
+        try {
+            await suspendreVehicule(toSuspend.id)
+            toast.success(`Annonce suspendue — ${toSuspend.description?.marque} ${toSuspend.description?.modele}`)
+            setToSuspend(null)
+            setSelectedVehicule(null)
+            fetchVehicules()
+        } catch {
+            toast.error("Échec de la suspension")
+        } finally {
+            setSuspending(false)
+        }
+    }
+
+    const handleSupprimer = async () => {
+        if (!toDelete) return
+        setDeleting(true)
+        try {
+            await supprimerVehicule(toDelete.id)
+            toast.success(`Annonce supprimée — ${toDelete.description?.marque} ${toDelete.description?.modele}`)
+            setToDelete(null)
+            setSelectedVehicule(null)
+            fetchVehicules()
+        } catch {
+            toast.error("Échec de la suppression")
+        } finally {
+            setDeleting(false)
         }
     }
 
@@ -758,6 +800,58 @@ export default function AdminVehiculesPage() {
                                     )}
                                 </section>
 
+                                <Separator />
+
+                                {/* ---- Section 5 : Actions admin ---- */}
+                                <section className="space-y-2">
+                                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                                        Actions
+                                    </h3>
+                                    {selectedVehicule.status_validation === "en_attente" && (
+                                        <div className="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                                                onClick={() => { setToValidate(selectedVehicule); setSelectedVehicule(null) }}
+                                            >
+                                                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                                                Valider
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-red-200 text-red-700 hover:bg-red-50 flex-1"
+                                                onClick={() => { setToReject(selectedVehicule); setMotif(""); setSelectedVehicule(null) }}
+                                            >
+                                                <XCircle className="h-3.5 w-3.5 mr-1.5" />
+                                                Rejeter
+                                            </Button>
+                                        </div>
+                                    )}
+                                    <div className="flex gap-2">
+                                        {selectedVehicule.statut !== "suspendu" && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-orange-200 text-orange-700 hover:bg-orange-50 flex-1"
+                                                onClick={() => setToSuspend(selectedVehicule)}
+                                            >
+                                                <PauseCircle className="h-3.5 w-3.5 mr-1.5" />
+                                                Suspendre
+                                            </Button>
+                                        )}
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="border-red-200 text-red-700 hover:bg-red-50 flex-1"
+                                            onClick={() => setToDelete(selectedVehicule)}
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                                            Supprimer
+                                        </Button>
+                                    </div>
+                                </section>
+
                             </div>
                         </>
                     )}
@@ -785,6 +879,54 @@ export default function AdminVehiculesPage() {
                             className="bg-green-600 text-white hover:bg-green-700"
                         >
                             {validating ? "Validation..." : "Oui, valider"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* AlertDialog suspension */}
+            <AlertDialog open={!!toSuspend} onOpenChange={open => !open && setToSuspend(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Suspendre cette annonce ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            L&apos;annonce{" "}
+                            <strong>{toSuspend?.description?.marque} {toSuspend?.description?.modele}</strong>{" "}
+                            sera masquée du catalogue. Le vendeur sera notifié.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleSuspendre}
+                            disabled={suspending}
+                            className="bg-orange-600 text-white hover:bg-orange-700"
+                        >
+                            {suspending ? "Suspension..." : "Oui, suspendre"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* AlertDialog suppression */}
+            <AlertDialog open={!!toDelete} onOpenChange={open => !open && setToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Supprimer définitivement ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            L&apos;annonce{" "}
+                            <strong>{toDelete?.description?.marque} {toDelete?.description?.modele}</strong>{" "}
+                            sera supprimée de façon permanente. Cette action est irréversible.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleSupprimer}
+                            disabled={deleting}
+                            className="bg-red-600 text-white hover:bg-red-700"
+                        >
+                            {deleting ? "Suppression..." : "Oui, supprimer"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

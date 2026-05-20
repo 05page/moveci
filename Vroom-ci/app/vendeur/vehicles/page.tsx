@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
+import { getErrorMessage } from "@/src/lib/handleError"
 import { useRevalidateOnFocus } from "@/hooks/useRevalidateOnFocus"
 import { useDataRefresh } from "@/hooks/useDataRefresh"
 import { motion } from "motion/react"
@@ -64,7 +65,7 @@ export default function VehiclesPage() {
             setStats(statsRes.data ?? null)
             setMesVehicules(mesVehiculesRes.data?.vehicules ?? [])
         } catch (error) {
-            toast.error(error instanceof Error ? error?.message : "Erreur serveur");
+            toast.error(getErrorMessage(error))
         } finally {
             setIsLoading(false);
         }

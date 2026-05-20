@@ -237,6 +237,8 @@ Route::middleware(['auth:sanctum', 'check.statut'])->group(function () {
         Route::get('/vehicules/en-attente',       [AdminController::class, 'vehiculesEnAttente']);
         Route::post('/vehicules/{id}/valider',    [AdminController::class, 'validerVehicule']);
         Route::post('/vehicules/{id}/rejeter',    [AdminController::class, 'rejeterVehicule']);
+        Route::post('/vehicules/{id}/suspendre',  [AdminController::class, 'suspendreVehicule']);
+        Route::delete('/vehicules/{id}',          [AdminController::class, 'supprimerVehicule']);
         Route::get('/signalements',               [AdminController::class, 'signalements']);
         Route::post('/signalements/{id}/traiter', [AdminController::class, 'traiterSignalement']);
         Route::get('/stats',                      [AdminController::class, 'stats']);

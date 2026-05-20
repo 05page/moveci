@@ -100,6 +100,14 @@ export const validerVehicule = (id: string | number) =>
 export const rejeterVehicule = (id: string | number, data: { motif: string }) =>
   api.post<vehicule>(`/admin/vehicules/${id}/rejeter`, {details: data.motif})
 
+/** Suspend un véhicule (statut → suspendu). */
+export const suspendreVehicule = (id: string | number) =>
+  api.post<vehicule>(`/admin/vehicules/${id}/suspendre`, {})
+
+/** Supprime définitivement un véhicule. */
+export const supprimerVehicule = (id: string | number) =>
+  api.delete<void>(`/admin/vehicules/${id}`)
+
 // ---------------------------------------------------------------------------
 // Signalements
 // ---------------------------------------------------------------------------

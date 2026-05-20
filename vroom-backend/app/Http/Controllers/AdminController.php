@@ -168,6 +168,25 @@ class AdminController extends Controller
         return response()->json(['success' => true, 'message' => 'Véhicule rejeté'], 200);
     }
 
+    public function suspendreVehicule($id): JsonResponse
+    {
+        $vehicule = Vehicules::findOrFail($id);
+        $vehicule->update(['statut' => 'suspendu']);
+        $this->logAction('SUSPEND_VEHICLE', 'vehicule', $id, null);
+        event(new DataRefresh($vehicule->created_by, 'vehicule'));
+        return response()->json(['success' => true, 'message' => 'Véhicule suspendu.']);
+    }
+
+    public function supprimerVehicule($id): JsonResponse
+    {
+        $vehicule = Vehicules::findOrFail($id);
+        $createdBy = $vehicule->created_by;
+        $vehicule->delete();
+        $this->logAction('DELETE_VEHICLE', 'vehicule', $id, null);
+        event(new DataRefresh($createdBy, 'vehicule'));
+        return response()->json(['success' => true, 'message' => 'Véhicule supprimé.']);
+    }
+
     // ── Formations ─────────────────────────────────────────
 
     /**

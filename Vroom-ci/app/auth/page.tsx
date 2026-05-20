@@ -1,6 +1,7 @@
 "use client"
 
 import { Suspense, useState } from "react"
+import { getErrorMessage } from "@/src/lib/handleError"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -110,7 +111,7 @@ const AuthContent = () => {
             toast.success("Connexion réussie !")
             router.push(getDashBoard(data.role as UserRole))
         } catch (error) {
-            toast.error("Erreur de connexion au serveur")
+            toast.error(getErrorMessage(error))
         } finally {
             setIsLoggingIn(false)
         }
@@ -155,7 +156,7 @@ const AuthContent = () => {
                 router.push(getDashBoard(data.role as UserRole))
             }
         } catch (error) {
-            toast.error("Erreur de connexion au serveur")
+            toast.error(getErrorMessage(error))
         } finally {
             setIsRegistering(false)
         }

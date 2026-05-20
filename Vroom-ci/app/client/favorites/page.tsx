@@ -1,5 +1,6 @@
 "use client"
 
+import { getErrorMessage } from "@/src/lib/handleError"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -44,7 +45,7 @@ const FavoritesPage = () => {
             ])
             setFavoris(favorisRes.data ?? [])
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Erreur serveur")
+            toast.error(getErrorMessage(error))
         } finally {
             setIsLoading(false)
         }
@@ -70,7 +71,7 @@ const FavoritesPage = () => {
             setFavoris(favoris.filter(f => f.vehicule_id !== vehiculeId))
             toast.success("Véhicule retiré des favoris")
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Erreur serveur")
+            toast.error(getErrorMessage(error))
         } finally {
             setRemovingId(null)
         }
