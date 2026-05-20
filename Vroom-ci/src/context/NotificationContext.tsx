@@ -48,7 +48,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
                     osc.type = "sine"
                     osc.frequency.value = freq
                     gain.gain.setValueAtTime(0, startAt)
-                    gain.gain.linearRampToValueAtTime(0.5, startAt + 0.01)
+                    gain.gain.linearRampToValueAtTime(1.0, startAt + 0.01)
                     gain.gain.exponentialRampToValueAtTime(0.001, startAt + duration)
                     osc.start(startAt)
                     osc.stop(startAt + duration)
