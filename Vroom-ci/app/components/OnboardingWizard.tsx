@@ -89,6 +89,20 @@ const STEPS: Record<string, Step[]> = {
             description: "Votre espace auto-école est prêt. Bonne gestion !",
         },
     ],
+    client: [
+        {
+            title: "Bienvenue sur Vroom !",
+            description: "Prenez 1 minute pour compléter votre profil.",
+        },
+        {
+            title: "Vos coordonnées",
+            description: "Renseignez votre téléphone et adresse pour être contacté par les vendeurs.",
+        },
+        {
+            title: "Vous êtes prêt !",
+            description: "Votre compte est configuré. Bonne navigation !",
+        },
+    ],
 }
 
 // ─── Contenu de chaque étape par rôle ────────────────────────────────────────
@@ -248,6 +262,35 @@ function StepContent({
         if (stepIndex === 3) return <FinishStep />
     }
 
+    if (role === "client") {
+        if (stepIndex === 0) return <WelcomeStep />
+        if (stepIndex === 1) return (
+            <form onSubmit={handleSubmitContact} className="flex flex-col gap-4 mt-2">
+                <div>
+                    <Label>Téléphone</Label>
+                    <Input
+                        type="text"
+                        placeholder="Téléphone (optionnel)"
+                        value={rsSociale.telephone}
+                        onChange={(e) => handleChange("telephone", e.target.value)}
+                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                    />
+                </div>
+                <div>
+                    <Label>Adresse</Label>
+                    <Input
+                        type="text"
+                        placeholder="Adresse (optionnel)"
+                        value={rsSociale.adresse}
+                        onChange={(e) => handleChange("adresse", e.target.value)}
+                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                    />
+                </div>
+            </form>
+        )
+        if (stepIndex === 2) return <FinishStep />
+    }
+
     return null
 }
 
@@ -291,7 +334,7 @@ export default function OnboardingWizard() {
     })
 
     // Rôles concernés par l'onboarding wizard
-    const ROLES_WITH_ONBOARDING = ["vendeur", "concessionnaire", "auto_ecole"]
+    const ROLES_WITH_ONBOARDING = ["client", "vendeur", "concessionnaire", "auto_ecole"]
 
     // N'affiche le wizard que si :
     // 1. L'utilisateur est connecté
@@ -328,10 +371,14 @@ export default function OnboardingWizard() {
         try {
             if (user.role === "auto_ecole") {
                 await submitAutoEcoleProfile(autoEcoleData)
+            } else if (user.role === "client") {
+                // Champs optionnels pour le client — on n'envoie que si les deux sont remplis
+                if (rsSociale.telephone && rsSociale.adresse) {
+                    await submitOnboardingProfile(rsSociale)
+                }
             } else {
                 // 1. Sauvegarde du profil en premier — finishOnboarding doit trouver les données déjà en base
                 await submitOnboardingProfile(rsSociale)
-
             }
             // 2. Marque l'onboarding terminé et récupère le user mis à jour
             // On utilise une variable séparée car Promise.all retourne un tableau — res[0], res[1] — pas res.data

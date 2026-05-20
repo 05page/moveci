@@ -156,6 +156,7 @@ class AuthController extends Controller
             'raison_sociale'  => $request->raison_sociale,
             'rccm'            => $request->rccm,
             'numero_agrement' => $request->numero_agrement,
+            'onboarding_completed_at'=> now()
         ]);
 
         try {
