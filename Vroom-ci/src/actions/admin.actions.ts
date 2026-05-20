@@ -98,7 +98,7 @@ export const validerVehicule = (id: string | number) =>
 
 /** Rejette un véhicule avec un motif obligatoire. */
 export const rejeterVehicule = (id: string | number, data: { motif: string }) =>
-  api.post<vehicule>(`/admin/vehicules/${id}/rejeter`, {details: data.motif})
+  api.post<vehicule>(`/admin/vehicules/${id}/rejeter`, { details: data.motif })
 
 /** Suspend un véhicule (statut → suspendu). */
 export const suspendreVehicule = (id: string | number) =>
@@ -200,3 +200,15 @@ export async function getAdminStatsMarche() {
 export async function getAdminStatsGeographie() {
   return api.get<{ success: boolean; data: StatsGeographie }>("/admin/stats/geographie")
 }
+
+/** Récupère les véhicules soft-deletés (corbeille). */
+export const getCorbeille = () =>
+  api.get<vehicule[]>("/admin/vehicules/corbeille")
+
+/** Restaure un véhicule depuis la corbeille. */
+export const restaurerVehicule = (id: string | number) =>
+  api.post<vehicule>(`/admin/vehicules/${id}/restaurer`, {})
+
+/** Supprime définitivement un véhicule (forceDelete). */
+export const forcerSupprimerVehicule = (id: string | number) =>
+  api.delete<void>(`/admin/vehicules/${id}/forcer`)

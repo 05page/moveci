@@ -87,7 +87,7 @@ Route::middleware(['auth:sanctum', 'check.statut'])->group(function () {
     });
 
     // Stats vendeur
-    Route::middleware('role:vendeur,concessionnaire,auto_ecole')->group(function() {
+    Route::middleware('role:vendeur,concessionnaire,auto_ecole')->group(function () {
         Route::get('/stats/mes-stats', [VendeurStatsController::class, 'mesStats']);
     });
 
@@ -117,7 +117,7 @@ Route::middleware(['auth:sanctum', 'check.statut'])->group(function () {
     // Signalements
     Route::prefix('signalements')->group(function () {
         Route::post('/',               [SignalementController::class, 'store']);
-        Route::get('/mes-signalements',[SignalementController::class, 'mesSignalements']);
+        Route::get('/mes-signalements', [SignalementController::class, 'mesSignalements']);
     });
 
     // Rendez-vous
@@ -239,6 +239,9 @@ Route::middleware(['auth:sanctum', 'check.statut'])->group(function () {
         Route::post('/vehicules/{id}/rejeter',    [AdminController::class, 'rejeterVehicule']);
         Route::post('/vehicules/{id}/suspendre',  [AdminController::class, 'suspendreVehicule']);
         Route::delete('/vehicules/{id}',          [AdminController::class, 'supprimerVehicule']);
+        Route::get('/vehicules/corbeille',          [AdminController::class, 'corbeille']);
+        Route::post('/vehicules/{id}/restaurer',    [AdminController::class, 'restaurerVehicule']);
+        Route::delete('/vehicules/{id}/forcer',     [AdminController::class, 'forcerSupprimerVehicule']);
         Route::get('/signalements',               [AdminController::class, 'signalements']);
         Route::post('/signalements/{id}/traiter', [AdminController::class, 'traiterSignalement']);
         Route::get('/stats',                      [AdminController::class, 'stats']);

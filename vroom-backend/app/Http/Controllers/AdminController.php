@@ -73,8 +73,18 @@ class AdminController extends Controller
         if ($request->filled('statut')) $query->where('statut', $request->statut);
 
         $users = $query
-            ->select('id','fullname','email','telephone','role','statut','created_at',
-                     'raison_sociale','rccm','numero_agrement')
+            ->select(
+                'id',
+                'fullname',
+                'email',
+                'telephone',
+                'role',
+                'statut',
+                'created_at',
+                'raison_sociale',
+                'rccm',
+                'numero_agrement'
+            )
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -186,8 +196,6 @@ class AdminController extends Controller
         event(new DataRefresh($createdBy, 'vehicule'));
         return response()->json(['success' => true, 'message' => 'Véhicule supprimé.']);
     }
-
-    // ── Formations ─────────────────────────────────────────
 
     /**
      * Liste toutes les formations avec filtres optionnels.
@@ -538,7 +546,7 @@ class AdminController extends Controller
             ->groupBy('vehicules_description.marque')
             ->pluck('vues', 'marque');
 
-        $topMarquesFavoris = $topMarquesFavoris->map(fn ($row) => [
+        $topMarquesFavoris = $topMarquesFavoris->map(fn($row) => [
             'marque'  => $row->marque,
             'favoris' => $row->favoris,
             'vues'    => $vuesParMarque[$row->marque] ?? 0,
@@ -573,7 +581,7 @@ class AdminController extends Controller
             ->groupBy('vehicules_description.carburant')
             ->pluck('vues', 'carburant');
 
-        $repartitionCarburant = $favorisByCarbu->map(fn ($row) => [
+        $repartitionCarburant = $favorisByCarbu->map(fn($row) => [
             'carburant' => $row->carburant,
             'favoris'   => $row->favoris,
             'vues'      => $vuesByCarbu[$row->carburant] ?? 0,
@@ -595,7 +603,7 @@ class AdminController extends Controller
             ")
             ->groupBy('tranche')
             ->get()
-            ->sortBy(fn ($row) => match($row->tranche) {
+            ->sortBy(fn($row) => match ($row->tranche) {
                 '< 5M'   => 1,
                 '5–10M'  => 2,
                 '10–20M' => 3,
@@ -736,8 +744,8 @@ class AdminController extends Controller
     public function logs(Request $request): JsonResponse
     {
         $query = LogModeration::with(['admin:id,fullname']);
-            
-        if ($request->filled('cible_type')) $query->where('cible_type', $request->cible_type);  
+
+        if ($request->filled('cible_type')) $query->where('cible_type', $request->cible_type);
         $logs = $query->orderBy('date_action', 'desc')->paginate(50);
 
         return response()->json(['success' => true, 'data' => $logs], 200);
@@ -793,5 +801,36 @@ class AdminController extends Controller
             'id_cible'   => $idCible,
             'details'    => $details,
         ]);
+    }
+    // Liste les véhicules soft-deletés
+    public function corbeille(): JsonResponse
+    {
+        $vehicules = Vehicules::onlyTrashed()
+            ->with(['creator:id,fullname,role', 'description', 'photos'])
+            ->orderBy('deleted_at', 'desc')
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $vehicules]);
+    }
+
+    // Restaure un véhicule soft-deleté
+    public function restaurerVehicule($id): JsonResponse
+    {
+        $vehicule = Vehicules::onlyTrashed()->findOrFail($id);
+        $vehicule->restore();
+        $this->logAction('RESTORE_VEHICLE', 'vehicule', $id, null);
+        event(new DataRefresh($vehicule->created_by, 'vehicule'));
+        return response()->json(['success' => true, 'message' => 'Véhicule restauré.']);
+    }
+
+    // Supprime définitivement (forceDelete)
+    public function forcerSupprimerVehicule($id): JsonResponse
+    {
+        $vehicule = Vehicules::onlyTrashed()->findOrFail($id);
+        $createdBy = $vehicule->created_by;
+        $vehicule->forceDelete();
+        $this->logAction('FORCE_DELETE_VEHICLE', 'vehicule', $id, null);
+        event(new DataRefresh($createdBy, 'vehicule'));
+        return response()->json(['success' => true, 'message' => 'Véhicule supprimé définitivement.']);
     }
 }

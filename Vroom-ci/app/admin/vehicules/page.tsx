@@ -53,9 +53,10 @@ import {
     RefreshCw,
     PauseCircle,
     Trash2,
+    RotateCcw,
 } from "lucide-react"
 import { toast } from "sonner"
-import { getVehicules, validerVehicule, rejeterVehicule, suspendreVehicule, supprimerVehicule } from "@/src/actions/admin.actions"
+import { getVehicules, validerVehicule, rejeterVehicule, suspendreVehicule, supprimerVehicule, getCorbeille, restaurerVehicule, forcerSupprimerVehicule } from "@/src/actions/admin.actions"
 
 // Interface complète du véhicule avec tous les champs renvoyés par le backend
 interface Vehicule {
@@ -98,7 +99,8 @@ const FILTRES = [
     { value: "validee",    label: "Validés" },
     { value: "rejetee",    label: "Rejetés" },
     { value: "restauree",  label: "Restaurés" },
-    { value: "a_venir",  label: "A Venir" },
+    { value: "a_venir",   label: "A Venir" },
+    { value: "corbeille",  label: "Corbeille" },
 ] as const
 
 type FiltreValue = typeof FILTRES[number]["value"]
@@ -156,6 +158,14 @@ export default function AdminVehiculesPage() {
     // Suppression
     const [toDelete, setToDelete] = useState<Vehicule | null>(null)
     const [deleting, setDeleting] = useState(false)
+
+    // Corbeille
+    const [corbeilleVehicules, setCorbeilleVehicules] = useState<Vehicule[]>([])
+    const [loadingCorbeille, setLoadingCorbeille] = useState(false)
+    const [toRestore, setToRestore] = useState<Vehicule | null>(null)
+    const [restoring, setRestoring] = useState(false)
+    const [toForceDelete, setToForceDelete] = useState<Vehicule | null>(null)
+    const [forceDeleting, setForceDeleting] = useState(false)
 
     const fetchVehicules = useCallback(async () => {
         setLoading(true)
@@ -238,6 +248,52 @@ export default function AdminVehiculesPage() {
             toast.error("Échec du rejet")
         } finally {
             setRejecting(false)
+        }
+    }
+
+    const fetchCorbeille = useCallback(async () => {
+        setLoadingCorbeille(true)
+        try {
+            const res = await getCorbeille()
+            if (res.data) setCorbeilleVehicules(res.data as unknown as Vehicule[])
+        } catch {
+            toast.error("Impossible de charger la corbeille")
+        } finally {
+            setLoadingCorbeille(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (filtre === "corbeille") fetchCorbeille()
+    }, [filtre, fetchCorbeille])
+
+    const handleRestore = async () => {
+        if (!toRestore) return
+        setRestoring(true)
+        try {
+            await restaurerVehicule(toRestore.id)
+            toast.success(`Annonce restaurée — ${toRestore.description?.marque} ${toRestore.description?.modele}`)
+            setToRestore(null)
+            fetchCorbeille()
+        } catch {
+            toast.error("Échec de la restauration")
+        } finally {
+            setRestoring(false)
+        }
+    }
+
+    const handleForceDelete = async () => {
+        if (!toForceDelete) return
+        setForceDeleting(true)
+        try {
+            await forcerSupprimerVehicule(toForceDelete.id)
+            toast.success(`Annonce supprimée définitivement`)
+            setToForceDelete(null)
+            fetchCorbeille()
+        } catch {
+            toast.error("Échec de la suppression définitive")
+        } finally {
+            setForceDeleting(false)
         }
     }
 
@@ -329,8 +385,96 @@ export default function AdminVehiculesPage() {
                 ))}
             </div>
 
+            {/* ── Corbeille ── */}
+            {filtre === "corbeille" ? (
+                loadingCorbeille ? (
+                    <div className="space-y-3">
+                        {[...Array(3)].map((_, i) => (
+                            <Card key={i}><CardContent className="p-4">
+                                <div className="flex items-start gap-4">
+                                    <Skeleton className="h-20 w-28 rounded-lg shrink-0" />
+                                    <div className="flex-1 space-y-2">
+                                        <Skeleton className="h-5 w-48" />
+                                        <Skeleton className="h-4 w-32" />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Skeleton className="h-8 w-24" />
+                                        <Skeleton className="h-8 w-24" />
+                                    </div>
+                                </div>
+                            </CardContent></Card>
+                        ))}
+                    </div>
+                ) : corbeilleVehicules.length === 0 ? (
+                    <Card>
+                        <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                            <Trash2 className="h-10 w-10 mb-3 text-zinc-300" />
+                            <p className="font-medium">Corbeille vide</p>
+                            <p className="text-sm mt-1">Aucun véhicule supprimé</p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="space-y-3">
+                        {corbeilleVehicules.map((v) => (
+                            <Card key={v.id} className="border-dashed border-red-200 bg-red-50/30">
+                                <CardContent className="p-4">
+                                    <div className="flex items-start gap-4">
+                                        {(() => {
+                                            const photo = v.photos?.find(p => p.is_primary) ?? v.photos?.[0]
+                                            const src = photo ? photoUrl(photo.path) : null
+                                            return src ? (
+                                                <div className="relative h-20 w-28 rounded-lg overflow-hidden shrink-0 opacity-60">
+                                                    <img src={src} alt="" className="h-full w-full object-cover" />
+                                                </div>
+                                            ) : (
+                                                <div className="flex h-20 w-28 items-center justify-center rounded-lg bg-secondary shrink-0 opacity-60">
+                                                    <Car className="h-8 w-8 text-muted-foreground" />
+                                                </div>
+                                            )
+                                        })()}
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-base text-muted-foreground line-through">
+                                                {v.description?.marque} {v.description?.modele}{" "}
+                                                <span className="font-normal">({v.description?.annee})</span>
+                                            </h3>
+                                            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                                <User className="h-3 w-3" />
+                                                {v.creator?.fullname ?? "Inconnu"}
+                                            </p>
+                                            <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                                                <Trash2 className="h-3 w-3" />
+                                                Supprimé le {new Date(v.created_at).toLocaleDateString("fr-FR")}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-col gap-2 shrink-0">
+                                            <Button
+                                                size="sm"
+                                                className="bg-green-600 hover:bg-green-700 text-white h-8 text-xs"
+                                                onClick={() => setToRestore(v)}
+                                            >
+                                                <RotateCcw className="h-3 w-3 mr-1" />
+                                                Restaurer
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-red-200 text-red-700 hover:bg-red-50 h-8 text-xs"
+                                                onClick={() => setToForceDelete(v)}
+                                            >
+                                                <Trash2 className="h-3 w-3 mr-1" />
+                                                Supprimer définitivement
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )
+            ) : null}
+
             {/* Liste des véhicules */}
-            {loading ? (
+            {filtre !== "corbeille" && loading ? (
                 <div className="space-y-3">
                     {[...Array(4)].map((_, i) => (
                         <Card key={i}>
@@ -351,7 +495,7 @@ export default function AdminVehiculesPage() {
                         </Card>
                     ))}
                 </div>
-            ) : vehiculesFiltres.length === 0 ? (
+            ) : filtre !== "corbeille" && vehiculesFiltres.length === 0 ? (
                 <Card>
                     <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                         <CheckCircle2 className="h-10 w-10 mb-3 text-green-600" />
@@ -927,6 +1071,54 @@ export default function AdminVehiculesPage() {
                             className="bg-red-600 text-white hover:bg-red-700"
                         >
                             {deleting ? "Suppression..." : "Oui, supprimer"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* AlertDialog restauration depuis la corbeille */}
+            <AlertDialog open={!!toRestore} onOpenChange={open => !open && setToRestore(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Restaurer cette annonce ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            L&apos;annonce{" "}
+                            <strong>{toRestore?.description?.marque} {toRestore?.description?.modele}</strong>{" "}
+                            sera remise dans la liste des véhicules avec son statut précédent.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleRestore}
+                            disabled={restoring}
+                            className="bg-green-600 text-white hover:bg-green-700"
+                        >
+                            {restoring ? "Restauration..." : "Oui, restaurer"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* AlertDialog suppression définitive depuis la corbeille */}
+            <AlertDialog open={!!toForceDelete} onOpenChange={open => !open && setToForceDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Supprimer définitivement ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            L&apos;annonce{" "}
+                            <strong>{toForceDelete?.description?.marque} {toForceDelete?.description?.modele}</strong>{" "}
+                            sera supprimée de la base de données. Cette action est <strong>irréversible</strong>.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleForceDelete}
+                            disabled={forceDeleting}
+                            className="bg-red-600 text-white hover:bg-red-700"
+                        >
+                            {forceDeleting ? "Suppression..." : "Oui, supprimer définitivement"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
