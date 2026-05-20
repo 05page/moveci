@@ -35,31 +35,36 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             .finally(() => setIsLoading(false))
     }, [user]);
 
-        // Joue un "ding" discret via Web Audio API — aucun fichier audio requis.
-    // Deux notes enchaînées (880 Hz → 1100 Hz) pour un son de type notification.
-    // Absorbe silencieusement les erreurs (API indisponible, politique autoplay).
-    function playNotificationSound() {
+        function playNotificationSound() {
         try {
             const ctx = new AudioContext()
 
-            const play = (freq: number, startAt: number, duration: number) => {
-                const osc  = ctx.createOscillator()
-                const gain = ctx.createGain()
-                osc.connect(gain)
-                gain.connect(ctx.destination)
-                osc.type = "sine"
-                osc.frequency.value = freq
-                gain.gain.setValueAtTime(0, startAt)
-                gain.gain.linearRampToValueAtTime(0.35, startAt + 0.01)
-                gain.gain.exponentialRampToValueAtTime(0.001, startAt + duration)
-                osc.start(startAt)
-                osc.stop(startAt + duration)
+            const doPlay = () => {
+                const play = (freq: number, startAt: number, duration: number) => {
+                    const osc  = ctx.createOscillator()
+                    const gain = ctx.createGain()
+                    osc.connect(gain)
+                    gain.connect(ctx.destination)
+                    osc.type = "sine"
+                    osc.frequency.value = freq
+                    gain.gain.setValueAtTime(0, startAt)
+                    gain.gain.linearRampToValueAtTime(0.5, startAt + 0.01)
+                    gain.gain.exponentialRampToValueAtTime(0.001, startAt + duration)
+                    osc.start(startAt)
+                    osc.stop(startAt + duration)
+                }
+                play(880,  ctx.currentTime,        0.25)
+                play(1100, ctx.currentTime + 0.18, 0.35)
             }
 
-            play(880,  ctx.currentTime,        0.25) // première note
-            play(1100, ctx.currentTime + 0.18, 0.35) // deuxième note
+            // Les navigateurs suspendent AudioContext jusqu'à une interaction utilisateur
+            if (ctx.state === "suspended") {
+                ctx.resume().then(doPlay).catch(() => {})
+            } else {
+                doPlay()
+            }
         } catch {
-            // Web Audio indisponible ou autoplay bloqué — pas de son
+            // Web Audio indisponible
         }
     }
 
