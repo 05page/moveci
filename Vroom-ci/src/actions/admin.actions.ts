@@ -130,7 +130,7 @@ export const getSignalementsPaginated = (params?: Record<string, string>) =>
 /** Traite un signalement (acceptation ou rejet avec note admin). */
 export const traiterSignalement = (
   id: string | number,
-  data: { statut: "traité" | "rejeté"; action_cible?: string; note_admin?: string }
+  data: { action: "traiter" | "rejeter"; action_cible?: string; note_admin?: string }
 ) => api.post<AdminSignalement>(`/admin/signalements/${id}/traiter`, data)
 
 // ---------------------------------------------------------------------------

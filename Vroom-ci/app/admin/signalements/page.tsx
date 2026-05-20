@@ -174,7 +174,7 @@ export default function AdminSignalementsPage() {
         setActing(true)
         try {
             await traiterSignalement(selected.id, {
-                statut: modalAction === "traiter" ? "traité" : "rejeté",
+                action: modalAction === "traiter" ? "traiter" : "rejeter",
                 action_cible: modalAction === "traiter" ? actionCible : undefined,
                 note_admin: noteAdmin.trim() || undefined,
             })
