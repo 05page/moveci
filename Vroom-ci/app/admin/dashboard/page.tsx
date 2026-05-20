@@ -20,7 +20,7 @@ import {
     UserCheck,
     RefreshCw,
 } from "lucide-react"
-import { getUsersPaginated, getVehiculesEnAttente, getSignalements, getLogs } from "@/src/actions/admin.actions"
+import { getUsersPaginated, getVehiculesEnAttente, getSignalementsPaginated, getLogs } from "@/src/actions/admin.actions"
 import { PaginatedResponse } from "@/src/types"
 import { FadeIn, SlideIn, StaggerList, StaggerItem } from "@/components/ui/motion-primitives"
 
@@ -110,9 +110,9 @@ export default function AdminDashboard() {
             .then(r => { if (r.data) setPendingVehicules(r.data.length) })
             .finally(() => setLoadingVehicules(false))
 
-        // getSignalements() retourne AdminSignalement[] — on compte la longueur
-        getSignalements()
-            .then(r => { if (r.data) setPendingSignal(r.data.length) })
+        // getSignalementsPaginated retourne une réponse paginée — on lit .total
+        getSignalementsPaginated({ statut: "en_attente" })
+            .then(r => { if (r.data) setPendingSignal((r.data as unknown as { total: number }).total) })
             .finally(() => setLoadingSignal(false))
 
         // getLogs() retourne une réponse paginée — les logs sont dans r.data.data
