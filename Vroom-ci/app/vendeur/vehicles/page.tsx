@@ -221,23 +221,25 @@ export default function VehiclesPage() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="flex-1 gap-1 cursor-pointer rounded-lg text-xs"
+                                    className="flex-1 gap-1 cursor-pointer rounded-lg text-xs min-w-0"
                                     onClick={() => setDetailVehicle(v)}
                                 >
-                                    <Eye className="h-3 w-3" /> Détails
+                                    <Eye className="h-3 w-3 shrink-0" />
+                                    <span className="truncate">Détails</span>
                                 </Button>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="flex-1 gap-1 cursor-pointer rounded-lg text-xs"
+                                    className="flex-1 gap-1 cursor-pointer rounded-lg text-xs min-w-0"
                                     onClick={() => setEditingVehicle(v)}
                                 >
-                                    <Edit className="h-3 w-3" /> Modifier
+                                    <Edit className="h-3 w-3 shrink-0" />
+                                    <span className="truncate">Modifier</span>
                                 </Button>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="gap-1 cursor-pointer rounded-lg text-xs text-red-500 hover:text-red-600 hover:border-red-200"
+                                    className="shrink-0 cursor-pointer rounded-lg text-xs text-red-500 hover:text-red-600 hover:border-red-200 px-2.5"
                                     onClick={() => { setVehicleToDelete(v); setDeleteOpen(true) }}
                                 >
                                     <Trash2 className="h-3 w-3" />
@@ -275,13 +277,13 @@ export default function VehiclesPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 animate-in fade-in slide-in-from-bottom duration-500">
                     {statsCards.map((s, i) => (
                         <Card key={i} className={cn(CARD, "hover:shadow-lg transition-all duration-300")}>
-                            <CardContent className="p-4 flex items-center gap-3">
-                                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", s.color)}>
-                                    <s.icon className="h-5 w-5" />
+                            <CardContent className="p-3 md:p-4 flex items-center gap-2 md:gap-3">
+                                <div className={cn("w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center shrink-0", s.color)}>
+                                    <s.icon className="h-4 w-4 md:h-5 md:w-5" />
                                 </div>
-                                <div>
-                                    <p className="text-2xl font-bold">{s.value}</p>
-                                    <p className="text-xs text-muted-foreground">{s.label}</p>
+                                <div className="min-w-0">
+                                    <p className="text-xl md:text-2xl font-bold">{s.value}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{s.label}</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -305,20 +307,22 @@ export default function VehiclesPage() {
 
                 {/* Tabs + Vehicles */}
                 <Tabs defaultValue="tous" className="animate-in fade-in slide-in-from-bottom duration-500 delay-200">
-                    <TabsList className="bg-muted/50 rounded-xl p-1 mb-4 w-full md:w-auto">
-                        <TabsTrigger value="tous" className="rounded-lg cursor-pointer data-[state=active]:bg-white data-[state=active]:text-black">Tous</TabsTrigger>
-                        <TabsTrigger value="vente" className="rounded-lg cursor-pointer data-[state=active]:bg-white data-[state=active]:text-black">En vente</TabsTrigger>
-                        <TabsTrigger value="location" className="rounded-lg cursor-pointer data-[state=active]:bg-white data-[state=active]:text-black">En location</TabsTrigger>
-                        <TabsTrigger value="vendus" className="rounded-lg cursor-pointer data-[state=active]:bg-white data-[state=active]:text-black">Vendus/Loués</TabsTrigger>
-                        <TabsTrigger value="en_attente" className="rounded-lg cursor-pointer data-[state=active]:bg-white data-[state=active]:text-black">En attente</TabsTrigger>
-                        <TabsTrigger value="rejetee" className="rounded-lg cursor-pointer data-[state=active]:bg-white data-[state=active]:text-red-600">
-                            Rejetés {mesvehicules.filter(v => v.status_validation === "rejetee").length > 0 && (
-                                <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold">
-                                    {mesvehicules.filter(v => v.status_validation === "rejetee").length}
-                                </span>
-                            )}
-                        </TabsTrigger>
-                    </TabsList>
+                    <div className="overflow-x-auto pb-1 mb-4 -mx-1 px-1">
+                        <TabsList className="bg-muted/50 rounded-xl p-1 w-max min-w-full md:w-auto flex">
+                            <TabsTrigger value="tous" className="rounded-lg cursor-pointer whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black">Tous</TabsTrigger>
+                            <TabsTrigger value="vente" className="rounded-lg cursor-pointer whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black">En vente</TabsTrigger>
+                            <TabsTrigger value="location" className="rounded-lg cursor-pointer whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black">En location</TabsTrigger>
+                            <TabsTrigger value="vendus" className="rounded-lg cursor-pointer whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black">Vendus/Loués</TabsTrigger>
+                            <TabsTrigger value="en_attente" className="rounded-lg cursor-pointer whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black">En attente</TabsTrigger>
+                            <TabsTrigger value="rejetee" className="rounded-lg cursor-pointer whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-red-600">
+                                Rejetés {mesvehicules.filter(v => v.status_validation === "rejetee").length > 0 && (
+                                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold">
+                                        {mesvehicules.filter(v => v.status_validation === "rejetee").length}
+                                    </span>
+                                )}
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
 
                     {["tous", "vente", "location", "vendus", "en_attente", "rejetee"].map(tab => (
                         <TabsContent key={tab} value={tab}>
