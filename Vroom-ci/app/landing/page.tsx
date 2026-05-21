@@ -695,7 +695,16 @@ export default function LandingPage() {
                     {/* Barre de séparation + copyright */}
                     <div className="pt-6 border-t border-zinc-800/60 flex flex-col md:flex-row items-center justify-between gap-2">
                         <p className="text-xs text-zinc-600">© 2026 Move. Tous droits réservés.</p>
-                        <p className="text-xs text-zinc-600">Marketplace automobile · Abidjan, Côte d&apos;Ivoire</p>
+                        <div className="flex items-center gap-4">
+                            <Link
+                                href="/cgu"
+                                className="text-xs text-zinc-600 hover:text-amber-400 transition-colors duration-200"
+                            >
+                                Conditions d&apos;utilisation
+                            </Link>
+                            <span className="text-zinc-700">·</span>
+                            <p className="text-xs text-zinc-600">Marketplace automobile · Abidjan, Côte d&apos;Ivoire</p>
+                        </div>
                     </div>
                 </div>
             </footer>
