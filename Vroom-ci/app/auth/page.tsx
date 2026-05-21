@@ -190,6 +190,7 @@ const AuthContent = () => {
         window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google/redirect`;
     }
     return (
+        <>
         <div className="min-h-screen flex">
             <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
                 <Image
@@ -751,6 +752,7 @@ const AuthContent = () => {
                 )}
             </DialogContent>
         </Dialog>
+        </>
     )
 }
 
