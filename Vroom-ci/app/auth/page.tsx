@@ -112,8 +112,11 @@ const AuthContent = () => {
         try {
             await forgotPassword(forgotEmail)
             setForgotSent(true)
-        } catch {
-            toast.error("Erreur lors de l'envoi. Réessayez dans quelques instants.")
+        } catch (err) {
+            // On affiche le message du backend (ex: "Ce compte utilise Google")
+            // plutôt qu'un message générique qui cache la vraie raison
+            const msg = err instanceof Error ? err.message : "Erreur lors de l'envoi. Réessayez dans quelques instants."
+            toast.error(msg)
         } finally {
             setIsSendingReset(false)
         }
