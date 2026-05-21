@@ -12,6 +12,7 @@ import {
     ArrowLeft,
     ArrowRight,
     Building2,
+    CheckCircle,
     Eye,
     EyeOff,
     GraduationCap,
@@ -28,6 +29,13 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { getDashBoard } from "@/src/core/auth/permission"
 import { UserRole } from "@/src/types"
+import { forgotPassword } from "@/src/actions/auth.actions"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 
 interface FormRegister {
     fullname: string,
@@ -55,6 +63,10 @@ const AuthContent = () => {
     const [registerStep, setRegisterStep] = useState(1)
     const [isLoggingIn, setIsLoggingIn] = useState(false)
     const [isRegistering, setIsRegistering] = useState(false)
+    const [forgotOpen, setForgotOpen] = useState(false)
+    const [forgotEmail, setForgotEmail] = useState("")
+    const [isSendingReset, setIsSendingReset] = useState(false)
+    const [forgotSent, setForgotSent] = useState(false)
     const defaultTab = searchParams.get("tab") === "register" ? "register" : "login"
     const [formDataLogin, setFormDataLogin] = useState<FormLogin>({
         email: "",
@@ -92,6 +104,19 @@ const AuthContent = () => {
             ...prev,
             [key]: value
         }))
+    }
+
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsSendingReset(true)
+        try {
+            await forgotPassword(forgotEmail)
+            setForgotSent(true)
+        } catch {
+            toast.error("Erreur lors de l'envoi. Réessayez dans quelques instants.")
+        } finally {
+            setIsSendingReset(false)
+        }
     }
 
     const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -241,8 +266,12 @@ const AuthContent = () => {
                                             <Label htmlFor="login-password" className="text-sm font-semibold text-zinc-700">
                                                 Mot de passe
                                             </Label>
-                                            <button type="button" className="text-xs text-orange-600 hover:text-orange-700 font-semibold">
-                                                Mot de passe oublie ?
+                                            <button
+                                                type="button"
+                                                onClick={() => { setForgotOpen(true); setForgotSent(false); setForgotEmail("") }}
+                                                className="text-xs text-orange-600 hover:text-orange-700 font-semibold"
+                                            >
+                                                Mot de passe oublié ?
                                             </button>
                                         </div>
                                         <div className="relative">
@@ -660,6 +689,68 @@ const AuthContent = () => {
                 </div>
             </div>
         </div>
+
+        {/* ── Modal mot de passe oublié ─────────────────────────────── */}
+        <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+            <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                    <DialogTitle>Mot de passe oublié</DialogTitle>
+                </DialogHeader>
+
+                {forgotSent ? (
+                    /* État succès — email envoyé */
+                    <div className="flex flex-col items-center gap-3 py-6 text-center">
+                        <CheckCircle className="h-10 w-10 text-green-500" />
+                        <p className="text-sm font-semibold text-zinc-800">Email envoyé !</p>
+                        <p className="text-sm text-zinc-500">
+                            Si <strong>{forgotEmail}</strong> est enregistré, vous recevrez un lien
+                            de réinitialisation dans quelques minutes.
+                        </p>
+                        <p className="text-xs text-zinc-400">Pensez à vérifier vos spams.</p>
+                        <Button
+                            variant="outline"
+                            className="mt-2 w-full"
+                            onClick={() => setForgotOpen(false)}
+                        >
+                            Fermer
+                        </Button>
+                    </div>
+                ) : (
+                    /* Formulaire email */
+                    <form onSubmit={handleForgotPassword} className="flex flex-col gap-4 pt-2">
+                        <p className="text-sm text-zinc-500">
+                            Entrez l&apos;adresse email de votre compte. Nous vous enverrons un lien
+                            pour choisir un nouveau mot de passe.
+                        </p>
+                        <div>
+                            <Label htmlFor="forgot-email">Adresse email</Label>
+                            <div className="relative mt-1.5">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                                <Input
+                                    id="forgot-email"
+                                    type="email"
+                                    required
+                                    placeholder="votre@email.com"
+                                    value={forgotEmail}
+                                    onChange={(e) => setForgotEmail(e.target.value)}
+                                    className="pl-10 h-11 rounded-xl"
+                                />
+                            </div>
+                        </div>
+                        <Button
+                            type="submit"
+                            disabled={isSendingReset}
+                            className="w-full h-11 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl"
+                        >
+                            {isSendingReset
+                                ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Envoi...</>
+                                : "Envoyer le lien"
+                            }
+                        </Button>
+                    </form>
+                )}
+            </DialogContent>
+        </Dialog>
     )
 }
 

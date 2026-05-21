@@ -37,6 +37,8 @@ Route::get('/auth/{provider}/redirect', [AuthController::class, 'redirect']);
 Route::get('/auth/{provider}/callback', [AuthController::class, 'callback']);
 Route::post('/login',    [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/forgot-password', [\App\Http\Controllers\PasswordResetController::class, 'sendResetLink']);
+Route::post('/reset-password',  [\App\Http\Controllers\PasswordResetController::class, 'resetPassword']);
 
 // Avis vendeur (public — visible sans connexion)
 Route::get('/avis/vendeur/{id}', [AvisController::class, 'avisVendeur']);
