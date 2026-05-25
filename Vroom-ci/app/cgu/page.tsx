@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function CguPage() {
     return (
-        <main className="min-h-screen bg-white">
+        <main className="min-h-screen bg-white pt-14">
             {/* En-tête */}
             <div className="bg-zinc-950 py-12 px-6">
                 <div className="max-w-3xl mx-auto">
