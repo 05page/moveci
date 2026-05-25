@@ -2,7 +2,7 @@
 import { UserRole } from "@/src/types";
 
 const  ROLE_ROUTES: Record<UserRole, string[]> = {
-    admin: ["*"],
+    admin: ["/admin"],
     vendeur: ["/vendeur"],
     concessionnaire: ["/partenaire"],
     auto_ecole: ["/partenaire"],
