@@ -252,7 +252,9 @@ class VehiculesController extends Controller
                             'index'       => $index,
                             'filename'    => $photo->getClientOriginalName(),
                         ]);
-                        return response()->json(['message' => 'Erreur upload photo (stockage local)'], 500);
+                        // On lève une exception pour que le catch extérieur appelle DB::rollBack()
+                        // Un return direct ici court-circuiterait la transaction sans la défaire
+                        throw new \RuntimeException("Échec de l'upload de la photo : " . $photo->getClientOriginalName());
                     }
 
                     VehiculesPhotos::create([
