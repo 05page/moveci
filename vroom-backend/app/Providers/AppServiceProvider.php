@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Vehicules;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
-
+use App\Policies\VehiculePolicy;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Vehicules::class, VehiculePolicy::class);
         // Chargement manuel des canaux Broadcast.
         // On ne passe pas "channels:" à withRouting() dans bootstrap/app.php car
         // cette méthode appelle Broadcast::routes() avec le middleware "web" (session/CSRF)
