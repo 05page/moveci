@@ -1202,11 +1202,7 @@ export default function AddVehiclePage() {
                     </div>
 
                     <div className="flex items-start justify-between gap-4">
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tight">Statistiques</h1>
-                            <p className="text-sm text-muted-foreground mt-1">Vue globale de l&apos;activité de la plateforme</p>
-                        </div>
-                        <Button
+                       <Button
                             variant="outline"
                             size="sm"
                             onClick={handleRefresh}
