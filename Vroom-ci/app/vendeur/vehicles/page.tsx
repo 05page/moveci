@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator"
 import {
     Car, Plus, Eye, Search,
     Tag, Key, Package, CheckCircle2,
-    Edit, Trash2, Trash2Icon,
+    Edit, Trash2, Trash2Icon, RefreshCw
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -39,8 +39,7 @@ export default function VehiclesPage() {
     const [editingVehicle, setEditingVehicle] = useState<vehicule | null>(null)
     const [vehicleToDelete, setVehicleToDelete] = useState<vehicule | null>(null)
     const [deleteOpen, setDeleteOpen] = useState(false);
-
-
+    
     const handleDelete = async () => {
         if (!vehicleToDelete) return
         try {
@@ -79,7 +78,7 @@ export default function VehiclesPage() {
     useDataRefresh("vehicule", fetchVendeurVehicles)
 
     const getStatutColor = (statut: string, status_validation?: string) => {
-        if (status_validation === "rejetee")  return "bg-red-500/10 text-red-600 border-red-500/20"
+        if (status_validation === "rejetee") return "bg-red-500/10 text-red-600 border-red-500/20"
         if (status_validation === "en_attente") return "bg-orange-500/10 text-orange-600 border-orange-500/20"
         switch (statut) {
             case "disponible": return "bg-zinc-900/10 text-zinc-700 border-zinc-900/20"
@@ -92,7 +91,7 @@ export default function VehiclesPage() {
     }
 
     const getStatutLabel = (statut: string, status_validation?: string) => {
-        if (status_validation === "rejetee")  return "Rejeté"
+        if (status_validation === "rejetee") return "Rejeté"
         if (status_validation === "en_attente") return "En attente de validation"
         switch (statut) {
             case "disponible": return "Disponible"
@@ -103,7 +102,7 @@ export default function VehiclesPage() {
             default: return statut
         }
     }
- 
+
     const statsCards = [
         { label: "Total", value: mesvehicules.length, icon: Package, color: "bg-zinc-900/10 text-zinc-700" },
         { label: "En vente", value: mesvehicules.filter(v => v.post_type === "vente" && v.statut === "disponible").length, icon: Tag, color: "bg-zinc-900/10 text-zinc-700" },
@@ -174,7 +173,7 @@ export default function VehiclesPage() {
                             )}
 
                             {/* Gradient overlay — prix en bas de l'image */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+                            <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/10 to-transparent" />
 
                             {/* Badges statut + type */}
                             <Badge className={cn("absolute top-3 left-3 rounded-full text-xs font-semibold", getStatutColor(v?.statut, v?.status_validation))}>
@@ -352,7 +351,7 @@ export default function VehiclesPage() {
                 />
             )}
 
-             {editingVehicle && (
+            {editingVehicle && (
                 <EditVehicle
                     isOpen={!!editingVehicle}
                     vehicule={editingVehicle}

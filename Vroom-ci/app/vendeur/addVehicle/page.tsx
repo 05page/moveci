@@ -40,9 +40,9 @@ import {
     Eye,
     Camera,
     Link,
+    RefreshCw
 } from "lucide-react"
-// Note : ce fichier utilise fetch() natif pour l'upload multipart (gestion du Content-Type par le navigateur)
-// postVehicule() de vehicules.actions utilise api.upload() qui est une alternative possible
+
 interface FormData {
     typePublication: "vente" | "location" | ""
     type: "neuf" | "occasion" | ""
@@ -140,6 +140,7 @@ export default function AddVehiclePage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [periodeChoisie, setPeriodeChoisie] = useState<"maintenant" | "1_semaine" | "2_semaines" | "1_mois" | "personnalisee" | null>(null)
+    const [refreshing, setRefreshing] = useState(false)
 
     const [formData, setFormData] = useState<FormData>({
         typePublication: "",
@@ -193,6 +194,11 @@ export default function AddVehiclePage() {
                 ? prev.equipements.filter(e => e !== id)
                 : [...prev.equipements, id],
         }))
+    }
+
+    const handleRefresh = () => {
+        setRefreshing(true)
+        setTimeout(() => setRefreshing(false), 1000)
     }
 
     const handlePhotoAdd = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -297,7 +303,7 @@ export default function AddVehiclePage() {
     const handleSubmit = async () => {
         if (!validateStep(5)) return
         setIsSubmitting(true)
-        const toastId = toast.loading("Analyse Gemini en cours...")
+        const toastId = toast.loading("Vérification de votre annonce...")
         try {
             const fd = new window.FormData()  // window.FormData pour éviter le conflit avec ton interface
 
@@ -351,10 +357,10 @@ export default function AddVehiclePage() {
             }
             toast.success("Véhicule publié !", {
                 id: toastId,
-                description: `Prix suggéré : ${data.data?.prix_suggere?.toLocaleString("fr-FR")} FCFA — ${data.data?.explication_prix}`
+                description: `Félicitation`
             })
             router.push("/vendeur/vehicles")
-            
+
         } catch (error) {
             toast.error("Erreur de connexion au serveur", { id: toastId })
         } finally {
@@ -1193,6 +1199,22 @@ export default function AddVehiclePage() {
                             <h1 className="text-2xl md:text-3xl font-bold">Nouvelle annonce</h1>
                             <p className="text-muted-foreground text-sm">Publiez votre véhicule en quelques étapes</p>
                         </div>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">Statistiques</h1>
+                            <p className="text-sm text-muted-foreground mt-1">Vue globale de l&apos;activité de la plateforme</p>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRefresh}
+                            disabled={refreshing}
+                            className="rounded-lg border-zinc-200 text-zinc-600 hover:bg-zinc-50 shrink-0"
+                        >
+                            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                        </Button>
                     </div>
                 </div>
 
