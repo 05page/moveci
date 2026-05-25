@@ -37,17 +37,30 @@ function sanitizeBackendResponse(data: unknown, status: number, path: string) {
   const message = typeof payload.message === "string" ? payload.message : undefined
   const errors = payload.errors
   const hasTechnicalDetails = looksTechnical(message) || looksTechnical(errors)
-  const isServerError = status >= 500
 
-  if (hasTechnicalDetails || isServerError) {
-    console.error("Backend API error hidden from user", { path, status, data })
-
+  // Cas 1 : message ou erreurs contiennent des détails techniques (stack trace, SQL…)
+  // → on masque tout et on log pour investigation
+  if (hasTechnicalDetails) {
+    console.error("Backend API error hidden from user (technical details detected)", { path, status, data })
     return {
       success: false,
       message: messageForStatus(status),
     }
   }
 
+  // Cas 2 : erreur 500 sans détails techniques
+  // → on laisse passer le message du backend s'il est propre et lisible,
+  //   sinon on utilise le message générique
+  if (status >= 500) {
+    const safeMessage = message && message.trim() ? message : messageForStatus(status)
+    console.error("Backend 500 error", { path, status, message: safeMessage })
+    return {
+      success: false,
+      message: safeMessage,
+    }
+  }
+
+  // Cas 3 : erreur 4xx sans détails techniques → on transmet telle quelle
   return {
     ...payload,
     message: message || messageForStatus(status),
