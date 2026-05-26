@@ -21,6 +21,7 @@ import {
     TabsList,
     TabsTrigger,
 } from "@/components/ui/tabs"
+import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -304,6 +305,7 @@ export default function StepView() {
                                 <p className="text-xs text-muted-foreground text-center pt-2">
                                     Des questions ? Contactez notre équipe via le Centre d'aide.
                                 </p>
+                                <Link href='/vendeur/aide'></Link>
                             </TabsContent>
                         </Tabs>
                     </div>

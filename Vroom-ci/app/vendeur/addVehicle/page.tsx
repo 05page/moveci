@@ -1212,8 +1212,8 @@ export default function AddVehiclePage() {
                         >
                             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
                         </Button>
+                        <StepView />
                     </div>
-                    <StepView />
                 </div>
 
                 {/* Step Indicator */}
