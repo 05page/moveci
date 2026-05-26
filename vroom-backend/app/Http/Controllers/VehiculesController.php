@@ -329,11 +329,11 @@ class VehiculesController extends Controller
             // Mettre à jour les informations du véhicule
             $this->authorize('update', $vehicule);
             $validatedData = $request->validate([
-                'post_type' => ['sometimes|required', Rule::in([
+                'post_type' => ['sometimes', 'required', Rule::in([
                     Vehicules::POST_TYPE_VENTE,
                     Vehicules::POST_TYPE_LOCATION
                 ])],
-                'type' => ['sometimes|required', Rule::in([
+                'type' => ['sometimes', 'required', Rule::in([
                     Vehicules::VEHICLE_TYPE_NEUF,
                     Vehicules::VEHICLE_TYPE_OCCASION
                 ])],
@@ -380,15 +380,22 @@ class VehiculesController extends Controller
 
             // Validation avec Gemini pour vérifier la cohérence des données
             DB::beginTransaction();
+            $dateDisponibilite = isset($validatedData['date_disponibilite'])
+                ? Carbon::parse($validatedData['date_disponibilite'])->startOfDay()
+                : $vehicule->date_disponibilite;
+
+            $statut = $dateDisponibilite->isFuture()
+                ? Vehicules::STATUS_A_VENIR
+                : Vehicules::STATUS_DISPONIBLE;
             $vehicule->update([
                 'created_by' => $user->id,
-                'post_type' => $validatedData['post_type'],
-                'type' => $validatedData['type'],
-                'statut' => Vehicules::STATUS_DISPONIBLE,
+                'post_type' => $validatedData['post_type'] ?? $vehicule->post_type,
+                'type' => $validatedData['type'] ?? $vehicule->type,
+                'statut' => $statut,
                 'status_validation' => Vehicules::STATUS_PENDING,
-                'prix' => $validatedData['prix'],
-                'negociable' => $request->boolean('negociable'),
-                'date_disponibilite' => now(),
+                'prix' => $validatedData['prix'] ?? $vehicule->prix,
+                'negociable'         => $request->has('negociable') ? $request->boolean('negociable') : $vehicule->negociable,
+                'date_disponibilite' => $dateDisponibilite,
             ]);
 
             VehiculesDescription::updateOrCreate(
