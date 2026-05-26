@@ -42,6 +42,7 @@ import {
     Link,
     RefreshCw
 } from "lucide-react"
+import StepView from "@/app/components/StepView";
 
 interface FormData {
     typePublication: "vente" | "location" | ""
@@ -1212,6 +1213,7 @@ export default function AddVehiclePage() {
                             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
                         </Button>
                     </div>
+                    <StepView />
                 </div>
 
                 {/* Step Indicator */}
