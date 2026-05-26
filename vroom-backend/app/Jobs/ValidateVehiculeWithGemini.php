@@ -57,7 +57,6 @@ class ValidateVehiculeWithGemini implements ShouldQueue
             "équipements : " . implode(', ', $desc->equipements ?? []) . ". " .
 
             "Des photos du véhicule sont jointes. Effectuez ces vérifications dans l'ordre : " .
-
             "1. MARQUE ET MODÈLE : Identifiez la marque visible sur les photos (logos, badges, calandre). " .
             "Comparez avec la marque déclarée : {$desc->marque} {$desc->modele}. " .
             "Si la marque visible est différente, répondez immédiatement valide=false avec l'explication claire. " .
