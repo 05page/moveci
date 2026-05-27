@@ -284,25 +284,43 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
         setIsSubmitting(true)
         const toastId = toast.loading("Modification de l'annonce en cours...")
         try {
-            await api.put(`/vehicules/${vehicule.id}`, {
-                post_type: formData.typePublication,
-                type: formData.typeVehicule,
-                prix: Number(formData.prix),
-                negociable: formData.negociable,
-                date_disponibilite: formData.typePublication === "vente" && formData.dateDisponibilite
-                    ? formData.dateDisponibilite.toISOString().split("T")[0]
-                    : undefined,
-                marque: formData.marque,
-                modele: formData.modele,
-                annee: formData.annee ? Number(formData.annee) : undefined,
-                carburant: formData.carburant || undefined,
-                transmission: formData.transmission || undefined,
-                kilometrage: formData.kilometrage ? Number(formData.kilometrage) : undefined,
-                couleur: formData.couleur || undefined,
-                nombre_portes: formData.nombrePortes ? Number(formData.nombrePortes) : undefined,
-                nombre_places: formData.nombrePlaces ? Number(formData.nombrePlaces) : undefined,
-                equipements: formData.equipements,
-            })
+            // FormData (classe du navigateur) permet d'envoyer du texte ET des fichiers
+            // api.put() n'envoie que du JSON → impossible d'y mettre des photos
+            // api.upload() envoie un FormData en POST → PHP peut lire les fichiers
+            const form = new FormData()
+
+            // _method: PUT dit à Laravel "traite cette requête POST comme un PUT"
+            // car PHP ne lit pas les fichiers sur les requêtes PUT
+            form.append('_method', 'PUT')
+
+            // Les champs texte — .append() n'accepte que des strings
+            // donc on convertit les nombres et booléens explicitement
+            form.append('post_type', formData.typePublication)
+            form.append('type', formData.typeVehicule)
+            form.append('prix', String(Number(formData.prix)))
+            form.append('negociable', formData.negociable ? '1' : '0')
+
+            if (formData.typePublication === "vente" && formData.dateDisponibilite) {
+                form.append('date_disponibilite', formData.dateDisponibilite.toISOString().split("T")[0])
+            }
+
+            form.append('marque', formData.marque)
+            form.append('modele', formData.modele)
+            if (formData.annee) form.append('annee', formData.annee)
+            if (formData.carburant) form.append('carburant', formData.carburant)
+            if (formData.transmission) form.append('transmission', formData.transmission)
+            if (formData.kilometrage) form.append('kilometrage', formData.kilometrage)
+            if (formData.couleur) form.append('couleur', formData.couleur)
+            if (formData.nombrePortes) form.append('nombre_portes', formData.nombrePortes)
+            if (formData.nombrePlaces) form.append('nombre_places', formData.nombrePlaces)
+
+            // Les tableaux s'envoient avec [] dans le nom du champ
+            formData.equipements.forEach(eq => form.append('equipements[]', eq))
+
+            // Les photos — chaque fichier est ajouté séparément avec photos[]
+            photos.forEach(photo => form.append('photos[]', photo))
+
+            await api.upload(`/vehicules/${vehicule.id}`, form)
             toast.dismiss(toastId)
             toast.success("Annonce modifiée avec succès !", {
                 description: `${formData.marque} ${formData.modele} a été mis à jour.`,

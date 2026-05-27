@@ -374,8 +374,8 @@ class VehiculesController extends Controller
                 'equipements' => 'sometimes|array',
 
                 // Photos
-                //'photos' => 'nullable|array',
-                //'photos.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'photos' => 'nullable|array',
+                'photos.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
 
             // Validation avec Gemini pour vérifier la cohérence des données
@@ -420,6 +420,30 @@ class VehiculesController extends Controller
                 ]
             );
 
+            if ($request->hasFile('photos')) {
+                $existingPhotosCount = $vehicule->photos()->count();
+                foreach ($request->file('photos') as $index => $photo) {
+                    $storagePath = $photo->store('vehicules', 'public');
+
+                    if (!$storagePath) {
+                        Log::error('Local storage upload failed', [
+                            'vehicule_id' => $vehicule->id,
+                            'index'       => $index,
+                            'filename'    => $photo->getClientOriginalName(),
+                        ]);
+                        // On lève une exception pour que le catch extérieur appelle DB::rollBack()
+                        // Un return direct ici court-circuiterait la transaction sans la défaire
+                        throw new \RuntimeException("Échec de l'upload de la photo : " . $photo->getClientOriginalName());
+                    }
+
+                    VehiculesPhotos::create([
+                        'vehicule_id' => $vehicule->id,
+                        'path'        => $storagePath,
+                        'is_primary'  => false,
+                        'position' => $existingPhotosCount + $index + 1
+                    ]);
+                }
+            }
             Notifications::create([
                 'user_id' => $user->id,
                 'type'    => Notifications::TYPE_MODERATION,
