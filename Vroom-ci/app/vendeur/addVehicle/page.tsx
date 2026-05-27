@@ -224,13 +224,36 @@ export default function AddVehiclePage() {
             useWebWorker: true
         }
 
-        const toastId = toast.loading('Compression des photos...')
-        const compressedFiles = await Promise.all(
-            validFiles.map(file => imageCompression(file, compressionOptions))
-        )
+        // Affiche un toast de chargement initial avant de commencer la compression
+        const toastId = toast.loading(`Compression des photos... (0/${validFiles.length})`)
+
+        // Tableau qui va accumuler les photos compressées une par une
+        const compressedFiles: File[] = []
+
+        // On traite chaque photo séquentiellement (pas en parallèle)
+        // pour pouvoir afficher la progression au vendeur
+        let i = 0
+        for (const file of validFiles) {
+            i++
+
+            // Met à jour le toast avec le numéro de la photo en cours
+            // ex: "Compression des photos... (2/5)"
+            toast.loading(`Compression des photos... (${i}/${validFiles.length})`, { id: toastId })
+
+            // Compresse la photo : réduit le poids max à 0.8 MB et la résolution à 1920px
+            const result = await imageCompression(file, compressionOptions)
+
+            // Ajoute la photo compressée au tableau de résultats
+            compressedFiles.push(result)
+        }
+
+        // Toutes les photos sont compressées — on ferme le toast de chargement
         toast.dismiss(toastId)
 
+        // Ajoute les photos compressées à l'état React
         setPhotos(prev => [...prev, ...compressedFiles])
+
+        // Génère les URLs locales pour l'aperçu visuel dans le formulaire
         setPhotoUrls(prev => [...prev, ...compressedFiles.map(f => URL.createObjectURL(f))])
     }
 
