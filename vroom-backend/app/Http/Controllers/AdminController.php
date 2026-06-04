@@ -122,7 +122,7 @@ class AdminController extends Controller
         return response()->json(['success' => true, 'message' => 'Compte validé'], 200);
     }
 
-    // ── Véhicules ──────────────────────────────────────────
+    // Véhicules
 
     public function vehiculesEnAttente(): JsonResponse
     {

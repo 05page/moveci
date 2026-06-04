@@ -21,30 +21,29 @@ import {
 import { getAdminStats, getAdminStatsMarche, getAdminStatsGeographie } from "@/src/actions/admin.actions"
 import type { StatsMarche, StatsGeographie } from "@/src/types"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface StatsData {
-    users_par_role:           Record<string, number>
-    users_par_statut:         Record<string, number>
-    inscriptions_par_mois:    { mois: string; total: number }[]
-    vehicules_validation:     Record<string, number>
-    vehicules_statut:         Record<string, number>
-    transactions:             { type: string; statut: string; total: number }[]
-    ca_ventes:                number
-    signalements_statut:      Record<string, number>
-    partenaires_par_type:     Record<string, number>
-    formations_validation:    Record<string, number>
-    formations_par_permis:    { type_permis: string; total: number }[]
-    inscriptions_par_statut:  Record<string, number>
-    examens_total:            number
-    examens_reussis:          number
+    users_par_role: Record<string, number>
+    users_par_statut: Record<string, number>
+    inscriptions_par_mois: { mois: string; total: number }[]
+    vehicules_validation: Record<string, number>
+    vehicules_statut: Record<string, number>
+    transactions: { type: string; statut: string; total: number }[]
+    ca_ventes: number
+    signalements_statut: Record<string, number>
+    partenaires_par_type: Record<string, number>
+    formations_validation: Record<string, number>
+    formations_par_permis: { type_permis: string; total: number }[]
+    inscriptions_par_statut: Record<string, number>
+    examens_total: number
+    examens_reussis: number
 }
 
-// ─── Constantes visuelles ─────────────────────────────────────────────────────
+//Constantes visuelles
 
-const COULEURS_ROLES   = ["#6366f1", "#f59e0b", "#10b981"]
+const COULEURS_ROLES = ["#6366f1", "#f59e0b", "#10b981"]
 const COULEURS_STATUTS = ["#10b981", "#f59e0b", "#ef4444", "#6b7280"]
-const COULEURS_VEHIC   = ["#3b82f6", "#10b981", "#ef4444", "#f59e0b", "#8b5cf6"]
+const COULEURS_VEHIC = ["#3b82f6", "#10b981", "#ef4444", "#f59e0b", "#8b5cf6"]
 
 /**
  * Formate un mois "YYYY-MM" en label court lisible.
@@ -56,7 +55,7 @@ function formatMois(mois: string): string {
     return `${labels[parseInt(num) - 1]} ${annee.slice(2)}`
 }
 
-// ─── Sous-composants ──────────────────────────────────────────────────────────
+//Sous-composants
 
 function KpiCard({
     label, value, icon: Icon, color, loading,
@@ -99,16 +98,16 @@ function EmptyGeo() {
     )
 }
 
-// ─── Page principale ──────────────────────────────────────────────────────────
+//Page principale
 
 export default function AdminStatsPage() {
-    const [data, setData]                   = useState<StatsData | null>(null)
-    const [loading, setLoading]             = useState(true)
-    const [marche, setMarche]               = useState<StatsMarche | null>(null)
+    const [data, setData] = useState<StatsData | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [marche, setMarche] = useState<StatsMarche | null>(null)
     const [loadingMarche, setLoadingMarche] = useState(true)
-    const [geo, setGeo]                     = useState<StatsGeographie | null>(null)
-    const [loadingGeo, setLoadingGeo]       = useState(true)
-    const [refreshing, setRefreshing]       = useState(false)
+    const [geo, setGeo] = useState<StatsGeographie | null>(null)
+    const [loadingGeo, setLoadingGeo] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
 
     const fetchStats = useCallback(() => {
         setLoading(true)
@@ -143,7 +142,7 @@ export default function AdminStatsPage() {
         setTimeout(() => setRefreshing(false), 1000)
     }
 
-    // ── KPIs dérivés ─────────────────────────────────────────────────────────
+    // KPIs dérivés
     const totalUsers = data
         ? Object.values(data.users_par_role).reduce((s, v) => s + v, 0)
         : 0
@@ -159,18 +158,18 @@ export default function AdminStatsPage() {
     const signalementsOuverts = data?.signalements_statut["en_attente"] ?? 0
 
     const kpis = [
-        { label: "Utilisateurs",          value: totalUsers,       icon: Users,          color: "bg-blue-100 text-blue-700" },
-        { label: "Véhicules",             value: totalVehicules,   icon: Car,            color: "bg-primary/10 text-primary" },
-        { label: "Transactions confirmées",value: txConfirmees,    icon: ArrowLeftRight, color: "bg-green-100 text-green-700" },
-        { label: "CA ventes",             value: `${(data?.ca_ventes ?? 0).toLocaleString("fr-FR")} FCFA`, icon: Wallet, color: "bg-indigo-100 text-indigo-700" },
-        { label: "Signalements ouverts",  value: signalementsOuverts, icon: ShieldAlert, color: "bg-orange-100 text-orange-700" },
+        { label: "Utilisateurs", value: totalUsers, icon: Users, color: "bg-blue-100 text-blue-700" },
+        { label: "Véhicules", value: totalVehicules, icon: Car, color: "bg-primary/10 text-primary" },
+        { label: "Transactions confirmées", value: txConfirmees, icon: ArrowLeftRight, color: "bg-green-100 text-green-700" },
+        { label: "CA ventes", value: `${(data?.ca_ventes ?? 0).toLocaleString("fr-FR")} FCFA`, icon: Wallet, color: "bg-indigo-100 text-indigo-700" },
+        { label: "Signalements ouverts", value: signalementsOuverts, icon: ShieldAlert, color: "bg-orange-100 text-orange-700" },
     ]
 
-    // ── Données graphiques ────────────────────────────────────────────────────
+    // Données graphiques
 
     // Inscriptions : tableau pour BarChart
     const inscriptionsData = (data?.inscriptions_par_mois ?? []).map(d => ({
-        mois:  formatMois(d.mois),
+        mois: formatMois(d.mois),
         total: d.total,
     }))
 
@@ -201,7 +200,7 @@ export default function AdminStatsPage() {
     // Transactions : barChart groupé vente/location par statut
     const txStatuts = ["en_attente", "confirmé", "expiré", "refusé"]
     const txData = txStatuts.map(statut => {
-        const vente    = data?.transactions.find(t => t.type === "vente"    && t.statut === statut)?.total ?? 0
+        const vente = data?.transactions.find(t => t.type === "vente" && t.statut === statut)?.total ?? 0
         const location = data?.transactions.find(t => t.type === "location" && t.statut === statut)?.total ?? 0
         return {
             statut: { en_attente: "En attente", confirmé: "Confirmé", expiré: "Expiré", refusé: "Refusé" }[statut],
@@ -277,7 +276,7 @@ export default function AdminStatsPage() {
                                     <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                                     <Tooltip contentStyle={{ fontSize: 12 }} />
                                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                                    <Bar dataKey="vente"    name="Vente"    fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="vente" name="Vente" fill="#6366f1" radius={[4, 4, 0, 0]} />
                                     <Bar dataKey="location" name="Location" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -625,8 +624,8 @@ export default function AdminStatsPage() {
                     <div className="flex flex-wrap gap-3">
                         {[
                             { label: "En attente", key: "en_attente", icon: ShieldAlert, color: "bg-orange-100 text-orange-700" },
-                            { label: "Traités",    key: "traité",     icon: UserCheck,   color: "bg-green-100 text-green-700" },
-                            { label: "Rejetés",    key: "rejeté",     icon: UserX,       color: "bg-zinc-100 text-zinc-500" },
+                            { label: "Traités", key: "traité", icon: UserCheck, color: "bg-green-100 text-green-700" },
+                            { label: "Rejetés", key: "rejeté", icon: UserX, color: "bg-zinc-100 text-zinc-500" },
                         ].map(({ label, key, icon: Icon, color }) => (
                             <Card key={key} className="flex-1 min-w-36">
                                 <CardContent className="p-4 flex items-center gap-3">
@@ -697,7 +696,7 @@ export default function AdminStatsPage() {
                                             <PieChart>
                                                 <Pie data={marche?.repartition_carburant_demande ?? []} dataKey="favoris" nameKey="carburant" cx="50%" cy="50%" outerRadius={55} paddingAngle={3}>
                                                     {(marche?.repartition_carburant_demande ?? []).map((_, i) => (
-                                                        <Cell key={i} fill={["#f59e0b","#3b82f6","#10b981","#8b5cf6"][i % 4]} />
+                                                        <Cell key={i} fill={["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6"][i % 4]} />
                                                     ))}
                                                 </Pie>
                                                 <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v, n) => [v, n]} />
@@ -708,7 +707,7 @@ export default function AdminStatsPage() {
                                         {(marche?.repartition_carburant_demande ?? []).map((d, i) => (
                                             <div key={d.carburant} className="flex items-center justify-between text-sm">
                                                 <span className="flex items-center gap-1.5">
-                                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: ["#f59e0b","#3b82f6","#10b981","#8b5cf6"][i % 4] }} />
+                                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: ["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6"][i % 4] }} />
                                                     {d.carburant}
                                                 </span>
                                                 <Badge variant="outline" className="text-xs">{d.favoris} favoris</Badge>
@@ -810,17 +809,17 @@ export default function AdminStatsPage() {
                         <CardContent className="h-52">
                             {loadingGeo ? <Skeleton className="h-full w-full rounded-lg" /> : (
                                 geo?.acheteurs_par_zone.length === 0
-                                ? <EmptyGeo />
-                                : (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={geo?.acheteurs_par_zone ?? []} layout="vertical" barSize={16}>
-                                            <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-                                            <YAxis type="category" dataKey="zone" tick={{ fontSize: 11 }} width={72} />
-                                            <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [v, "Acheteurs"]} />
-                                            <Bar dataKey="total" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                )
+                                    ? <EmptyGeo />
+                                    : (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={geo?.acheteurs_par_zone ?? []} layout="vertical" barSize={16}>
+                                                <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                                                <YAxis type="category" dataKey="zone" tick={{ fontSize: 11 }} width={72} />
+                                                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [v, "Acheteurs"]} />
+                                                <Bar dataKey="total" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    )
                             )}
                         </CardContent>
                     </Card>
@@ -836,17 +835,17 @@ export default function AdminStatsPage() {
                         <CardContent className="h-52">
                             {loadingGeo ? <Skeleton className="h-full w-full rounded-lg" /> : (
                                 geo?.vendeurs_par_zone.length === 0
-                                ? <EmptyGeo />
-                                : (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={geo?.vendeurs_par_zone ?? []} layout="vertical" barSize={16}>
-                                            <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-                                            <YAxis type="category" dataKey="zone" tick={{ fontSize: 11 }} width={72} />
-                                            <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [v, "Vendeurs"]} />
-                                            <Bar dataKey="total" fill="#10b981" radius={[0, 4, 4, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                )
+                                    ? <EmptyGeo />
+                                    : (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={geo?.vendeurs_par_zone ?? []} layout="vertical" barSize={16}>
+                                                <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                                                <YAxis type="category" dataKey="zone" tick={{ fontSize: 11 }} width={72} />
+                                                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [v, "Vendeurs"]} />
+                                                <Bar dataKey="total" fill="#10b981" radius={[0, 4, 4, 0]} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    )
                             )}
                         </CardContent>
                     </Card>
@@ -862,17 +861,17 @@ export default function AdminStatsPage() {
                         <CardContent className="h-52">
                             {loadingGeo ? <Skeleton className="h-full w-full rounded-lg" /> : (
                                 geo?.partenaires_par_zone.length === 0
-                                ? <EmptyGeo />
-                                : (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={geo?.partenaires_par_zone ?? []} layout="vertical" barSize={16}>
-                                            <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-                                            <YAxis type="category" dataKey="zone" tick={{ fontSize: 11 }} width={72} />
-                                            <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [v, "Partenaires"]} />
-                                            <Bar dataKey="total" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                )
+                                    ? <EmptyGeo />
+                                    : (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={geo?.partenaires_par_zone ?? []} layout="vertical" barSize={16}>
+                                                <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                                                <YAxis type="category" dataKey="zone" tick={{ fontSize: 11 }} width={72} />
+                                                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [v, "Partenaires"]} />
+                                                <Bar dataKey="total" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    )
                             )}
                         </CardContent>
                     </Card>
@@ -888,17 +887,17 @@ export default function AdminStatsPage() {
                         <CardContent className="h-52">
                             {loadingGeo ? <Skeleton className="h-full w-full rounded-lg" /> : (
                                 geo?.vehicules_par_zone.length === 0
-                                ? <EmptyGeo />
-                                : (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={geo?.vehicules_par_zone ?? []} layout="vertical" barSize={16}>
-                                            <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-                                            <YAxis type="category" dataKey="zone" tick={{ fontSize: 11 }} width={72} />
-                                            <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [v, "Véhicules"]} />
-                                            <Bar dataKey="total" fill="#f59e0b" radius={[0, 4, 4, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                )
+                                    ? <EmptyGeo />
+                                    : (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={geo?.vehicules_par_zone ?? []} layout="vertical" barSize={16}>
+                                                <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                                                <YAxis type="category" dataKey="zone" tick={{ fontSize: 11 }} width={72} />
+                                                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [v, "Véhicules"]} />
+                                                <Bar dataKey="total" fill="#f59e0b" radius={[0, 4, 4, 0]} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    )
                             )}
                         </CardContent>
                     </Card>
