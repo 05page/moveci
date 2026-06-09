@@ -339,6 +339,7 @@ export interface Notifications{
   type: string
   title: string
   level?: "success" | "warning" | "error" | "info"
+  data?: Record<string, string | number>
   message: string
   is_read: boolean
   unread_count: number

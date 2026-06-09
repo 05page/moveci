@@ -14,13 +14,14 @@ import { fr } from "date-fns/locale"
 import { formatDistanceToNow } from "date-fns"
 import { useUser } from "@/src/context/UserContext"
 import { useNotification } from "@/src/context/NotificationContext"
+import { cn } from "@/src/lib/utils"
 
 /**
  * Retourne la route vers laquelle naviguer quand l'utilisateur clique
  * sur une notification, selon son type et son rôle.
  * Retourne null si aucune redirection pertinente.
  */
-function getNotificationLink(type: Notifications["type"], role?: string): string | null {
+function getNotificationLink(type: Notifications["type"], role?: string, data?: Record<string, string | number>): string | null {
     switch (type) {
         case "transaction":
             if (role === "vendeur" || role === "concessionnaire") return "/vendeur/transactions"
@@ -30,12 +31,14 @@ function getNotificationLink(type: Notifications["type"], role?: string): string
             return "/client/rdv"
         case "formation":
             if (role === "auto_ecole") return "/partenaire/formations"
+            if (data?.formation_id) return `/partenaire/formations/${data.formation_id}`
             return "/client/formations"
         case "tendance":
             if (role === "auto_ecole") return "/partenaire/formations"
             return "/vendeur/vehicles"
         case "moderation":
             if (role === "admin") return "/admin/moderation"
+            if(data?.vehicule_id) return `/vehicles/${data.vehicule_id}`
             return "/vendeur/vehicles"
         case "alerte_vehicule":
             return "/client/favorites"
@@ -91,15 +94,18 @@ function NotificationItem({ notification, onRead, role }: { notification: Notifi
 
     const handleClick = () => {
         if (!notification.is_read) onRead(notification.id)
-        const link = getNotificationLink(notification.type, role)
+        const link = getNotificationLink(notification.type, role, notification.data)
         if (link) router.push(link)
     }
 
     return (
         <Card
             onClick={handleClick}
-            className={`rounded-xl shadow-none border border-zinc-100 hover:border-zinc-200 hover:shadow-sm transition-all duration-200 cursor-pointer ${!notification.is_read ? getNotificationBorderStyle(notification.level) : "bg-white"
-                }`}
+            className={cn(
+                "rounded-xl shadow-none border hover:shadow-sm transition-all duration-200 cursor-pointer",
+                getNotificationBorderStyle(notification.level),
+                !notification.is_read && "opacity-100",
+            )}
         >
             <CardContent className="p-3 md:p-4">
                 <div className="flex items-start gap-3">
