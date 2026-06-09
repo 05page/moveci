@@ -12,6 +12,8 @@ export const getVehicule = (id: string | number) =>
 export const getMesVehicules = () =>
   api.get<MesVehicules>("/vehicules/mes-vehicules")
 
+export const getMonVehicule = (id: number | string) =>
+  api.get<vehicule>(`/vehicules/mon-vehicule/${id}`)
 /** Publie un nouveau véhicule avec ses photos (multipart/form-data). */
 export const postVehicule = (formData: FormData) =>
   api.upload<vehicule>("/vehicules/post-vehicule", formData)

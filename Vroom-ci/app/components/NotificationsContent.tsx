@@ -38,6 +38,7 @@ function getNotificationLink(type: Notifications["type"], role?: string, data?: 
             return "/vendeur/vehicles"
         case "moderation":
             if (role === "admin") return "/admin/moderation"
+            if (data?.vehicule_id) return `/vendeur/vehicles/${data.vehicule_id}`
             return "/vendeur/vehicles"
         case "alerte_vehicule":
             return "/client/favorites"

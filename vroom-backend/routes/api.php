@@ -16,17 +16,11 @@ use App\Http\Controllers\AvisController;
 use App\Http\Controllers\FavoriController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\RendezVousController;
-use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\SignalementController;
 use App\Http\Controllers\VehiculesController;
 use App\Http\Controllers\VendeurStatsController;
 use App\Http\Controllers\VersementInscriptionController;
 use App\Http\Controllers\ReservationController;
-// À créer :
-// use App\Http\Controllers\CatalogueController;
-// use App\Http\Controllers\FormationController;
-// use App\Http\Controllers\InscriptionFormationController;
-// use App\Http\Controllers\AbonnementController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public ────────────────────────────────────────────────
@@ -84,6 +78,7 @@ Route::middleware(['auth:sanctum', 'check.statut'])->group(function () {
         Route::middleware('role:vendeur,concessionnaire,auto_ecole')->group(function () {
             Route::get('/mes-vehicules',  [VehiculesController::class, 'mesVehicules']);
             Route::post('/post-vehicule', [VehiculesController::class, 'postVehicules']);
+            Route::get('/mon-vehicule/{id}',   [VehiculesController::class, 'monVehicule']);
             Route::put('/{id}',          [VehiculesController::class, 'updateVehicule']);
             Route::delete('/{id}',       [VehiculesController::class, 'deleteVehicule']);
         });

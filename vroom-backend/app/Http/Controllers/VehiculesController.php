@@ -137,6 +137,32 @@ class VehiculesController extends Controller
         }
     }
 
+    public function monVehicule($id): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $monVehicule = Vehicules::with([
+                'creator:id,fullname,email',
+                'description',
+                'photos',
+            ])->where('created_by', $user->id)
+                ->findOrFail($id);
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'vehicule' => $monVehicule
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Véhicule introuvable'], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des véhicules',
+            ], 500);
+        }
+    }
+
     public function postVehicules(Request $request): JsonResponse
     {
         try {
