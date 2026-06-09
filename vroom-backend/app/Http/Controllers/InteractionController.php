@@ -195,6 +195,7 @@ class InteractionController extends Controller
                 'recever_id' => $user->id,
                 'title' => 'Signalement enregistré',
                 'type' => Notifications::TYPE_ALERT,
+                'level' => 'info',
                 'message' => 'Votre signalement a été enregistré et sera examiné par notre équipe.',
             ]);
 
@@ -370,6 +371,7 @@ class InteractionController extends Controller
                 'recever_id' => $user->id,
                 'title' => 'Signalement enregistré',
                 'type' => Notifications::TYPE_ALERT,
+                'level' => 'info',
                 'message' => 'Votre signalement a été enregistré et sera examiné par notre équipe.',
             ]);
 

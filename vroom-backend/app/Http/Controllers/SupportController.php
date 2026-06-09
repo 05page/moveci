@@ -121,6 +121,7 @@ class SupportController extends Controller
         Notifications::create([
             'user_id'    => $ticket->user_id,
             'type'       => Notifications::TYPE_SUPPORT,
+            'level'      => 'info',
             'title'      => 'Réponse à votre ticket',
             'message'    => "Votre ticket « {$ticket->sujet} » a reçu une réponse.",
             'data'       => ['ticket_id' => $ticket->id],

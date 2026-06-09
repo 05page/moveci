@@ -162,6 +162,7 @@ class moderationsController extends Controller
             Notifications::create([
                 'recever_id' => $vehicule->created_by,
                 'type' => Notifications::TYPE_WARNING,
+                'level' => 'error',
                 'title' => 'Véhicule suspendu',
                 'message' => "Votre véhicule a été suspendu. Motif : {$moderation->motif}",
                 'data' => json_encode(['vehicule_id' => $vehicule->id]),
@@ -179,6 +180,7 @@ class moderationsController extends Controller
                 Notifications::create([
                     'recever_id' => $userId,
                     'type' => Notifications::TYPE_INFO,
+                    'level' => 'info',
                     'title' => 'Signalement traité',
                     'message' => 'Le véhicule que vous avez signalé a été suspendu.',
                     'data' => json_encode(['vehicule_id' => $vehicule->id]),
@@ -242,6 +244,7 @@ class moderationsController extends Controller
             Notifications::create([
                 'recever_id' => $vehicule->created_by,
                 'type' => Notifications::TYPE_SUCCESS,
+                'level' => 'success',
                 'title' => 'Véhicule restauré',
                 'message' => 'Votre véhicule a été restauré et est de nouveau visible.',
                 'data' => json_encode(['vehicule_id' => $vehicule->id])
@@ -310,6 +313,7 @@ class moderationsController extends Controller
             Notifications::create([
                 'recever_id' => $vehicule->created_by,
                 'type' => Notifications::TYPE_WARNING,
+                'level' => 'error',
                 'title' => 'Véhicule retiré',
                 'message' => "Votre véhicule a finalement été retiré. Motif : {$moderation->motif}",
                 'data' => json_encode(['vehicule_id' => $vehicule->id]),
@@ -325,6 +329,7 @@ class moderationsController extends Controller
                 Notifications::create([
                     'recever_id' => $userId,
                     'type' => Notifications::TYPE_INFO,
+                    'level' => 'info',
                     'title' => 'Signalement traité',
                     'message' => 'Le véhicule que vous avez signalé a été suspendu.',
                     'data' => json_encode(['vehicule_id' => $vehicule->id]),
@@ -399,6 +404,7 @@ class moderationsController extends Controller
             Notifications::create([
                 'recever_id' => $userCible->id,
                 'type' => Notifications::TYPE_WARNING,
+                'level' => 'error',
                 'title' => 'Compte suspendu',
                 'message' => "Votre compte a été suspendu. Motif : {$data['motif']}. {$data['description']}",
             ]);
@@ -483,6 +489,7 @@ class moderationsController extends Controller
             Notifications::create([
                 'recever_id' => $userCible->id,
                 'type' => Notifications::TYPE_ERROR,
+                'level' => 'error',
                 'title' => 'Compte banni définitivement',
                 'message' => "Votre compte a été banni de manière définitive. Motif : {$data['motif']}",
             ]);

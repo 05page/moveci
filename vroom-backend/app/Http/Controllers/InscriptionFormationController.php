@@ -68,6 +68,7 @@ class InscriptionFormationController extends Controller
         Notifications::create([
             'user_id'    => $formation->auto_ecole_id,
             'type'       => Notifications::TYPE_FORMATION,
+            'level'      => 'info',
             'title'      => 'Nouvelle préinscription',
             'message'    => $user->fullname . ' vient de se préinscrire à votre formation ' . ($formation->description->titre ?? 'Permis ' . $formation->type_permis),
             'data'       => ['inscription_id' => $inscription->id, 'formation_id' => $id],
@@ -133,6 +134,7 @@ class InscriptionFormationController extends Controller
             Notifications::create([
                 'user_id'    => $formation->auto_ecole_id,
                 'type'       => Notifications::TYPE_FORMATION,
+                'level'      => 'error',
                 'title'      => 'Préinscription annulée',
                 'message'    => $user->fullname . ' a annulé sa préinscription à "' .
                                 ($formation->description->titre ?? 'Permis ' . $formation->type_permis) . '".',

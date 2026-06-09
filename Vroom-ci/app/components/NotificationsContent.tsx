@@ -63,7 +63,6 @@ function NotificationsLoading() {
     )
 }
 
-
 function EmptyState({ icon: Icon, title, description }: { icon: React.ComponentType<{ className?: string }>, title: string, description: string }) {
     return (
         <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-500">
@@ -88,23 +87,22 @@ function NotificationItem({ notification, onRead, role }: { notification: Notifi
     return (
         <Card
             onClick={handleClick}
-            className={`rounded-xl shadow-none border border-zinc-100 hover:border-zinc-200 hover:shadow-sm transition-all duration-200 cursor-pointer ${
-                !notification.is_read ? "bg-primary/5 border-primary/20" : "bg-white"
-            }`}
+            className={`rounded-xl shadow-none border border-zinc-100 hover:border-zinc-200 hover:shadow-sm transition-all duration-200 cursor-pointer ${!notification.is_read ? getNotificationBorderStyle(notification.level) : "bg-white"
+                }`}
         >
             <CardContent className="p-3 md:p-4">
                 <div className="flex items-start gap-3">
 
                     <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                            <h4 className="font-semibold text-sm text-zinc-900 leading-snug break-words pr-1">
+                            <h4 className="font-semibold text-sm text-zinc-900 leading-snug wrap-break-word pr-1">
                                 {notification.title}
                             </h4>
                             {!notification.is_read && (
                                 <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1" />
                             )}
                         </div>
-                        <p className="text-sm text-zinc-500 mt-1 break-words">{notification.message}</p>
+                        <p className="text-sm text-zinc-500 mt-1 wrap-break-word">{notification.message}</p>
                         <div className="flex items-center gap-2 mt-2">
                             <Clock className="h-3 w-3 text-zinc-400 shrink-0" />
                             <span className="text-xs text-zinc-400">
@@ -116,6 +114,19 @@ function NotificationItem({ notification, onRead, role }: { notification: Notifi
             </CardContent>
         </Card>
     )
+}
+
+function getNotificationBorderStyle(level?: string) {
+    switch (level) {
+        case "error":
+            return "border-red-300 bg-red-50"
+        case "warning":
+            return "border-orange-300 bg-orange-50"
+        case "success":
+            return "border-green-300 bg-green-50"
+        default:
+            return "border-blue-300 bg-blue-50"
+    }
 }
 
 export function NotificationsContent() {

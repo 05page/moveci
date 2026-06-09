@@ -164,6 +164,7 @@ class CheckTendances extends Command
         Notifications::create([
             'user_id' => $ownerId,
             'type'    => Notifications::TYPE_TENDANCE,
+            'level'   => 'info',
             'title'   => "Votre annonce cartonne !",
             'message' => "Votre annonce a atteint {$nbVues} vues {$label} (seuil {$tranche} franchi). Elle attire beaucoup d'acheteurs potentiels.",
             'data'    => ['vehicule_id' => $vehiculeId, 'nb_vues' => $nbVues, 'tranche' => $tranche, 'periode' => $periode],
@@ -193,6 +194,7 @@ class CheckTendances extends Command
         Notifications::create([
             'user_id' => $ownerId,
             'type'    => Notifications::TYPE_TENDANCE,
+            'level'   => 'info',
             'title'   => "Affluence sur votre formation !",
             'message' => "{$nbInscrits} préinscriptions enregistrées {$label} (seuil {$tranche} franchi). Votre formation suscite un fort intérêt.",
             'data'    => ['formation_id' => $formationId, 'nb_inscrits' => $nbInscrits, 'tranche' => $tranche, 'periode' => $periode],

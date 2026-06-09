@@ -90,6 +90,7 @@ class VersementInscriptionController extends Controller
         Notifications::create([
             'user_id'    => $inscription->client_id,
             'type'       => Notifications::TYPE_FORMATION,
+            'level'      => 'info',
             'title'      => 'Versement enregistré',
             'message'    => 'Un versement de ' . number_format($validated['montant'], 0, ',', ' ') . ' FCFA a été enregistré pour votre formation. Total payé : ' . number_format($montantPaye, 0, ',', ' ') . ' / ' . number_format($montantTotal, 0, ',', ' ') . ' FCFA.',
             'data'       => ['inscription_id' => $inscription->id, 'formation_id' => $formationId],

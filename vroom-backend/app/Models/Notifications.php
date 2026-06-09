@@ -15,6 +15,7 @@ class Notifications extends Model
         'user_id',
         'type',
         'title',
+        'level',
         'message',
         'data',
         'lu',

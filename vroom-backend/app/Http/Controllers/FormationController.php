@@ -261,6 +261,7 @@ class FormationController extends Controller
             Notifications::create([
                 'user_id'    => $inscription->client_id,
                 'type'       => Notifications::TYPE_FORMATION,
+                'level'      => 'info',
                 'title'      => 'Mise à jour de votre formation',
                 'message'    => $messages[$validated['statut_eleve']],
                 'data'       => ['inscription_id' => $inscription->id, 'formation_id' => $formationId],

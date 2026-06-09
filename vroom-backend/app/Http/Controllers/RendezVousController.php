@@ -98,6 +98,7 @@ class RendezVousController extends Controller
             Notifications::create([
                 'user_id' => $vehicule->created_by,
                 'type'    => Notifications::TYPE_RDV,
+                'level'   => 'info',
                 'title'   => 'Nouvelle demande de rendez-vous',
                 'message' => $user->fullname . ' souhaite un rendez-vous le ' . \Carbon\Carbon::parse($validated['date_heure'])->format('d/m/Y à H:i'),
                 'data'    => ['rdv_id' => $rdv->id],
@@ -153,6 +154,7 @@ class RendezVousController extends Controller
             Notifications::create([
                 'user_id' => $rdv->client_id,
                 'type'    => Notifications::TYPE_RDV,
+                'level'   => 'success',
                 'title'   => 'Rendez-vous confirmé',
                 'message' => 'Votre rendez-vous du ' . $rdv->date_heure->format('d/m/Y à H:i') . ' a été confirmé.',
                 'data'    => ['rdv_id' => $rdv->id],
@@ -184,6 +186,7 @@ class RendezVousController extends Controller
             Notifications::create([
                 'user_id' => $rdv->client_id,
                 'type'    => Notifications::TYPE_RDV,
+                'level'   => 'error',
                 'title'   => 'Rendez-vous refusé',
                 'message' => 'Votre rendez-vous du ' . $rdv->date_heure->format('d/m/Y à H:i') . ' a été refusé.',
                 'data'    => ['rdv_id' => $rdv->id],
@@ -226,6 +229,7 @@ class RendezVousController extends Controller
             Notifications::create([
                 'user_id' => $destinataire,
                 'type'    => Notifications::TYPE_RDV,
+                'level'   => 'error',
                 'title'   => 'Rendez-vous annulé',
                 'message' => 'Le rendez-vous du ' . $rdv->date_heure->format('d/m/Y à H:i') . ' a été annulé.',
                 'data'    => ['rdv_id' => $rdv->id],
@@ -279,6 +283,7 @@ class RendezVousController extends Controller
             Notifications::create([
                 'user_id'    => $rdv->vendeur_id,
                 'type'       => Notifications::TYPE_TRANSACTION,
+                'level'      => 'info',
                 'title'      => 'RDV terminé — confirmez la transaction',
                 'message'    => 'Rendez-vous du ' . $rdv->date_heure->format('d/m/Y') . ' terminé. Code de confirmation : ' . $code . '. Renseignez les détails du deal sur votre dashboard.',
                 'data'       => ['transaction_id' => $transaction->id, 'code' => $code],
@@ -289,6 +294,7 @@ class RendezVousController extends Controller
             Notifications::create([
                 'user_id'    => $rdv->client_id,
                 'type'       => Notifications::TYPE_TRANSACTION,
+                'level'      => 'info',
                 'title'      => 'Confirmation de transaction requise',
                 'message'    => 'Votre rendez-vous du ' . $rdv->date_heure->format('d/m/Y') . ' est terminé. Code de confirmation : ' . $code . '. Confirmez la transaction sur votre dashboard.',
                 'data'       => ['transaction_id' => $transaction->id, 'code' => $code],

@@ -351,6 +351,7 @@ class AdminController extends Controller
                 Notifications::create([
                     'user_id'    => $cibleUserId,
                     'type'       => Notifications::TYPE_MODERATION,
+                    'level'      => 'info',
                     'title'      => $titre,
                     'message'    => implode(' ', $lignes),
                     'data'       => ['signalement_id' => $signalement->id, 'action_cible' => $actionCible],
@@ -363,6 +364,7 @@ class AdminController extends Controller
             Notifications::create([
                 'user_id'    => $signalement->client_id,
                 'type'       => Notifications::TYPE_MODERATION,
+                'level'      => 'info',
                 'title'      => 'Votre signalement a été traité',
                 'message'    => 'Nous avons examiné votre signalement et pris les mesures appropriées.',
                 'data'       => ['signalement_id' => $signalement->id],
@@ -381,6 +383,7 @@ class AdminController extends Controller
             Notifications::create([
                 'user_id'    => $signalement->client_id,
                 'type'       => Notifications::TYPE_MODERATION,
+                'level'      => 'info',
                 'title'      => 'Votre signalement a été examiné',
                 'message'    => $messageRejet,
                 'data'       => ['signalement_id' => $signalement->id],
@@ -782,6 +785,7 @@ class AdminController extends Controller
         Notifications::create([
             'user_id'    => $user->id,
             'type'       => Notifications::TYPE_MODERATION,
+            'level'      => 'info',
             'title'      => $titre,
             'message'    => $message,
             'data'       => [],

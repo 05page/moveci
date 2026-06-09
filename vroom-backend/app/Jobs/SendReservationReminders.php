@@ -37,6 +37,7 @@ class SendReservationReminders implements ShouldQueue
             Notifications::create([
                 'user_id'    => $reservation->client_id,
                 'type'       => Notifications::TYPE_RESERVATION,
+                'level'      => 'warning',
                 'title'      => 'Rappel de réservation',
                 'message'    => $joursRestants > 0
                     ? "Votre réservation pour {$nom} expire dans {$joursRestants} jour(s). Finalisez votre achat avant qu'elle n'expire."

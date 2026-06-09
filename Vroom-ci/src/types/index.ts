@@ -338,6 +338,7 @@ export interface Notifications{
   recever_id:number
   type: string
   title: string
+  level?: "success" | "warning" | "error" | "info"
   message: string
   is_read: boolean
   unread_count: number

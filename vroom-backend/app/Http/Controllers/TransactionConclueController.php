@@ -147,6 +147,7 @@ class TransactionConclueController extends Controller
         Notifications::create([
             'user_id'    => $transaction->vendeur_id,
             'type'       => Notifications::TYPE_TRANSACTION,
+            'level'      => 'error',
             'title'      => 'Transaction refusée par le client',
             'message'    => $transaction->client->fullname . ' a refusé de confirmer la transaction. Votre annonce est de nouveau disponible.',
             'data'       => ['transaction_id' => $transaction->id],
@@ -201,6 +202,7 @@ class TransactionConclueController extends Controller
             Notifications::create([
                 'user_id'    => $transaction->client_id,
                 'type'       => Notifications::TYPE_TRANSACTION,
+                'level'      => 'error',
                 'title'      => 'Transaction annulée par le vendeur',
                 'message'    => 'Le vendeur a refusé de confirmer la transaction. Si vous avez effectué un paiement, contactez le support.',
                 'data'       => ['transaction_id' => $transaction->id],
@@ -287,6 +289,7 @@ class TransactionConclueController extends Controller
             Notifications::create([
                 'user_id'    => $userId,
                 'type'       => Notifications::TYPE_TRANSACTION,
+                'level'      => 'success',
                 'title'      => 'Transaction confirmée ✓',
                 'message'    => $message,
                 'data'       => ['transaction_id' => $transaction->id],

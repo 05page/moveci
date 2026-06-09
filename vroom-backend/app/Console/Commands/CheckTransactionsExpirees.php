@@ -87,6 +87,7 @@ class CheckTransactionsExpirees extends Command
         Notifications::create([
             'user_id'    => $transaction->vendeur_id,
             'type'       => Notifications::TYPE_TRANSACTION,
+            'level'      => 'warning',
             'title'      => 'Transaction expirée — avertissement',
             'message'    => 'Vous n\'avez pas confirmé la transaction dans les délais impartis (48h). Votre annonce est redevenue disponible. Un avertissement a été enregistré sur votre profil.',
             'data'       => ['transaction_id' => $transaction->id],
@@ -97,6 +98,7 @@ class CheckTransactionsExpirees extends Command
         Notifications::create([
             'user_id'    => $transaction->client_id,
             'type'       => Notifications::TYPE_TRANSACTION,
+            'level'      => 'warning',
             'title'      => 'Transaction expirée',
             'message'    => 'La transaction a expiré car le vendeur n\'a pas confirmé dans les délais. Si vous avez effectué un paiement, contactez le support.',
             'data'       => ['transaction_id' => $transaction->id],
@@ -112,6 +114,7 @@ class CheckTransactionsExpirees extends Command
         Notifications::create([
             'user_id'    => $transaction->vendeur_id,
             'type'       => Notifications::TYPE_TRANSACTION,
+            'level'      => 'warning',
             'title'      => 'Transaction expirée',
             'message'    => 'La transaction a expiré car le client n\'a pas confirmé dans les délais. Votre annonce est de nouveau disponible.',
             'data'       => ['transaction_id' => $transaction->id],
@@ -121,6 +124,7 @@ class CheckTransactionsExpirees extends Command
         Notifications::create([
             'user_id'    => $transaction->client_id,
             'type'       => Notifications::TYPE_TRANSACTION,
+            'level'      => 'warning',
             'title'      => 'Transaction expirée',
             'message'    => 'Vous n\'avez pas confirmé la transaction dans les délais impartis (48h). Elle a été annulée automatiquement.',
             'data'       => ['transaction_id' => $transaction->id],

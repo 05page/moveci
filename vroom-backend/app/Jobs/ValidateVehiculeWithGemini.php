@@ -131,6 +131,7 @@ class ValidateVehiculeWithGemini implements ShouldQueue
             Notifications::create([
                 'user_id'    => $this->vehicule->created_by,
                 'type'       => Notifications::TYPE_MODERATION,
+                'level'      => 'error',
                 'title'      => 'Annonce rejetée automatiquement',
                 'message'    => 'Votre annonce ' . $desc->marque . ' ' . $desc->modele .
                     ' a été rejetée : ' . ($aiResult['explication'] ?? 'données incohérentes.'),
