@@ -7,13 +7,13 @@ use App\Services\GeocodingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Mail\WelcomeMail;
 use Illuminate\Support\Facades\Mail;
 use Laravel\Socialite\Facades\Socialite;
-
 class AuthController extends Controller
 {
     public function redirect(string $provider)
@@ -63,19 +63,38 @@ class AuthController extends Controller
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            // Rediriger vers Next.js avec le token pour stockage en cookie httpOnly
-            $redirectUrl = config('app.frontend_url', 'http://localhost:3000') . "/api/auth/callback?" . http_build_query([
+            // Stocker le token sous un code UUID temporaire (60s) — le token brut ne passe jamais dans l'URL
+            $code = (string) Str::uuid();
+            Cache::put("oauth_code_{$code}", [
                 'token'            => $token,
-                'data'             => $user,
                 'role'             => $user->role ?? 'client',
                 'statut'           => $user->statut ?? 'actif',
-                'needs_onboarding' => $needsOnboarding ? '1' : '0',
-            ]);
+                'needs_onboarding' => $needsOnboarding,
+            ], 60);
+
+            $redirectUrl = config('app.frontend_url', 'http://localhost:3000')
+                . "/api/auth/callback?code={$code}";
 
             return redirect($redirectUrl);
         } catch (\Exception) {
             return redirect($frontendUrl . '/auth?error=auth_failed');
         }
+    }
+
+    /**
+     * Échange un code temporaire (OAuth state) contre le vrai token Sanctum.
+     * Usage unique — Cache::pull() supprime la clé après lecture.
+     */
+    public function exchangeCode(Request $request): JsonResponse
+    {
+        $code = $request->input('code');
+        $data = Cache::pull("oauth_code_{$code}");
+
+        if (!$data) {
+            return response()->json(['error' => 'Code invalide ou expiré'], 400);
+        }
+
+        return response()->json($data);
     }
 
     public function login(Request $request): JsonResponse

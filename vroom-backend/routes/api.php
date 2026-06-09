@@ -33,8 +33,9 @@ use Illuminate\Support\Facades\Route;
 // Géolocalisation — accessible sans connexion (visiteurs + clients)
 Route::get('/geo/proches', [GeolocalisationController::class, 'proches']);
 
-Route::get('/auth/{provider}/redirect', [AuthController::class, 'redirect']);
-Route::get('/auth/{provider}/callback', [AuthController::class, 'callback']);
+Route::get('/auth/{provider}/redirect',  [AuthController::class, 'redirect']);
+Route::get('/auth/{provider}/callback',  [AuthController::class, 'callback']);
+Route::post('/auth/exchange',            [AuthController::class, 'exchangeCode']);
 Route::post('/login',    [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/forgot-password', [\App\Http\Controllers\PasswordResetController::class, 'sendResetLink']);

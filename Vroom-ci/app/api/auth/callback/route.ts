@@ -2,16 +2,27 @@ import { getDashBoard } from "@/src/core/auth/permission"
 import { UserRole } from "@/src/types"
 import { NextRequest, NextResponse } from "next/server"
 
-// Laravel redirige ici apres Google OAuth avec ?token=xxx&role=xxx
+// Laravel redirige ici après Google OAuth avec ?code=UUID (jamais le token brut)
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get("token")
-  const role = request.nextUrl.searchParams.get("role")
-  const statut = request.nextUrl.searchParams.get("statut") ?? "actif"
-  const needsOnboarding = request.nextUrl.searchParams.get("needs_onboarding") === "1"
+  const code = request.nextUrl.searchParams.get("code")
 
-  if (!token) {
-    return NextResponse.redirect(new URL("/auth?error=no_token", request.url))
+  if (!code) {
+    return NextResponse.redirect(new URL("/auth?error=no_code", request.url))
   }
+
+  // Échanger le code temporaire contre le vrai token (appel serveur → serveur)
+  const backendUrl = process.env.BACKEND_URL ?? "http://127.0.0.1:8000/api"
+  const exchangeRes = await fetch(`${backendUrl}/auth/exchange`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  })
+
+  if (!exchangeRes.ok) {
+    return NextResponse.redirect(new URL("/auth?error=code_expired", request.url))
+  }
+
+  const { token, role, statut, needs_onboarding: needsOnboarding } = await exchangeRes.json()
 
   // Utilisateur banni ou suspendu → page bloquée directement
   if (statut === "suspendu" || statut === "banni") {
