@@ -149,9 +149,7 @@ class VehiculesController extends Controller
                 ->findOrFail($id);
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'vehicule' => $monVehicule
-                ]
+                'data'    => $monVehicule,
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Véhicule introuvable'], 404);
