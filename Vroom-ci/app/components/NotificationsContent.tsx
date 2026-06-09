@@ -34,6 +34,17 @@ function getNotificationLink(type: Notifications["type"], role?: string): string
         case "tendance":
             if (role === "auto_ecole") return "/partenaire/formations"
             return "/vendeur/vehicles"
+        case "moderation":
+            if (role === "admin") return "/admin/moderation"
+            return "/vendeur/vehicles"
+        case "alerte_vehicule":
+            return "/client/favorites"
+        case "reservation":
+            if (role === "auto_ecole" || role === "partenaire") return "/partenaire/rdv"
+            return "/client/reservations"
+        case "abonnement":
+        case "support":
+            return null
         default:
             return null
     }
