@@ -95,7 +95,8 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => env('PGSSLMODE', 'require'),
+            'sslmode'  => env('PGSSLMODE', 'require'),
+            'endpoint' => env('DB_ENDPOINT', ''),
         ],
 
         'sqlsrv' => [

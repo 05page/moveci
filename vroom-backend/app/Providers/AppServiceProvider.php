@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Database\NeonPostgresConnector;
 use App\Models\Vehicules;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -13,6 +14,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind('db.connector.pgsql', NeonPostgresConnector::class);
+
         // Bind du gateway de paiement — remplacer SimulationPaymentService
         // par StripePaymentService ou CinetPayPaymentService pour le vrai paiement
         $this->app->bind(
