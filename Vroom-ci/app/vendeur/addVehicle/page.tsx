@@ -178,11 +178,9 @@ export default function AddVehiclePage() {
         "image/jpeg",
         "image/png",
         "image/jpg",
-        "image/gif",
-        "image/svg+xml",
         "image/webp",
     ]
-    const allowedPhotoExtensions = ["jpg", "jpeg", "png", "gif", "svg", "webp"]
+    const allowedPhotoExtensions = ["jpg", "jpeg", "png", "webp"]
 
     const updateFormData = <K extends keyof FormData>(field: K, value: FormData[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }))

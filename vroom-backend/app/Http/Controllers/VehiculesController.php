@@ -188,7 +188,7 @@ class VehiculesController extends Controller
                 'equipements' => 'nullable|array',
 
                 'photos' => 'nullable|array',
-                'photos.*' => 'image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+                'photos.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
             ]);
 
             if (!$validatedData) {
@@ -269,6 +269,7 @@ class VehiculesController extends Controller
             Notifications::create([
                 'user_id'    => $user->id,
                 'type'       => Notifications::TYPE_MODERATION,
+                'level'      => 'success',
                 'title'      => 'Annonce soumise avec succès',
                 'message'    => 'Votre annonce ' . $vehiculeDescription->marque . ' ' . $vehiculeDescription->modele . ' est en cours de validation. Vous serez notifié du résultat.',
                 'data'       => ['vehicule_id' => $vehicule->id],
@@ -375,7 +376,7 @@ class VehiculesController extends Controller
 
                 // Photos
                 'photos' => 'nullable|array',
-                'photos.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'photos.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
             ]);
 
             // Validation avec Gemini pour vérifier la cohérence des données
@@ -447,6 +448,7 @@ class VehiculesController extends Controller
             Notifications::create([
                 'user_id' => $user->id,
                 'type'    => Notifications::TYPE_MODERATION,
+                'level'   => 'success',
                 'title'   => 'Véhicule modifié avec succès',
                 'message' => 'Votre véhicule ' . $vehiculeDescription->marque . ' ' . $vehiculeDescription->modele . ' a été modifié avec succès.',
                 'data'    => ['vehicule_id' => $vehicule->id],
