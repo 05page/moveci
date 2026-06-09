@@ -6,6 +6,7 @@ use App\Events\NotificationBroadcast;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 
 class Notifications extends Model
 {
@@ -118,7 +119,7 @@ class Notifications extends Model
                 ]);
             }
         } catch (\Exception $e) {
-            \Log::warning('notifyAdmins échoué : ' . $e->getMessage());
+            Log::warning('notifyAdmins échoué : ' . $e->getMessage());
         }
     }
 
@@ -132,7 +133,7 @@ class Notifications extends Model
             try {
                 NotificationBroadcast::dispatch($notification);
             } catch (\Exception $e) {
-                \Log::warning('Broadcast notification échoué : ' . $e->getMessage());
+                Log::warning('Broadcast notification échoué : ' . $e->getMessage());
             }
         });
     }
