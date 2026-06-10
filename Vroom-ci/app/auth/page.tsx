@@ -2,6 +2,14 @@
 
 import { Suspense, useState } from "react"
 import { getErrorMessage } from "@/src/lib/handleError"
+
+/** Extrait un message lisible depuis une réponse JSON Laravel (gère data.errors et data.message). */
+function extractApiError(data: { message?: string; errors?: Record<string, string[]> }, fallback: string): string {
+    if (data.errors && Object.keys(data.errors).length > 0) {
+        return Object.values(data.errors).flat().join(" ")
+    }
+    return data.message || fallback
+}
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -133,7 +141,7 @@ const AuthContent = () => {
             })
             const data = await res.json()
             if (!res.ok) {
-                toast.error(data.message || "Erreur lors de la connexion")
+                toast.error(extractApiError(data, "Erreur lors de la connexion"))
                 return
             }
             toast.success("Connexion réussie !")
@@ -172,7 +180,7 @@ const AuthContent = () => {
 
             const data = await res.json()
             if (!res.ok) {
-                toast.error(data.message || "Erreur lors de l'inscription")
+                toast.error(extractApiError(data, "Erreur lors de l'inscription"))
                 return
             }
 
