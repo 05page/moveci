@@ -127,9 +127,7 @@ export function ProfileContent() {
         fetchData()
     }, [user?.id])
 
-    const handleSubmit = () => {
-        toast.success("Profil modifié avec succès")
-    }
+    const handleSubmit = () => {}
 
     const mesRdv = rdvList
     // Transactions conclues (statut confirmé)

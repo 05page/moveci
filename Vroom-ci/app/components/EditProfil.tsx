@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/src/lib/api";
 import { User } from "@/src/types";
+import { useUser } from "@/src/context/UserContext";
 import { LocationEdit, Mail, Phone, Users, Vault } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ interface FormRegister {
 }
 
 export function EditProfil({ open, onOpenChange, onSubmit, user }: EditProfilProps) {
+    const { setUser } = useUser()
     const [formEdit, setFormEdit] = useState<FormRegister>({
         fullname: user.fullname,
         email: user.email,
@@ -54,7 +56,8 @@ export function EditProfil({ open, onOpenChange, onSubmit, user }: EditProfilPro
     }
     const handleSubmit = async () => {
         try {
-            await api.put('/me/update', formEdit)
+            const res = await api.put<User>('/me/update', formEdit)
+            if (res.data) setUser(res.data)
             toast.success("Modification réussie !")
             if (onSubmit) onSubmit()
             onOpenChange(false);
