@@ -156,6 +156,8 @@ class AuthController extends Controller
             'role'          => 'required|in:client,vendeur,concessionnaire,auto_ecole',
             'telephone'     => 'sometimes|string|max:20',
             'adresse'       => 'sometimes|string|max:500',
+            'latitude'      => 'sometimes|numeric|between:-90,90',
+            'longitude'     => 'sometimes|numeric|between:-180,180',
             // champs concessionnaire / auto_ecole
             'raison_sociale'  => 'required_if:role,concessionnaire,auto_ecole|string|max:255',
             'rccm'            => 'required_if:role,concessionnaire|string|max:14',
@@ -172,6 +174,8 @@ class AuthController extends Controller
             'statut'          => $isProfessionnel ? User::EN_ATTENTE : User::ACTIF,
             'telephone'       => $request->telephone,
             'adresse'         => $request->adresse,
+            'latitude'        => $request->latitude,
+            'longitude'       => $request->longitude,
             'raison_sociale'  => $request->raison_sociale,
             'rccm'            => $request->rccm,
             'numero_agrement' => $request->numero_agrement,

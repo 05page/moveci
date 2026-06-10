@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react"
 import { getErrorMessage } from "@/src/lib/handleError"
+import { MapPicker } from "@/components/map/MapPicker"
 
 /** Extrait un message lisible depuis une réponse JSON Laravel (gère data.errors et data.message). */
 function extractApiError(data: { message?: string; errors?: Record<string, string[]> }, fallback: string): string {
@@ -51,6 +52,8 @@ interface FormRegister {
     email: string,
     telephone: string,
     adresse: string
+    latitude?: number
+    longitude?: number
     password: string,
     passwordConfirmation: string,
     raison_sociale: string,
@@ -157,7 +160,7 @@ const AuthContent = () => {
         e.preventDefault()
         setIsRegistering(true)
         try {
-            const body: Record<string, string> = {
+            const body: Record<string, string | number> = {
                 fullname: formDataRegister.fullname,
                 role: formDataRegister.role,
                 email: formDataRegister.email,
@@ -165,6 +168,8 @@ const AuthContent = () => {
                 adresse: formDataRegister.adresse,
                 password: formDataRegister.password,
                 password_confirmation: formDataRegister.passwordConfirmation,
+                ...(formDataRegister.latitude  && { latitude:  formDataRegister.latitude }),
+                ...(formDataRegister.longitude && { longitude: formDataRegister.longitude }),
             }
             if (formDataRegister.role === "concessionnaire" || formDataRegister.role === "auto_ecole") {
                 body.raison_sociale = formDataRegister.raison_sociale
@@ -494,20 +499,15 @@ const AuthContent = () => {
 
                                             {/* Adresse */}
                                             <div className="space-y-2">
-                                                <Label htmlFor="address" className="text-sm font-semibold text-zinc-700">
+                                                <Label className="text-sm font-semibold text-zinc-700">
                                                     Adresse
                                                 </Label>
-                                                <div className="relative">
-                                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-                                                    <Input
-                                                        id="address"
-                                                        type="text"
-                                                        value={formDataRegister.adresse}
-                                                        onChange={(e) => handleChange("adresse", e.target.value)}
-                                                        placeholder="Abidjan, Cocody..."
-                                                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
-                                                    />
-                                                </div>
+                                                <MapPicker
+                                                    currentValue={formDataRegister.adresse}
+                                                    onSelect={({ adresse, latitude, longitude }) =>
+                                                        setFormDataRegister(prev => ({ ...prev, adresse, latitude, longitude }))
+                                                    }
+                                                />
                                             </div>
 
                                             {/* Champs spécifiques partenaires */}
