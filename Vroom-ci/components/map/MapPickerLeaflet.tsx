@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet"
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet"
+import { GeoSearchControl, OpenStreetMapProvider } from "leaflet-geosearch"
+import "leaflet-geosearch/dist/geosearch.css"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
@@ -31,6 +33,17 @@ function ClickHandler({ onPositionChange }: { onPositionChange: (pos: Position) 
             onPositionChange({ lat: e.latlng.lat, lng: e.latlng.lng })
         },
     })
+    return null
+}
+
+function SearchControl(){
+    const map = useMap();
+    useEffect(() => {
+        const provider = new OpenStreetMapProvider();
+        const control = GeoSearchControl({provider, style: "bar"})
+        map.addControl(control)
+        return () => {map.removeControl(control)}
+    }, [map])
     return null
 }
 
@@ -87,6 +100,7 @@ export default function MapPickerLeaflet({ onSelect }: MapPickerLeafletProps) {
                 zoom={13}
                 style={{ height: "380px", width: "100%", borderRadius: "12px" }}
             >
+                <SearchControl />
                 <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

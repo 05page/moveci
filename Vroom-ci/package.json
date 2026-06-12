@@ -25,6 +25,7 @@
     "date-fns": "^4.1.0",
     "laravel-echo": "^2.3.0",
     "leaflet": "^1.9.4",
+    "leaflet-geosearch": "^4.4.0",
     "lucide-react": "^0.563.0",
     "motion": "^12.34.3",
     "next": "16.1.5",
