@@ -1,5 +1,4 @@
 import { getErrorMessage } from "@/src/lib/handleError"
-import { MapPicker } from "@/components/map/MapPicker"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -131,15 +130,20 @@ export function EditProfil({ open, onOpenChange, onSubmit, user }: EditProfilPro
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-zinc-700">
+                        <Label htmlFor="adresse" className="text-sm font-semibold text-zinc-700">
                             Adresse
                         </Label>
-                        <MapPicker
-                            currentValue={formEdit.adresse}
-                            onSelect={({ adresse, latitude, longitude }) =>
-                                setFormEdit(prev => ({ ...prev, adresse, latitude, longitude }))
-                            }
-                        />
+                        <div className="relative">
+                            <LocationEdit className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                            <Input
+                                id="adresse"
+                                value={formEdit.adresse}
+                                onChange={(e) => handleEditChange("adresse", e.target.value)}
+                                type="text"
+                                placeholder="Yopougon, Selmer"
+                                className="pl-11 h-11 rounded-xl border-zinc-200 focus-visible:ring-zinc-400"
+                            />
+                        </div>
                     </div>
 
                     {/* Champs spécifiques partenaires */}
