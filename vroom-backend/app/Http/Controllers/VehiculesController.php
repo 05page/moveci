@@ -66,6 +66,24 @@ class VehiculesController extends Controller
         }
     }
 
+    /** Retourne les 3 véhicules validés les plus consultés (page d'accueil). */
+    public function populaires(): JsonResponse
+    {
+        try {
+            $vehicules = Vehicules::with(['creator:id,fullname,adresse', 'description', 'photos'])
+                ->whereIn('status_validation', ['validee', 'restauree'])
+                ->whereIn('statut', ['disponible', 'a_venir'])
+                ->orderByDesc('views_count')
+                ->limit(3)
+                ->get();
+
+            return response()->json(['success' => true, 'data' => $vehicules], 200);
+        } catch (\Exception $e) {
+            Log::error('populaires: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Erreur serveur.'], 500);
+        }
+    }
+
     public function vehicule($id): JsonResponse
     {
         try {

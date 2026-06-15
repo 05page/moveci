@@ -45,7 +45,8 @@ Route::get('/users/{id}/profil', [VendeurStatsController::class, 'profil']);
 // ->where() contraint {id} à n'accepter que des UUIDs valides,
 // évitant que "mes-vehicules" soit capturé par cette route publique
 Route::prefix('vehicules')->group(function () {
-    Route::get('/',     [VehiculesController::class, 'index']);
+    Route::get('/',            [VehiculesController::class, 'index']);
+    Route::get('/populaires',  [VehiculesController::class, 'populaires']);
     Route::get('/{id}', [VehiculesController::class, 'vehicule'])
         ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
 });

@@ -3,7 +3,9 @@ import React from "react"
 import { motion } from "motion/react"
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { api } from "@/src/lib/api"
+import type { vehicule } from "@/src/types"
 import {
     ArrowRight,
     BarChart3,
@@ -86,11 +88,6 @@ const temoignages = [
     { name: "Traoré Aminata", role: "Locataire", text: "La location est super pratique. J'ai loué un SUV pour un weekend et tout était parfait. Prix correct, véhicule impeccable.", rating: 5 },
 ]
 
-const popularVehicles = [
-    { marque: "Toyota", modele: "RAV4 2024", prix: "18 500 000", type: "vente", carburant: "Essence", lieu: "Abidjan, Cocody" },
-    { marque: "Mercedes", modele: "Classe C 2023", prix: "25 000 000", type: "vente", carburant: "Diesel", lieu: "Abidjan, Plateau" },
-    { marque: "BMW", modele: "X3 2024", prix: "45 000/jr", type: "location", carburant: "Essence", lieu: "Abidjan, Marcory" },
-]
 
 const features = [
     { icon: ShieldCheck, title: "Véhicules vérifiés", desc: "Chaque véhicule est inspecté avant publication. Historique, état mécanique, documents — tout est contrôlé." },
@@ -110,6 +107,15 @@ export default function LandingPage() {
     const [partenaireDialog, setPartenaireDialog] = useState(false)
     const [selectedProfile, setSelectedProfile] = useState<ProfileKey>("client")
     const [carouselIndex, setCarouselIndex] = useState(0)
+    const [popularVehicles, setPopularVehicles] = useState<vehicule[]>([])
+    const [loadingPopular, setLoadingPopular] = useState(true)
+
+    useEffect(() => {
+        api.get<vehicule[]>('/vehicules/populaires')
+            .then(res => { if (res.success && Array.isArray(res.data)) setPopularVehicles(res.data) })
+            .catch(() => {})
+            .finally(() => setLoadingPopular(false))
+    }, [])
 
     return (
         <div className="min-h-screen bg-white">
@@ -404,40 +410,73 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-5">
-                        {popularVehicles.map((v) => (
-                            <div key={v.modele}
-                                className="group rounded-2xl border border-zinc-200 bg-white overflow-hidden hover:border-zinc-300 hover:shadow-xl transition-all duration-300 cursor-pointer">
-                                {/* Image placeholder */}
-                                <div className="h-48 bg-zinc-50 flex items-center justify-center relative">
-                                    <div className="absolute inset-0 bg-linear-to-br from-zinc-50 to-zinc-100" />
-                                    <Car className="h-14 w-14 text-zinc-300 relative z-10 group-hover:scale-110 transition-transform duration-300" />
-                                    <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider z-10
-                    ${v.type === "location"
-                                            ? "bg-blue-50 text-blue-600 border border-blue-100"
-                                            : "bg-amber-50 text-amber-700 border border-amber-100"}`}>
-                                        {v.type === "location" ? "Location" : "À vendre"}
-                                    </span>
-                                </div>
-                                <div className="p-5">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div>
-                                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{v.marque}</p>
-                                            <h3 className="text-base font-bold text-zinc-900" style={{ fontFamily: "var(--font-syne, sans-serif)" }}>
-                                                {v.modele}
-                                            </h3>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-base font-bold text-amber-600 font-stat">{v.prix}</p>
-                                            <p className="text-[10px] text-zinc-400">FCFA</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4 text-xs text-zinc-400">
-                                        <span className="flex items-center gap-1"><Fuel className="h-3 w-3" /> {v.carburant}</span>
-                                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {v.lieu}</span>
+                        {loadingPopular
+                            ? Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className="rounded-2xl border border-zinc-200 bg-white overflow-hidden animate-pulse">
+                                    <div className="h-48 bg-zinc-100" />
+                                    <div className="p-5 space-y-3">
+                                        <div className="h-3 bg-zinc-100 rounded w-1/3" />
+                                        <div className="h-4 bg-zinc-100 rounded w-2/3" />
+                                        <div className="h-3 bg-zinc-100 rounded w-1/2" />
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                            : popularVehicles.length === 0
+                                ? (
+                                    <div className="col-span-3 text-center py-16 text-zinc-400 text-sm">
+                                        Aucun véhicule disponible pour le moment.
+                                    </div>
+                                )
+                                : popularVehicles.map((v) => {
+                                    const photo = v.photos?.find(p => p.is_primary) ?? v.photos?.[0]
+                                    const prixFormate = Number(v.prix).toLocaleString('fr-FR')
+                                    const lieu = v.creator?.adresse ?? 'Abidjan'
+                                    return (
+                                        <Link key={v.id} href={`/vehicles/${v.id}`}
+                                            className="group rounded-2xl border border-zinc-200 bg-white overflow-hidden hover:border-zinc-300 hover:shadow-xl transition-all duration-300 cursor-pointer">
+                                            <div className="h-48 bg-zinc-50 flex items-center justify-center relative overflow-hidden">
+                                                {photo
+                                                    ? <Image src={photo.path} alt={`${v.description?.marque} ${v.description?.modele}`}
+                                                        fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                    : <>
+                                                        <div className="absolute inset-0 bg-linear-to-br from-zinc-50 to-zinc-100" />
+                                                        <Car className="h-14 w-14 text-zinc-300 relative z-10 group-hover:scale-110 transition-transform duration-300" />
+                                                    </>
+                                                }
+                                                <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider z-10
+                                                    ${v.post_type === "location"
+                                                        ? "bg-blue-50 text-blue-600 border border-blue-100"
+                                                        : "bg-amber-50 text-amber-700 border border-amber-100"}`}>
+                                                    {v.post_type === "location" ? "Location" : "À vendre"}
+                                                </span>
+                                                <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 text-white text-[10px] z-10">
+                                                    <Eye className="h-3 w-3" /> {v.views_count}
+                                                </span>
+                                            </div>
+                                            <div className="p-5">
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{v.description?.marque}</p>
+                                                        <h3 className="text-base font-bold text-zinc-900">{v.description?.modele}</h3>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-base font-bold text-[#d4aa00] font-stat">
+                                                            {prixFormate}{v.post_type === "location" ? "/jr" : ""}
+                                                        </p>
+                                                        <p className="text-[10px] text-zinc-400">FCFA</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-4 text-xs text-zinc-400">
+                                                    {v.description?.carburant && (
+                                                        <span className="flex items-center gap-1"><Fuel className="h-3 w-3" /> {v.description.carburant}</span>
+                                                    )}
+                                                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {lieu}</span>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    )
+                                })
+                        }
                     </div>
                 </div>
             </section>

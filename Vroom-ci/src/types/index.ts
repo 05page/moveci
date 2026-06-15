@@ -253,7 +253,7 @@ export interface vehicule {
   date_disponibilite: Date;
   status_validation: string;
   views_count: string;
-  creator?: { id: string; fullname: string; email?: string; role?: string }; // vendeur du véhicule
+  creator?: { id: string; fullname: string; email?: string; role?: string; adresse?: string }; // vendeur du véhicule
   description: VehiculeDescription;
   photos?: VehiculePhotos[]; // photos du véhicule (relation Eloquent chargée avec 'photos')
 }
