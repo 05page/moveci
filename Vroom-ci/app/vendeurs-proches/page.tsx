@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import dynamic from "next/dynamic"
 import { useEffect, useRef, useState } from "react"
@@ -39,7 +39,7 @@ const RAYON_OPTIONS = [
 
 /** Couleurs de badge par rôle (cohérent avec MapView) */
 const ROLE_COLORS: Record<UserProche["role"], string> = {
-  vendeur: "bg-orange-100 text-orange-700",
+  vendeur: "bg-amber-100 text-amber-700",
   concessionnaire: "bg-purple-100 text-purple-700",
   auto_ecole: "bg-cyan-100 text-cyan-700",
 }

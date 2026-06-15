@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 export const dynamic = "force-dynamic"
 
@@ -162,7 +162,7 @@ export default function AdminStatsPage() {
         { label: "Véhicules", value: totalVehicules, icon: Car, color: "bg-primary/10 text-primary" },
         { label: "Transactions confirmées", value: txConfirmees, icon: ArrowLeftRight, color: "bg-green-100 text-green-700" },
         { label: "CA ventes", value: `${(data?.ca_ventes ?? 0).toLocaleString("fr-FR")} FCFA`, icon: Wallet, color: "bg-indigo-100 text-indigo-700" },
-        { label: "Signalements ouverts", value: signalementsOuverts, icon: ShieldAlert, color: "bg-orange-100 text-orange-700" },
+        { label: "Signalements ouverts", value: signalementsOuverts, icon: ShieldAlert, color: "bg-amber-100 text-amber-700" },
     ]
 
     // Données graphiques
@@ -623,7 +623,7 @@ export default function AdminStatsPage() {
                     <SectionTitle>Signalements</SectionTitle>
                     <div className="flex flex-wrap gap-3">
                         {[
-                            { label: "En attente", key: "en_attente", icon: ShieldAlert, color: "bg-orange-100 text-orange-700" },
+                            { label: "En attente", key: "en_attente", icon: ShieldAlert, color: "bg-amber-100 text-amber-700" },
                             { label: "Traités", key: "traité", icon: UserCheck, color: "bg-green-100 text-green-700" },
                             { label: "Rejetés", key: "rejeté", icon: UserX, color: "bg-zinc-100 text-zinc-500" },
                         ].map(({ label, key, icon: Icon, color }) => (

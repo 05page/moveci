@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 export const dynamic = "force-dynamic"
 
@@ -65,11 +65,11 @@ function ActionBadge({ action }: { action: string }) {
     const map: Record<string, { label: string; class: string }> = {
         VALIDATE_VEHICLE:     { label: "Véhicule validé",        class: "bg-green-100 text-green-700 border-green-200" },
         REJECT_VEHICLE:       { label: "Véhicule rejeté",        class: "bg-red-100 text-red-700 border-red-200" },
-        SUSPEND_VEHICLE:      { label: "Véhicule suspendu",      class: "bg-orange-100 text-orange-700 border-orange-200" },
+        SUSPEND_VEHICLE:      { label: "Véhicule suspendu",      class: "bg-amber-100 text-amber-700 border-amber-200" },
         DELETE_VEHICLE:       { label: "Véhicule supprimé",      class: "bg-red-100 text-red-700 border-red-200" },
         RESTORE_VEHICLE:      { label: "Véhicule restauré",      class: "bg-blue-100 text-blue-700 border-blue-200" },
         FORCE_DELETE_VEHICLE: { label: "Suppression définitive", class: "bg-zinc-900 text-white border-zinc-900" },
-        SUSPEND_USER:         { label: "Utilisateur suspendu",   class: "bg-orange-100 text-orange-700 border-orange-200" },
+        SUSPEND_USER:         { label: "Utilisateur suspendu",   class: "bg-amber-100 text-amber-700 border-amber-200" },
         BAN_USER:             { label: "Utilisateur banni",      class: "bg-red-100 text-red-700 border-red-200" },
         RESTORE_USER:         { label: "Utilisateur restauré",   class: "bg-blue-100 text-blue-700 border-blue-200" },
         VALIDATE_ACCOUNT:     { label: "Compte validé",          class: "bg-green-100 text-green-700 border-green-200" },
@@ -163,8 +163,8 @@ export default function AdminDashboard() {
             value: pendingSignal,
             icon: ShieldAlert,
             loading: loadingSignal,
-            iconColor: "text-orange-600",
-            iconBg: "bg-orange-50",
+            iconColor: "text-amber-600",
+            iconBg: "bg-amber-50",
             urgent: pendingSignal > 0,
         },
         {
@@ -336,11 +336,11 @@ export default function AdminDashboard() {
                     <a href="/admin/signalements">
                         <Card className="hover:shadow-sm transition-shadow cursor-pointer group">
                             <CardContent className="flex items-center gap-3 p-4">
-                                <div className="p-2 rounded-lg bg-orange-50">
-                                    <ShieldAlert className="h-5 w-5 text-orange-600" />
+                                <div className="p-2 rounded-lg bg-amber-50">
+                                    <ShieldAlert className="h-5 w-5 text-amber-600" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium group-hover:text-orange-600 transition-colors">
+                                    <p className="text-sm font-medium group-hover:text-amber-600 transition-colors">
                                         Traiter les signalements
                                     </p>
                                     <p className="text-xs text-muted-foreground">

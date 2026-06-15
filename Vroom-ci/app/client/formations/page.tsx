@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { toast } from "sonner"
@@ -23,7 +23,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? ""
 // Couleurs de l'en-tête de la card selon le type de permis
 const permisHeader: Record<string, { bg: string; text: string; dot: string }> = {
     A:  { bg: "bg-red-50",     text: "text-red-700",    dot: "bg-red-500" },
-    A2: { bg: "bg-orange-50",  text: "text-orange-700", dot: "bg-orange-500" },
+    A2: { bg: "bg-amber-50",  text: "text-amber-700", dot: "bg-amber-500" },
     B:  { bg: "bg-blue-50",    text: "text-blue-700",   dot: "bg-blue-600" },
     B1: { bg: "bg-sky-50",     text: "text-sky-700",    dot: "bg-sky-500" },
     C:  { bg: "bg-amber-50",   text: "text-amber-700",  dot: "bg-amber-500" },

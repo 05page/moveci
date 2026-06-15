@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useCallback, useEffect, useState } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -485,7 +485,7 @@ const Settings = () => {
                         <CardContent className="space-y-3">
                             {[
                                 { key: "notifRdv"      as const, icon: Calendar,     bg: "bg-green-500/10",  color: "text-green-600",  title: "Rendez-vous",         desc: "Nouveaux RDV, annulations, rappels" },
-                                { key: "notifMessages" as const, icon: MessageSquare, bg: "bg-orange-500/10", color: "text-orange-600", title: "Messages",            desc: "Nouveaux messages de clients" },
+                                { key: "notifMessages" as const, icon: MessageSquare, bg: "bg-amber-500/10", color: "text-amber-600", title: "Messages",            desc: "Nouveaux messages de clients" },
                                 { key: "notifStats"    as const, icon: Building2,     bg: "bg-teal-500/10",   color: "text-teal-600",   title: "Rapports hebdomadaires", desc: "Résumé des stats chaque lundi" },
                             ].map(({ key, icon: Icon, bg, color, title, desc }) => (
                                 <div key={key} className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/40">

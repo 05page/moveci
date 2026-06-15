@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 import { useState, useEffect, useCallback } from "react"
 import { getErrorMessage } from "@/src/lib/handleError"
 import { useRevalidateOnFocus } from "@/hooks/useRevalidateOnFocus"
@@ -79,7 +79,7 @@ export default function VehiclesPage() {
 
     const getStatutColor = (statut: string, status_validation?: string) => {
         if (status_validation === "rejetee") return "bg-red-500/10 text-red-600 border-red-500/20"
-        if (status_validation === "en_attente") return "bg-orange-500/10 text-orange-600 border-orange-500/20"
+        if (status_validation === "en_attente") return "bg-amber-500/10 text-amber-600 border-amber-500/20"
         switch (statut) {
             case "disponible": return "bg-zinc-900/10 text-zinc-700 border-zinc-900/20"
             case "réservé": return "bg-amber-500/10 text-amber-600 border-amber-500/20"

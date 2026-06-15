@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 export const dynamic = "force-dynamic"
 
@@ -50,7 +50,7 @@ const STATUT_VARIANT: Record<AdminFormation["statut_validation"], string> = {
 
 const PERMIS_COLOR: Record<string, string> = {
     A:  "bg-red-100 text-red-700",
-    A2: "bg-orange-100 text-orange-700",
+    A2: "bg-amber-100 text-amber-700",
     B:  "bg-blue-100 text-blue-700",
     B1: "bg-indigo-100 text-indigo-700",
     C:  "bg-purple-100 text-purple-700",

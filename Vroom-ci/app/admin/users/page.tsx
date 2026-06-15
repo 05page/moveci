@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 export const dynamic = "force-dynamic"
 
@@ -81,7 +81,7 @@ interface AdminUser {
 function StatutBadge({ statut }: { statut: AdminUser["statut"] }) {
     const map = {
         actif:      "bg-green-100 text-green-700 border-green-200",
-        suspendu:   "bg-orange-100 text-orange-700 border-orange-200",
+        suspendu:   "bg-amber-100 text-amber-700 border-amber-200",
         banni:      "bg-red-100 text-red-700 border-red-200",
         en_attente: "bg-yellow-100 text-yellow-700 border-yellow-200",
     }
@@ -382,7 +382,7 @@ export default function AdminUsersPage() {
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    className="h-7 text-xs border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
+                                                    className="h-7 text-xs border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
                                                     onClick={() => setPending({ userId: user.id, userName: user.fullname, type: "suspendre" })}
                                                 >
                                                     <ShieldOff className="h-3 w-3 mr-1" />
@@ -513,7 +513,7 @@ export default function AdminUsersPage() {
                                         )}
                                         {selectedUser.statut === "actif" && (
                                             <Button size="sm" variant="outline"
-                                                className="h-7 text-xs border-orange-200 text-orange-700 hover:bg-orange-50"
+                                                className="h-7 text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
                                                 onClick={() => { setPending({ userId: selectedUser.id, userName: selectedUser.fullname, type: "suspendre" }); setSelectedUser(null) }}>
                                                 <ShieldOff className="h-3 w-3 mr-1" /> Suspendre
                                             </Button>

@@ -7,8 +7,13 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-montserrat);
-  --font-display: var(--font-montserrat);
+  --font-display: var(--font-montserrat);   /* → Montaser Arabic si fichier local dispo */
+  --font-accent: var(--font-playfair);
   --font-mono: var(--font-jetbrains-mono);
+  /* Brand tokens MOVE — utilisables via bg-move-gold, text-move-mint, etc. */
+  --color-move-gold: oklch(0.80 0.175 83);    /* #efbf04 */
+  --color-move-gray: oklch(0.742 0 0);         /* #b4b4b4 */
+  --color-move-mint: oklch(0.928 0.055 142);   /* #d7efc2 */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,8 +53,12 @@
 }
 
 /* ============================================
-   THÈME PRINCIPAL — Move CI
-   Palette : #ffffff (fond) · #000000 (texte) · #efbf04 (gold accent)
+   THÈME PRINCIPAL — Move CI  (charte juin 2026)
+   Gold   #efbf04 → --primary / --move-gold
+   Gris   #b4b4b4 → --move-gray
+   Menthe #d7efc2 → --move-mint
+   Noir   #000000 → --foreground
+   Blanc  #ffffff → --background
    ============================================ */
 :root {
   --radius: 0.5rem;
@@ -86,6 +95,11 @@
   --border: oklch(0.88 0 0);
   --input: oklch(0.92 0 0);
   --ring: oklch(0.80 0.175 83);         /* focus ring gold */
+
+  /* Palette brand nommée — accès direct sans sémantique */
+  --move-gold: oklch(0.80 0.175 83);    /* #efbf04 */
+  --move-gray: oklch(0.742 0 0);         /* #b4b4b4 */
+  --move-mint: oklch(0.928 0.055 142);   /* #d7efc2 */
 
   /* Charts */
   --chart-1: oklch(0.80 0.175 83);      /* gold */

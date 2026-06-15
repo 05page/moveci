@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 export const dynamic = "force-dynamic"
 
@@ -264,8 +264,8 @@ export default function AdminSignalementsPage() {
                     >
                         <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
                     </Button>
-                    <div className="p-2 rounded-lg bg-orange-50">
-                        <ShieldAlert className="h-4 w-4 text-orange-600" />
+                    <div className="p-2 rounded-lg bg-amber-50">
+                        <ShieldAlert className="h-4 w-4 text-amber-600" />
                     </div>
                 </div>
             </div>
@@ -392,7 +392,7 @@ export default function AdminSignalementsPage() {
                 <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
                     <SheetHeader className="mb-6">
                         <SheetTitle className="flex items-center gap-2">
-                            <ShieldAlert className="h-4 w-4 text-orange-500" />
+                            <ShieldAlert className="h-4 w-4 text-amber-500" />
                             Détail du signalement
                         </SheetTitle>
                     </SheetHeader>
@@ -452,7 +452,7 @@ export default function AdminSignalementsPage() {
                                     <div className="border-t" />
                                     <div className="flex items-center justify-between">
                                         <span className="text-muted-foreground">Action appliquée</span>
-                                        <Badge className="bg-orange-100 text-orange-700 border-orange-200 text-xs capitalize">
+                                        <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-xs capitalize">
                                             {detail.action_cible}
                                         </Badge>
                                     </div>
@@ -496,7 +496,7 @@ export default function AdminSignalementsPage() {
                 <DialogContent className="max-w-lg">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <AlertTriangle className="h-4 w-4 text-orange-500" />
+                            <AlertTriangle className="h-4 w-4 text-amber-500" />
                             Traiter le signalement
                         </DialogTitle>
                         <DialogDescription>

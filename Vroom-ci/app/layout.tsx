@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat, JetBrains_Mono } from "next/font/google";
+import { Montserrat, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import ConditionalHeader from "./components/ConditionalHeader";
 import { Toaster } from "sonner";
@@ -21,6 +21,15 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+// Accent typographique charte MOVE — citations, tags, highlights
+const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Move CI — Marketplace Automobile",
   description: "Achetez, vendez et louez des véhicules en toute confiance.",
@@ -32,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${montserrat.variable} ${jetbrainsMono.variable}`}>
+    <html lang="fr" className={`${montserrat.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable}`}>
       <body className="antialiased bg-white text-black min-h-screen">
         <UserProvider>
           <NotificationProvider>

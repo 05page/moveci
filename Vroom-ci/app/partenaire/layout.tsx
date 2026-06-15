@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
@@ -183,7 +183,7 @@ export default function PartenaireLayout({
                     <SidebarMenu>
                         <SidebarMenuItem>
                             <SidebarMenuButton size="lg">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-orange-500">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-amber-500">
                                     <User className="h-4 w-4" />
                                 </div>
                                 <div className="flex flex-col gap-0.5 leading-none">

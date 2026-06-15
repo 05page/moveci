@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 export const dynamic = "force-dynamic"
 
@@ -42,7 +42,7 @@ const STATUT_CONFIG: Record<SupportTicket["statut"], { label: string; className:
 const PRIORITE_CONFIG: Record<SupportTicket["priorite"], { label: string; className: string }> = {
     basse:    { label: "Basse",    className: "bg-zinc-100 text-zinc-500 border-zinc-200" },
     normale:  { label: "Normale",  className: "bg-blue-100 text-blue-700 border-blue-200" },
-    haute:    { label: "Haute",    className: "bg-orange-100 text-orange-700 border-orange-200" },
+    haute:    { label: "Haute",    className: "bg-amber-100 text-amber-700 border-amber-200" },
     urgente:  { label: "Urgente",  className: "bg-red-100 text-red-700 border-red-200" },
 }
 

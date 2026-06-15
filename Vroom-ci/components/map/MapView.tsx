@@ -1,4 +1,4 @@
-// Fix CSS Leaflet — doit être importé avant tout composant react-leaflet
+﻿// Fix CSS Leaflet — doit être importé avant tout composant react-leaflet
 import "leaflet/dist/leaflet.css"
 
 import L from "leaflet"
@@ -81,7 +81,7 @@ function createRoleIcon(color: string, letter: string): L.DivIcon {
 
 /** Map rôle → couleur */
 const ROLE_COLORS: Record<UserProche["role"], string> = {
-  vendeur: "#f97316",         // orange
+  vendeur: "#efbf04",         // gold MOVE
   concessionnaire: "#a855f7", // violet
   auto_ecole: "#06b6d4",      // cyan
 }

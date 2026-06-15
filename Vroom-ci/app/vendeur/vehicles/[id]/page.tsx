@@ -48,7 +48,7 @@ const getValidationBadgeClass = (status_validation?: string): string => {
         case "rejetee":
             return "bg-red-500/15 text-red-700 border-red-500/30"
         case "en_attente":
-            return "bg-orange-500/15 text-orange-700 border-orange-500/30"
+            return "bg-amber-500/15 text-amber-700 border-amber-500/30"
         default:
             return "bg-zinc-500/15 text-zinc-600 border-zinc-500/20"
     }

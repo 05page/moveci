@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 export const dynamic = "force-dynamic"
 
@@ -744,7 +744,7 @@ export default function AdminVehiculesPage() {
                                             <p className="text-sm font-medium">
                                                 {Number(selectedVehicule.prix).toLocaleString("fr-FR")} FCFA
                                                 {selectedVehicule.negociable && (
-                                                    <Badge className="ml-2 bg-orange-100 text-orange-700 border-orange-200 text-[10px]">
+                                                    <Badge className="ml-2 bg-amber-100 text-amber-700 border-amber-200 text-[10px]">
                                                         négociable
                                                     </Badge>
                                                 )}
@@ -977,7 +977,7 @@ export default function AdminVehiculesPage() {
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                className="border-orange-200 text-orange-700 hover:bg-orange-50 flex-1"
+                                                className="border-amber-200 text-amber-700 hover:bg-amber-50 flex-1"
                                                 onClick={() => setToSuspend(selectedVehicule)}
                                             >
                                                 <PauseCircle className="h-3.5 w-3.5 mr-1.5" />
@@ -1044,7 +1044,7 @@ export default function AdminVehiculesPage() {
                         <AlertDialogAction
                             onClick={handleSuspendre}
                             disabled={suspending}
-                            className="bg-orange-600 text-white hover:bg-orange-700"
+                            className="bg-amber-600 text-white hover:bg-amber-700"
                         >
                             {suspending ? "Suspension..." : "Oui, suspendre"}
                         </AlertDialogAction>

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -138,7 +138,7 @@ function getNotificationBorderStyle(level?: string) {
         case "error":
             return "border-red-300 bg-red-50"
         case "warning":
-            return "border-orange-300 bg-orange-50"
+            return "border-amber-300 bg-amber-50"
         case "success":
             return "border-green-300 bg-green-50"
         default:

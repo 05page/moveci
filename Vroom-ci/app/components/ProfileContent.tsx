@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { getErrorMessage } from "@/src/lib/handleError"
 import { Badge } from "@/components/ui/badge"
@@ -148,7 +148,7 @@ export function ProfileContent() {
                     <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-8">
                         <Avatar
                             className={`h-20 w-20 md:h-28 md:w-28 border-4 border-background shadow-2xl ring-4 shrink-0 ${
-                                user?.role === "client" ? "ring-orange-500" : "ring-accent"
+                                user?.role === "client" ? "ring-amber-500" : "ring-accent"
                             }`}
                         >
                             <AvatarImage src="" alt={user?.fullname} />
@@ -164,7 +164,7 @@ export function ProfileContent() {
                                         <h1 className="text-xl md:text-3xl font-black tracking-tight">{user?.fullname ?? ""}</h1>
                                         <Badge
                                             className={`font-bold rounded-full ${
-                                                user?.role === "client" ? "bg-orange-500 text-primary-foreground"
+                                                user?.role === "client" ? "bg-amber-500 text-primary-foreground"
                                                 : user?.role === "vendeur" ? "bg-accent text-accent-foreground"
                                                 : user?.role === "admin" ? "bg-red-600 text-white"
                                                 : "bg-blue-600 text-white"

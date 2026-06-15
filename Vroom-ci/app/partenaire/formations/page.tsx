@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState, useMemo } from "react"
 import { toast } from "sonner"
@@ -46,7 +46,7 @@ const statutBadge: Record<string, { label: string; className: string }> = {
 
 const permisBadgeColor: Record<string, string> = {
     A:  "bg-red-100 text-red-700 border-red-200",
-    A2: "bg-orange-100 text-orange-700 border-orange-200",
+    A2: "bg-amber-100 text-amber-700 border-amber-200",
     B:  "bg-blue-100 text-blue-700 border-blue-200",
     B1: "bg-sky-100 text-sky-700 border-sky-200",
     C:  "bg-amber-100 text-amber-700 border-amber-200",

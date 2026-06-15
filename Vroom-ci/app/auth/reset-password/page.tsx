@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -32,7 +32,7 @@ function ResetPasswordContent() {
         return (
             <div className="flex flex-col items-center gap-4 py-12 text-center">
                 <p className="text-sm text-zinc-500">Lien invalide ou expiré.</p>
-                <Link href="/auth" className="text-sm text-orange-600 hover:underline font-semibold">
+                <Link href="/auth" className="text-sm text-amber-600 hover:underline font-semibold">
                     Retour à la connexion
                 </Link>
             </div>
@@ -75,7 +75,7 @@ function ResetPasswordContent() {
                 {/* Logo */}
                 <div className="flex justify-center mb-8">
                     <span className="text-2xl font-bold text-zinc-900">
-                        M<span className="text-orange-500">ove</span> CI
+                        M<span className="text-amber-500">ove</span> CI
                     </span>
                 </div>
 
@@ -92,7 +92,7 @@ function ResetPasswordContent() {
                         </p>
                         <Button
                             onClick={() => router.push("/auth")}
-                            className="mt-2 w-full h-11 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl"
+                            className="mt-2 w-full h-11 bg-[#efbf04] hover:bg-[#d4aa00] text-black font-semibold rounded-xl"
                         >
                             Se connecter
                         </Button>
@@ -160,7 +160,7 @@ function ResetPasswordContent() {
                             <Button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="w-full h-11 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl mt-2"
+                                className="w-full h-11 bg-[#efbf04] hover:bg-[#d4aa00] text-black font-semibold rounded-xl mt-2"
                             >
                                 {isSubmitting
                                     ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Réinitialisation...</>
@@ -170,7 +170,7 @@ function ResetPasswordContent() {
                         </form>
 
                         <p className="text-center text-xs text-zinc-400 mt-6">
-                            <Link href="/auth" className="hover:text-orange-600 transition-colors">
+                            <Link href="/auth" className="hover:text-amber-600 transition-colors">
                                 ← Retour à la connexion
                             </Link>
                         </p>

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Clock, Mail, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -43,7 +43,7 @@ export default function EnAttentePage() {
                 </div>
 
                 <div className="space-y-2">
-                    <Button asChild className="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold">
+                    <Button asChild className="w-full h-12 rounded-xl bg-[#efbf04] hover:bg-[#d4aa00] text-black font-bold">
                         <Link href="/auth">Se connecter</Link>
                     </Button>
                     <Button asChild variant="ghost" className="w-full h-12 rounded-xl text-zinc-500">
@@ -52,7 +52,7 @@ export default function EnAttentePage() {
                 </div>
 
                 <p className="text-xs text-zinc-400">
-                    Une question ? Contactez-nous à <span className="text-orange-600">support@vroomci.com</span>
+                    Une question ? Contactez-nous à <span className="text-amber-600">support@vroomci.com</span>
                 </p>
             </div>
         </div>

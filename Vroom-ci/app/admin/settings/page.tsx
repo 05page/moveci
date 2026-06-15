@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 export const dynamic = "force-dynamic"
 
@@ -541,8 +541,8 @@ export default function AdminSettings() {
                             </div>
                             <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/40">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
-                                        <ShieldAlert className="h-5 w-5 text-orange-600" />
+                                    <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                                        <ShieldAlert className="h-5 w-5 text-amber-600" />
                                     </div>
                                     <div>
                                         <p className="font-semibold text-sm">Nouveaux signalements</p>

@@ -19,7 +19,7 @@ class WelcomeMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            from: new Address('hello@moveci.tech', 'Vroom'),
+            from: new Address('hello@moveci.tech', 'MoveCi'),
             subject: 'Bienvenue sur MoveCi',
         );
     }

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Suspense, useState } from "react"
 import { getErrorMessage } from "@/src/lib/handleError"
@@ -272,7 +272,7 @@ const AuthContent = () => {
                                                 value={formDataLogin.email}
                                                 onChange={(e) => handleChangeLogin("email", e.target.value)}
                                                 placeholder="exemple@email.com"
-                                                className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                                className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                                             />
                                         </div>
                                     </div>
@@ -285,7 +285,7 @@ const AuthContent = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => { setForgotOpen(true); setForgotSent(false); setForgotEmail("") }}
-                                                className="text-xs text-orange-600 hover:text-orange-700 font-semibold"
+                                                className="text-xs text-amber-600 hover:text-amber-700 font-semibold"
                                             >
                                                 Mot de passe oublié ?
                                             </button>
@@ -298,7 +298,7 @@ const AuthContent = () => {
                                                 value={formDataLogin.password}
                                                 onChange={(e) => handleChangeLogin("password", e.target.value)}
                                                 placeholder="Votre mot de passe"
-                                                className="pl-11 pr-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                                className="pl-11 pr-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                                             />
                                             <button
                                                 type="button"
@@ -313,7 +313,7 @@ const AuthContent = () => {
                                     <Button
                                         type="submit"
                                         disabled={isLoggingIn}
-                                        className="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm cursor-pointer shadow-lg shadow-orange-500/20"
+                                        className="w-full h-12 rounded-xl bg-[#efbf04] hover:bg-[#d4aa00] text-black font-bold text-sm cursor-pointer shadow-lg shadow-[#efbf04]/20"
                                     >
                                         {isLoggingIn
                                             ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Connexion...</>
@@ -358,9 +358,9 @@ const AuthContent = () => {
                                     {[1, 2, 3].map((step) => (
                                         <div key={step} className="flex items-center gap-2 flex-1">
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 ${registerStep === step
-                                                ? "bg-orange-500 text-white shadow-md shadow-orange-500/20"
+                                                ? "bg-[#efbf04] text-black shadow-md shadow-[#efbf04]/20"
                                                 : registerStep > step
-                                                    ? "bg-orange-100 text-orange-600"
+                                                    ? "bg-amber-100 text-amber-600"
                                                     : "bg-gray-100 text-zinc-400"
                                                 }`}>
                                                 {registerStep > step ? (
@@ -370,7 +370,7 @@ const AuthContent = () => {
                                                 ) : step}
                                             </div>
                                             {step < 3 && (
-                                                <div className={`flex-1 h-1 rounded-full transition-all duration-200 ${registerStep > step ? "bg-orange-300" : "bg-gray-200"
+                                                <div className={`flex-1 h-1 rounded-full transition-all duration-200 ${registerStep > step ? "bg-amber-300" : "bg-gray-200"
                                                     }`} />
                                             )}
                                         </div>
@@ -400,22 +400,22 @@ const AuthContent = () => {
                                                                 type="button"
                                                                 onClick={() => handleChange("role", role)}
                                                                 className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer ${active
-                                                                    ? "border-orange-500 bg-orange-50 shadow-md shadow-orange-500/10"
+                                                                    ? "border-amber-500 bg-amber-50 shadow-md shadow-amber-500/10"
                                                                     : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
                                                                     }`}
                                                             >
                                                                 {active && (
-                                                                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center">
+                                                                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#efbf04] flex items-center justify-center">
                                                                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                                                         </svg>
                                                                     </div>
                                                                 )}
-                                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${active ? "bg-orange-100" : "bg-gray-50"}`}>
-                                                                    <Icon className={`h-6 w-6 ${active ? "text-orange-600" : "text-gray-400"}`} />
+                                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${active ? "bg-amber-100" : "bg-gray-50"}`}>
+                                                                    <Icon className={`h-6 w-6 ${active ? "text-amber-600" : "text-gray-400"}`} />
                                                                 </div>
                                                                 <div className="text-center">
-                                                                    <p className={`text-sm font-bold ${active ? "text-orange-700" : "text-zinc-700"}`}>{label}</p>
+                                                                    <p className={`text-sm font-bold ${active ? "text-amber-700" : "text-zinc-700"}`}>{label}</p>
                                                                     <p className="text-xs text-zinc-400">{sub}</p>
                                                                 </div>
                                                             </button>
@@ -427,7 +427,7 @@ const AuthContent = () => {
                                             <Button
                                                 type="button"
                                                 onClick={() => setRegisterStep(2)}
-                                                className="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm cursor-pointer shadow-lg shadow-orange-500/20"
+                                                className="w-full h-12 rounded-xl bg-[#efbf04] hover:bg-[#d4aa00] text-black font-bold text-sm cursor-pointer shadow-lg shadow-[#efbf04]/20"
                                             >
                                                 Suivant
                                                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -454,7 +454,7 @@ const AuthContent = () => {
                                                             value={formDataRegister.fullname}
                                                             onChange={(e) => handleChange("fullname", e.target.value)}
                                                             placeholder="Votre nom"
-                                                            className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                                            className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                                                         />
                                                     </div>
                                                 </div>
@@ -474,7 +474,7 @@ const AuthContent = () => {
                                                             value={formDataRegister.email}
                                                             onChange={(e) => handleChange("email", e.target.value)}
                                                             placeholder="Email"
-                                                            className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                                            className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                                                         />
                                                     </div>
                                                 </div>
@@ -490,7 +490,7 @@ const AuthContent = () => {
                                                             value={formDataRegister.telephone}
                                                             onChange={(e) => handleChange("telephone", e.target.value)}
                                                             placeholder="+225 XX XX XX XX"
-                                                            className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                                            className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                                                         />
                                                     </div>
                                                 </div>
@@ -509,15 +509,15 @@ const AuthContent = () => {
                                                         value={formDataRegister.adresse}
                                                         onChange={(e) => handleChange("adresse", e.target.value)}
                                                         placeholder="Abidjan, Cocody..."
-                                                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                                                     />
                                                 </div>
                                             </div>
 
                                             {/* Champs spécifiques partenaires */}
                                             {isPartenaire && (
-                                                <div className="space-y-4 p-4 rounded-2xl bg-orange-50 border border-orange-100">
-                                                    <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide">Informations professionnelles</p>
+                                                <div className="space-y-4 p-4 rounded-2xl bg-amber-50 border border-amber-100">
+                                                    <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Informations professionnelles</p>
                                                     <div className="space-y-2">
                                                         <Label className="text-sm font-semibold text-zinc-700">Raison sociale</Label>
                                                         <div className="relative">
@@ -527,7 +527,7 @@ const AuthContent = () => {
                                                                 value={formDataRegister.raison_sociale}
                                                                 onChange={(e) => handleChange("raison_sociale", e.target.value)}
                                                                 placeholder="Nom de votre entreprise"
-                                                                className="pl-11 h-12 rounded-xl bg-white border-orange-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                                                className="pl-11 h-12 rounded-xl bg-white border-amber-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                                                             />
                                                         </div>
                                                     </div>
@@ -539,7 +539,7 @@ const AuthContent = () => {
                                                                 value={formDataRegister.rccm}
                                                                 onChange={(e) => handleChange("rccm", e.target.value)}
                                                                 placeholder="Ex: CI-ABJ-2024-B-12345"
-                                                                className="h-12 rounded-xl bg-white border-orange-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                                                className="h-12 rounded-xl bg-white border-amber-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                                                             />
                                                         </div>
                                                     )}
@@ -551,11 +551,11 @@ const AuthContent = () => {
                                                                 value={formDataRegister.numero_agrement}
                                                                 onChange={(e) => handleChange("numero_agrement", e.target.value)}
                                                                 placeholder="Ex: AE-2024-0123"
-                                                                className="h-12 rounded-xl bg-white border-orange-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                                                className="h-12 rounded-xl bg-white border-amber-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                                                             />
                                                         </div>
                                                     )}
-                                                    <p className="text-xs text-orange-600">
+                                                    <p className="text-xs text-amber-600">
                                                         Votre compte sera activé après vérification par notre équipe (24-48h).
                                                     </p>
                                                 </div>
@@ -575,7 +575,7 @@ const AuthContent = () => {
                                                 <Button
                                                     type="button"
                                                     onClick={() => setRegisterStep(3)}
-                                                    className="flex-1 h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm cursor-pointer shadow-lg shadow-orange-500/20"
+                                                    className="flex-1 h-12 rounded-xl bg-[#efbf04] hover:bg-[#d4aa00] text-black font-bold text-sm cursor-pointer shadow-lg shadow-[#efbf04]/20"
                                                 >
                                                     Suivant
                                                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -602,7 +602,7 @@ const AuthContent = () => {
                                                         onChange={(e) => handleChange("password", e.target.value)}
                                                         value={formDataRegister.password}
                                                         placeholder="Votre mot de passe"
-                                                        className="pl-11 pr-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                                        className="pl-11 pr-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                                                     />
                                                     <button
                                                         type="button"
@@ -627,7 +627,7 @@ const AuthContent = () => {
                                                         onChange={(e) => handleChange("passwordConfirmation", e.target.value)}
                                                         placeholder="Confirmer votre mot de passe"
                                                         value={formDataRegister.passwordConfirmation}
-                                                        className="pl-11 pr-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                                        className="pl-11 pr-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                                                     />
                                                     <button
                                                         type="button"
@@ -641,9 +641,9 @@ const AuthContent = () => {
 
                                             <p className="text-xs text-zinc-400 leading-relaxed">
                                                 En creant un compte, vous acceptez nos{" "}
-                                                <a href="#" className="text-orange-600 hover:underline font-medium">conditions d&apos;utilisation</a>
+                                                <a href="#" className="text-amber-600 hover:underline font-medium">conditions d&apos;utilisation</a>
                                                 {" "}et notre{" "}
-                                                <a href="#" className="text-orange-600 hover:underline font-medium">politique de confidentialite</a>.
+                                                <a href="#" className="text-amber-600 hover:underline font-medium">politique de confidentialite</a>.
                                             </p>
 
                                             {/* Navigation */}
@@ -660,7 +660,7 @@ const AuthContent = () => {
                                                 <Button
                                                     type="submit"
                                                     disabled={isRegistering}
-                                                    className="flex-1 h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm cursor-pointer shadow-lg shadow-orange-500/20"
+                                                    className="flex-1 h-12 rounded-xl bg-[#efbf04] hover:bg-[#d4aa00] text-black font-bold text-sm cursor-pointer shadow-lg shadow-[#efbf04]/20"
                                                 >
                                                     {isRegistering
                                                         ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Création...</>
@@ -756,7 +756,7 @@ const AuthContent = () => {
                         <Button
                             type="submit"
                             disabled={isSendingReset}
-                            className="w-full h-11 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl"
+                            className="w-full h-11 bg-[#efbf04] hover:bg-[#d4aa00] text-black font-semibold rounded-xl"
                         >
                             {isSendingReset
                                 ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Envoi...</>

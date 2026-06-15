@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { useUser } from "@/src/context/UserContext"
@@ -166,7 +166,7 @@ function StepContent({
                         placeholder="Téléphone"
                         value={rsSociale.telephone}
                         onChange={(e) => handleChange("telephone", e.target.value)}
-                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                     />
                 </div>
                 <div>
@@ -176,7 +176,7 @@ function StepContent({
                         placeholder="Adresse"
                         value={rsSociale.adresse}
                         onChange={(e) => handleChange("adresse", e.target.value)}
-                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                     />
                 </div>
             </form>
@@ -198,7 +198,7 @@ function StepContent({
                         placeholder="Téléphone"
                         value={rsSociale.telephone}
                         onChange={(e) => handleChange("telephone", e.target.value)}
-                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                     />
                 </div>
                 <div>
@@ -208,7 +208,7 @@ function StepContent({
                         placeholder="Adresse"
                         value={rsSociale.adresse}
                         onChange={(e) => handleChange("adresse", e.target.value)}
-                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                     />
                 </div>
             </form>
@@ -236,7 +236,7 @@ function StepContent({
                         placeholder="Nom de votre auto-école"
                         value={autoEcoleData.raison_sociale}
                         onChange={(e) => handleChangeAutoEcole("raison_sociale", e.target.value)}
-                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                     />
                 </div>
                 <div>
@@ -246,7 +246,7 @@ function StepContent({
                         placeholder="Numéro d'agrément officiel"
                         value={autoEcoleData.numero_agrement}
                         onChange={(e) => handleChangeAutoEcole("numero_agrement", e.target.value)}
-                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                     />
                 </div>
             </form>
@@ -273,7 +273,7 @@ function StepContent({
                         placeholder="Téléphone (optionnel)"
                         value={rsSociale.telephone}
                         onChange={(e) => handleChange("telephone", e.target.value)}
-                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                     />
                 </div>
                 <div>
@@ -283,7 +283,7 @@ function StepContent({
                         placeholder="Adresse (optionnel)"
                         value={rsSociale.adresse}
                         onChange={(e) => handleChange("adresse", e.target.value)}
-                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                        className="pl-11 h-12 rounded-xl bg-gray-50/50 border-gray-200 focus:border-[#efbf04] focus:ring-[#efbf04]/20"
                     />
                 </div>
             </form>
