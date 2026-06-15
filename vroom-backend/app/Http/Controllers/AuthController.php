@@ -12,8 +12,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Mail\WelcomeMail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Laravel\Socialite\Facades\Socialite;
+
 class AuthController extends Controller
 {
     public function redirect(string $provider)
@@ -58,7 +60,9 @@ class AuthController extends Controller
             if ($user->wasRecentlyCreated) {
                 try {
                     Mail::to($user->email)->queue(new WelcomeMail($user));
-                } catch (\Exception) {}
+                } catch (\Exception $e) {
+                    Log::error('Mail queue failed: ' . $e->getMessage());
+                }
             }
 
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -179,12 +183,15 @@ class AuthController extends Controller
             'raison_sociale'  => $request->raison_sociale,
             'rccm'            => $request->rccm,
             'numero_agrement' => $request->numero_agrement,
-            'onboarding_completed_at'=> now()
+            'onboarding_completed_at' => now()
         ]);
 
         try {
             Mail::to($user->email)->queue(new WelcomeMail($user));
-        } catch (\Exception) {}
+        } catch (\Exception $e) {
+            Log::error('Mail queue failed: ' . $e->getMessage());
+        }
+
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -291,7 +298,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => ["user"=> $user->fresh()],
+            'data'    => ["user" => $user->fresh()],
         ]);
     }
 
