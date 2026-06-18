@@ -16,7 +16,10 @@ class ReservationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $user = Auth::user();
-        $vehiculeId = $request->vehicule_id;
+        $validated = $request->validate([
+            'vehicule_id' => 'required|uuid|exists:vehicules,id',
+        ]);
+        $vehiculeId = $validated['vehicule_id'];
 
         try {
             $vehicule = Vehicules::findOrFail($vehiculeId);
@@ -89,7 +92,6 @@ class ReservationController extends Controller
                 'message' => 'Véhicule réservé avec succès.',
                 'data'    => $reservation
             ], 201);
-
         } catch (\Exception $e) {
             return $this->serverError($e, 'Erreur lors de la réservation. Réessayez dans quelques instants.');
         }
@@ -114,7 +116,6 @@ class ReservationController extends Controller
                 'success' => true,
                 'data'    => $reservation
             ]);
-
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
@@ -145,7 +146,6 @@ class ReservationController extends Controller
                 'success' => true,
                 'data'    => $reservations
             ]);
-
         } catch (\Exception $e) {
             return $this->serverError($e, 'Erreur lors du chargement des réservations. Réessayez dans quelques instants.');
         }
@@ -204,7 +204,6 @@ class ReservationController extends Controller
                 'success' => true,
                 'message' => 'Réservation annulée avec succès.'
             ]);
-
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
