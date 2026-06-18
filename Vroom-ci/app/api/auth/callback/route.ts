@@ -1,13 +1,14 @@
 import { getDashBoard } from "@/src/core/auth/permission"
 import { UserRole } from "@/src/types"
 import { NextRequest, NextResponse } from "next/server"
+import { z } from "zod";
 
 // Laravel redirige ici après Google OAuth avec ?code=UUID (jamais le token brut)
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code")
-
-  if (!code) {
-    return NextResponse.redirect(new URL("/auth?error=no_code", request.url))
+  const codeCheck = z.string().uuid().safeParse(code)
+  if(!codeCheck.success){
+    return NextResponse.redirect(new URL("/auth?error=invalid_code", request.url))
   }
 
   // Échanger le code temporaire contre le vrai token (appel serveur → serveur)

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 import { NextRequest, NextResponse } from "next/server"
+import { z } from "zod";
 
 /**
  * Proxy d'authentification pour les canaux privés Reverb/Echo.
@@ -23,9 +24,19 @@ export async function POST(request: NextRequest) {
 
   // Lecture du body envoyé par Echo (format: socket_id=xxx&channel_name=yyy)
   const body = await request.text()
+  const param = new URLSearchParams(body)
+  const socket_id = param.get('socket_id')
+  const channel_name = param.get('channel_name')
 
-  // BACKEND_URL = "http://127.0.0.1:8000/api" → on retire "/api" pour atteindre /broadcasting/auth
-  // car la route broadcasting n'est pas sous le préfixe /api
+  const check = z.object({
+    socket_id: z.string().regex(/^\d+\.\d+$/),
+    channel_name: z.string().min(1).max(200)
+  }).safeParse({ socket_id, channel_name })
+
+  if (!check.success) {
+    return NextResponse.json({ message: "Données invalides" }, { status: 400 })
+  }
+
   const backendBase = process.env.BACKEND_URL?.replace(/\/api$/, "") ?? "http://127.0.0.1:8000"
 
   const res = await fetch(`${backendBase}/broadcasting/auth`, {

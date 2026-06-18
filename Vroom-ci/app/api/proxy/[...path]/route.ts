@@ -67,12 +67,28 @@ function sanitizeBackendResponse(data: unknown, status: number, path: string) {
   }
 }
 
+const ALLOWED_PATHS = [
+  "/notifications",        // /notifications/:id/read, /notifications/read-all
+  "/auth",                 // /auth/complete-onboarding
+  "/admin",                // /admin/transactions, /admin/stats, /admin/admins
+  "/reservations",         // /reservations, /reservations/:id/cancel
+  "/rdv",                  // /rdv/
+  "/alertes",              // /alertes/
+  "/signalements",         // /signalements/
+  "/vehicules",            // /vehicules/:id
+  "/me",                   // /me/update, /me/contact
+]
+
 async function proxyToLaravel(request: NextRequest) {
   // Reconstruire le path : /api/proxy/stats → /stats
   const url = new URL(request.url)
   const path = url.pathname.replace(/^\/api\/proxy/, "")
-  const search = url.search // conserver les query params
 
+  const search = url.search // conserver les query params
+  const isAllowed = ALLOWED_PATHS.some(allowed => path.startsWith(allowed))
+  if(!isAllowed){
+    return NextResponse.json({message: "Route non autorisée"}, {status: 403})
+  }
   const backendUrl = `${process.env.BACKEND_URL}${path}${search}`
 
   // Lire le token depuis le cookie httpOnly
@@ -93,7 +109,7 @@ async function proxyToLaravel(request: NextRequest) {
     headers["Content-Type"] = "application/json"
   }
   const contentType = request.headers.get("content-type") || ""
-  if(contentType.includes("multipart/form-data")){
+  if (contentType.includes("multipart/form-data")) {
     headers["Content-Type"] = contentType
   }
 

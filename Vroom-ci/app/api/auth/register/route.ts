@@ -1,11 +1,19 @@
 import { NextResponse, NextRequest } from "next/server";
 import { cookies } from "next/headers";
+import { registerValidator } from "@/app/validator/registerValidator";
 
 const API_URL = process.env.BACKEND_URL || "http://localhost:8000/api";
 
 export async function POST(req: NextRequest) {
     //à terminer
     const body = await req.json();
+    const resultat = registerValidator.safeParse(body)
+    if (!resultat.success) {
+        return NextResponse.json(
+            { errors: resultat.error.flatten() },
+            { status: 400 }
+        )
+    }
     const controller = new AbortController();
     const timeout = setTimeout(() => {
         controller.abort()
@@ -18,7 +26,7 @@ export async function POST(req: NextRequest) {
                 "Content-Type": "application/json",
                 Accept: "application/json"
             },
-            body: JSON.stringify(body),
+            body: JSON.stringify(resultat.data),
             signal: controller.signal
         })
         clearTimeout(timeout)

@@ -1,11 +1,19 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import {LoginValidator} from "@/app/validator/loginValidator"
 
 //appel l'api backend
 const API_URL = process.env.BACKEND_URL || "http://localhost:8000/api";
 
 export async function POST(req: NextRequest) {
     const body = await req.json()
+    const resultat = LoginValidator.safeParse(body)
+    if(!resultat.success){
+        return NextResponse.json(
+            {errors: resultat.error.flatten()},
+            {status: 400}
+        )
+    }
     const controller = new AbortController();
     //on defini un temps que la requette a à mettre
     const timeout = setTimeout(() => {
@@ -19,7 +27,7 @@ export async function POST(req: NextRequest) {
                 "Content-Type": "application/json",
                 Accept: "application/json"
             },
-            body: JSON.stringify(body),
+            body: JSON.stringify(resultat.data),
             signal: controller.signal
         })
         clearTimeout(timeout)
