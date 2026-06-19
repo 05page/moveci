@@ -10,12 +10,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('versements_inscription', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->foreignUuid('inscription_id')
                   ->constrained('inscriptions_formation')
                   ->cascadeOnDelete();
             $table->decimal('montant', 10, 2);
-            $table->date('date_versement')->default(DB::raw('CURRENT_DATE'));
+            $table->date('date_versement')->default(DB::raw('(CURDATE())'));
             $table->string('note')->nullable();
             $table->timestamps();
         });

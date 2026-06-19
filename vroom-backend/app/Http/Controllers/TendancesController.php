@@ -96,7 +96,7 @@ class TendancesController extends Controller
             ->where('formations.auto_ecole_id', $userId)
             ->whereYear('inscriptions_formation.date_inscription', now()->year)
             ->select(
-                DB::raw('EXTRACT(MONTH FROM inscriptions_formation.date_inscription)::int as mois'),
+                DB::raw('MONTH(inscriptions_formation.date_inscription) as mois'),
                 DB::raw('count(*) as inscrits')
             )
             ->groupBy('mois')

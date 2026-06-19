@@ -454,7 +454,7 @@ class AdminController extends Controller
         // Inscriptions par mois sur les 6 derniers mois
         $inscriptionsParMois = User::whereIn('role', $rolesUtilisateurs)
             ->where('created_at', '>=', now()->subMonths(5)->startOfMonth())
-            ->selectRaw("TO_CHAR(created_at, 'YYYY-MM') as mois, count(*) as total")
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as mois, count(*) as total")
             ->groupBy('mois')
             ->orderBy('mois')
             ->get();
@@ -657,7 +657,7 @@ class AdminController extends Controller
     {
         // Expression SQL pour extraire la zone depuis l'adresse texte
         // Si l'adresse contient une virgule → prend la 2e partie, sinon prend l'adresse entière
-        $zoneExpr = "CASE WHEN adresse LIKE '%,%' THEN TRIM(SPLIT_PART(adresse, ',', 2)) ELSE TRIM(adresse) END";
+        $zoneExpr = "CASE WHEN adresse LIKE '%,%' THEN TRIM(SUBSTRING_INDEX(adresse, ',', -1)) ELSE TRIM(adresse) END";
 
         // Acheteurs par zone (rôle client)
         $acheteursByZone = DB::table('users')
