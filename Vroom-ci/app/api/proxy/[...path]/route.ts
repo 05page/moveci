@@ -68,15 +68,17 @@ function sanitizeBackendResponse(data: unknown, status: number, path: string) {
 }
 
 const ALLOWED_PATHS = [
-  "/notifications",        // /notifications/:id/read, /notifications/read-all
-  "/auth",                 // /auth/complete-onboarding
-  "/admin",                // /admin/transactions, /admin/stats, /admin/admins
-  "/reservations",         // /reservations, /reservations/:id/cancel
-  "/rdv",                  // /rdv/
-  "/alertes",              // /alertes/
-  "/signalements",         // /signalements/
-  "/vehicules",            // /vehicules/:id
-  "/me",                   // /me/update, /me/contact
+  "/notifications",         // /notifications/:id/read, /notifications/read-all
+  "/auth",                  // /auth/complete-onboarding
+  "/admin",                 // /admin/transactions, /admin/stats, /admin/admins
+  "/reservations",          // /reservations, /reservations/:id/cancel
+  "/rdv",                   // /rdv/, /rdv/mes-rdv
+  "/alertes",               // /alertes/
+  "/signalements",          // /signalements/
+  "/vehicules",             // /vehicules/:id
+  "/me",                    // /me/update, /me/contact
+  "/avis",                  // /avis/vendeur/:id
+  "/transactions-conclues", // /transactions-conclues/mes-demandes, /mes-transactions
 ]
 
 async function proxyToLaravel(request: NextRequest) {
