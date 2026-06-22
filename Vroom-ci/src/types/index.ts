@@ -16,6 +16,7 @@ export interface User {
   raison_sociale?: string;
   rccm?: string;
   numero_agrement?: string;
+  created_at?: string;
 }
 
 export type UserRole =
