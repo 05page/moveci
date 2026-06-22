@@ -1,141 +1,152 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-    Car,
-    Plus,
-    Filter,
-    Tag,
-    KeyRound,
-    Search,
-    CheckCircle2,
-    PackageX,
-    X,
-    Fuel,
-    Calendar,
-    CircleDollarSign,
+    Car, Search, PackageX, X, Fuel,
+    Heart, GitCompare, LogIn, Building2, MapPin,
+    LayoutGrid, List, ChevronLeft, ChevronRight, MoreVertical,
     SlidersHorizontal,
-    Heart,
-    ShoppingBag,
-    Eye,
-    LogIn,
-    Building2,
-    GitCompare,
-    RefreshCw,
 } from "lucide-react"
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
 import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { toast } from "sonner";
-import { vehicule, User, AllVehicules, VehiculeStats, Favori } from "@/src/types"
+import { toast } from "sonner"
+import { vehicule, Favori } from "@/src/types"
 import { getVehicules } from "@/src/actions/vehicules.actions"
 import { getFavoris, removeFavori, addFavori } from "@/src/actions/favoris.actions"
 import { useUser } from "@/src/context/UserContext"
-import VehicleDetails from "./VehicleDetails"
 import { cn, getPhotoUrl } from "@/src/lib/utils"
-import { FadeIn, SlideIn, StaggerList, StaggerItem } from "@/components/ui/motion-primitives"
-import { useRouter } from "next/navigation"
+
+// ─── Types ─────────────────────────────────────────────────────────────────
 
 interface Filters {
     search: string
-    carburant: string
-    statut: string
+    marque: string
     prixMin: string
     prixMax: string
     anneeMin: string
-    anneeMax: string
-    marque: string
+    carburant: string[]
+    transmission: string
+    localisation: string
 }
 
-const CARBURANTS = ["Tous", "Essence", "Diesel", "Hybride", "Électrique"]
-const STATUTS = ["Tous", "Disponible", "Réservé", "Vendu", "Loué"]
+type SortKey = "recent" | "prix_asc" | "prix_desc" | "km_asc"
+type ViewMode = "grid" | "list"
+
+// ─── Constantes ─────────────────────────────────────────────────────────────
+
+const CARBURANTS = ["Électrique", "Hybride", "Essence", "Diesel"]
+const ANNEES_PILLS = ["2018+", "2020+", "2022+", "2024+"]
+const TRANSMISSIONS = ["Automatique", "Manuelle"]
+const PER_PAGE = 9
+
+const SORT_LABELS: Record<SortKey, string> = {
+    recent: "Plus récents",
+    prix_asc: "Prix croissant",
+    prix_desc: "Prix décroissant",
+    km_asc: "Kilométrage ↑",
+}
+
+const EMPTY_FILTERS: Filters = {
+    search: "",
+    marque: "Toutes",
+    prixMin: "",
+    prixMax: "",
+    anneeMin: "",
+    carburant: [],
+    transmission: "",
+    localisation: "",
+}
+
+// ─── Skeleton ───────────────────────────────────────────────────────────────
+
+function PageSkeleton() {
+    return (
+        <div className="flex min-h-screen pt-16 bg-zinc-50">
+            <aside className="hidden lg:block w-64 shrink-0 border-r border-zinc-200 bg-white p-6 space-y-5">
+                <Skeleton className="h-6 w-24" />
+                {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+            </aside>
+            <main className="flex-1 p-6 space-y-5">
+                <Skeleton className="h-11 w-full rounded-xl" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className="rounded-2xl border border-zinc-200 overflow-hidden bg-white">
+                            <Skeleton className="h-44 w-full rounded-none" />
+                            <div className="p-4 space-y-2">
+                                <Skeleton className="h-4 w-3/4" />
+                                <Skeleton className="h-3 w-1/2" />
+                                <Skeleton className="h-6 w-1/3" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </main>
+        </div>
+    )
+}
+
+// ─── Page principale ─────────────────────────────────────────────────────────
 
 const VehiclesPage = () => {
+    const { user, loading: userLoading } = useUser()
     const [isLoading, setIsLoading] = useState(true)
-    const [refreshing, setRefreshing] = useState(false)
-    const [showFilters, setShowFilters] = useState(false)
-    const { user, loading: userLoading } = useUser();
     const [vehiculesList, setVehiculesList] = useState<vehicule[]>([])
-    const [stats, setStats] = useState<VehiculeStats | null>(null)
-    const [selectedVehicule, setSelectedVehicule] = useState<vehicule | null>(null)
     const [isFavori, setIsFavori] = useState<Set<string>>(new Set())
-    const [favLoading, setFavLoading] = useState<string  |  null>(null)
+    const [favLoading, setFavLoading] = useState<string | null>(null)
     const [compareIds, setCompareIds] = useState<string[]>([])
+    const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
+    const [sortBy, setSortBy] = useState<SortKey>("recent")
+    const [viewMode, setViewMode] = useState<ViewMode>("grid")
+    const [page, setPage] = useState(1)
+    const [sidebarOpen, setSidebarOpen] = useState(true)
 
-    const router = useRouter();
+    // ── Fetch données ───────────────────────────────────────────────────────
 
-    const navigate = () => {
-        router.push('/vendeur/addVehicle')
-    }
-
-    /** Ajoute ou retire un véhicule de la sélection de comparaison (max 3). */
-    const toggleCompare = (id: string) => {
-        setCompareIds(prev => {
-            if (prev.includes(id)) return prev.filter(x => x !== id)
-            if (prev.length >= 3) { toast.info("Maximum 3 véhicules à comparer"); return prev }
-            return [...prev, id]
-        })
-    }
-
-    const fetchVehicules = useCallback(async (silent = false) => {
-        if (!silent) setIsLoading(true)
+    const fetchVehicules = useCallback(async () => {
+        setIsLoading(true)
         try {
             const res = await getVehicules()
             setVehiculesList(res?.data?.vehicules ?? [])
-            setStats(res?.data?.statsVehicules ?? null)
         } catch {
             toast.error("Erreur lors du chargement des véhicules")
         } finally {
-            if (!silent) setIsLoading(false)
+            setIsLoading(false)
         }
     }, [])
 
     useEffect(() => { fetchVehicules() }, [fetchVehicules])
 
-    const handleRefresh = async () => {
-        setRefreshing(true)
-        await fetchVehicules(true)
-        setRefreshing(false)
-    }
-
-    // Charge les favoris uniquement quand on sait que l'user est connecté
     useEffect(() => {
         if (userLoading || !user) return
         getFavoris()
             .then(res => setIsFavori(new Set((res?.data ?? []).map((f: Favori) => f.vehicule_id))))
-            .catch(() => {/* silencieux si favoris indisponibles */})
+            .catch(() => {})
     }, [user, userLoading])
 
-    // Écoute le canal public "vehicules" pour afficher les nouveaux véhicules validés en temps réel
-    // Canal public = pas besoin d'auth, même les visiteurs non connectés reçoivent l'event
+    // WebSocket — nouveaux véhicules validés en temps réel
     useEffect(() => {
-        let channelRef: ReturnType<typeof import("laravel-echo").default.prototype.channel> | null = null
-
         async function connectEcho() {
             try {
                 const { getEcho } = await import("@/src/lib/echo")
                 const echo = await getEcho()
-                // .channel() (sans "private") pour un canal public
-                channelRef = echo
-                    .channel("vehicules")
-                    .listen(".vehicule.validated", (e: { vehicule: vehicule }) => {
-                        // On ajoute le nouveau véhicule en tête de liste
-                        setVehiculesList(prev => [e.vehicule, ...prev])
-                        toast.success(`Nouveau véhicule disponible : ${e.vehicule.description?.marque ?? ""}`)
-                    })
+                echo.channel("vehicules").listen(".vehicule.validated", (e: { vehicule: vehicule }) => {
+                    setVehiculesList(prev => [e.vehicule, ...prev])
+                    toast.success(`Nouveau véhicule disponible : ${e.vehicule.description?.marque ?? ""}`)
+                })
             } catch (err) {
                 console.error("WebSocket vehicules :", err)
             }
         }
-
         connectEcho()
-
-        // Cleanup : quitter le canal au démontage du composant
         return () => {
             import("@/src/lib/echo").then(({ getEcho }) =>
                 getEcho().then(echo => echo.leave("vehicules")).catch(() => {})
@@ -143,20 +154,15 @@ const VehiclesPage = () => {
         }
     }, [])
 
+    // ── Favoris ─────────────────────────────────────────────────────────────
+
     const toggleFavori = async (v: vehicule) => {
-        if (!user) {
-            toast.error("Connectez-vous pour ajouter aux favoris")
-            return
-        }
+        if (!user) { toast.error("Connectez-vous pour ajouter aux favoris"); return }
         setFavLoading(v.id)
         try {
             if (isFavori.has(v.id)) {
                 await removeFavori(v.id)
-                setIsFavori(prev => {
-                    const next = new Set(prev)
-                    next.delete(v.id)
-                    return next
-                })
+                setIsFavori(prev => { const n = new Set(prev); n.delete(v.id); return n })
                 toast.success("Retiré des favoris")
             } else {
                 await addFavori(v.id)
@@ -170,160 +176,178 @@ const VehiclesPage = () => {
         }
     }
 
-    const isVendeur = user?.role === "vendeur"
+    // ── Comparaison ──────────────────────────────────────────────────────────
 
-    const [filters, setFilters] = useState<Filters>({
-        search: "",
-        carburant: "Tous",
-        statut: "Tous",
-        prixMin: "",
-        prixMax: "",
-        anneeMin: "",
-        anneeMax: "",
-        marque: "Toutes",
-    })
+    const toggleCompare = (id: string) => {
+        setCompareIds(prev => {
+            if (prev.includes(id)) return prev.filter(x => x !== id)
+            if (prev.length >= 3) { toast.info("Maximum 3 véhicules à comparer"); return prev }
+            return [...prev, id]
+        })
+    }
 
-    /** Extrait les marques uniques depuis la liste chargée pour les chips de filtre. */
+    // ── Filtres + tri ────────────────────────────────────────────────────────
+
     const marquesDisponibles = useMemo(() => {
-        const uniques = Array.from(
-            new Set(vehiculesList.map(v => v.description?.marque).filter(Boolean))
-        ).sort()
+        const uniques = Array.from(new Set(vehiculesList.map(v => v.description?.marque).filter(Boolean))).sort()
         return ["Toutes", ...uniques]
     }, [vehiculesList])
 
-    const activeFilterCount = useMemo(() => {
-        let count = 0
-        if (filters.search) count++
-        if (filters.carburant !== "Tous") count++
-        if (filters.statut !== "Tous") count++
-        if (filters.prixMin) count++
-        if (filters.prixMax) count++
-        if (filters.anneeMin) count++
-        if (filters.anneeMax) count++
-        if (filters.marque !== "Toutes") count++
-        return count
-    }, [filters])
-
-    const applyFilters = (list: vehicule[]): vehicule[] => {
-        return list.filter(v => {
+    const filteredAndSorted = useMemo(() => {
+        let list = vehiculesList.filter(v => {
             if (filters.search) {
                 const q = filters.search.toLowerCase()
-                if (
-                    !v.description.marque.toLowerCase().includes(q) &&
-                    !v.description.modele.toLowerCase().includes(q)
-                ) return false
+                if (!v.description?.marque?.toLowerCase().includes(q) && !v.description?.modele?.toLowerCase().includes(q)) return false
             }
-            if (filters.marque !== "Toutes" && v.description.marque !== filters.marque) return false
-            if (filters.carburant !== "Tous" && v.description.carburant.toLowerCase() !== filters.carburant.toLowerCase()) return false
-            if (filters.statut !== "Tous" && v.statut.toLowerCase() !== filters.statut.toLowerCase()) return false
+            if (filters.marque !== "Toutes" && v.description?.marque !== filters.marque) return false
+            if (filters.carburant.length > 0 && !filters.carburant.includes(v.description?.carburant)) return false
+            if (filters.transmission && v.description?.transmission?.toLowerCase() !== filters.transmission.toLowerCase()) return false
             if (filters.prixMin && v.prix < Number(filters.prixMin)) return false
             if (filters.prixMax && v.prix > Number(filters.prixMax)) return false
-            if (filters.anneeMin && v.description.annee < Number(filters.anneeMin)) return false
-            if (filters.anneeMax && v.description.annee > Number(filters.anneeMax)) return false
+            if (filters.anneeMin) {
+                const minYear = Number(filters.anneeMin.replace("+", ""))
+                if (v.description?.annee < minYear) return false
+            }
             return true
         })
-    }
 
-    const getVehiclesFiltres = (type: string): vehicule[] => {
-        let list = vehiculesList
-        if (type === "vente") list = vehiculesList.filter(v => v.post_type === "vente")
-        if (type === "location") list = vehiculesList.filter(v => v.post_type === "location")
-        return applyFilters(list)
-    }
-
-    const resetFilters = () => {
-        setFilters({
-            search: "",
-            carburant: "Tous",
-            statut: "Tous",
-            prixMin: "",
-            prixMax: "",
-            anneeMin: "",
-            anneeMax: "",
-            marque: "Toutes",
+        list = [...list].sort((a, b) => {
+            if (sortBy === "prix_asc") return a.prix - b.prix
+            if (sortBy === "prix_desc") return b.prix - a.prix
+            if (sortBy === "km_asc") return Number(a.description?.kilometrage ?? 0) - Number(b.description?.kilometrage ?? 0)
+            return 0 // recent: ordre API
         })
-        toast.success("Filtres réinitialisés")
+
+        return list
+    }, [vehiculesList, filters, sortBy])
+
+    const totalPages = Math.max(1, Math.ceil(filteredAndSorted.length / PER_PAGE))
+    const paginated = filteredAndSorted.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+
+    const resetFilters = () => { setFilters(EMPTY_FILTERS); setPage(1) }
+    const setFilter = <K extends keyof Filters>(key: K, val: Filters[K]) => {
+        setFilters(prev => ({ ...prev, [key]: val }))
+        setPage(1)
     }
+
+    const activeFilterCount = useMemo(() => {
+        let n = 0
+        if (filters.search) n++
+        if (filters.marque !== "Toutes") n++
+        if (filters.carburant.length > 0) n++
+        if (filters.transmission) n++
+        if (filters.prixMin) n++
+        if (filters.prixMax) n++
+        if (filters.anneeMin) n++
+        if (filters.localisation) n++
+        return n
+    }, [filters])
+
+    // ── Carte véhicule ───────────────────────────────────────────────────────
 
     const VehicleCard = ({ v }: { v: vehicule }) => {
         const primaryPhoto = v.photos?.find(p => p.is_primary) ?? v.photos?.[0]
         const imageUrl = primaryPhoto ? getPhotoUrl(primaryPhoto.path) : null
+        const isVerified = v.status_validation === "validee"
+        const isPremium = v.creator?.role === "concessionnaire" || v.creator?.role === "auto_ecole"
+
         return (
-            <Card className="rounded-2xl shadow-sm border border-zinc-200 bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
-                <CardContent className="p-0">
-                    {/* Photo — h-48 pour plus de respiration */}
-                    <div className="h-48 bg-linear-to-br from-zinc-100 to-zinc-50 flex items-center justify-center relative overflow-hidden">
+            <Card className={cn(
+                "rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5",
+                viewMode === "list" && "flex flex-row"
+            )}>
+                <CardContent className={cn("p-0 flex flex-col", viewMode === "list" && "flex-row w-full")}>
+
+                    {/* ── Image ── */}
+                    <div className={cn(
+                        "relative bg-zinc-100 overflow-hidden shrink-0",
+                        viewMode === "grid" ? "h-44 w-full" : "h-36 w-52"
+                    )}>
                         {imageUrl
                             ? <Image src={imageUrl} alt={`${v.description?.marque} ${v.description?.modele}`} fill className="object-cover" unoptimized />
-                            : <Car className="h-12 w-12 text-zinc-300" />
+                            : <div className="w-full h-full flex items-center justify-center"><Car className="h-12 w-12 text-zinc-300" /></div>
                         }
-                        <Badge className={`absolute top-3 left-3 rounded-full text-xs ${v.post_type === "vente"
-                            ? "bg-green-500/10 text-green-600 border-green-500/20"
-                            : "bg-blue-500/10 text-blue-600 border-blue-500/20"
-                            }`}>
-                            {v.post_type === "vente" ? <Tag className="h-3 w-3 mr-1" /> : <KeyRound className="h-3 w-3 mr-1" />}
-                            {v.post_type === "vente" ? "Vente" : "Location"}
-                        </Badge>
+
+                        {/* ⋮ menu top-left */}
+                        <button className="absolute top-2.5 left-2.5 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition-colors cursor-pointer">
+                            <MoreVertical className="h-4 w-4 text-white" />
+                        </button>
+
+                        {/* ♡ heart top-right */}
                         <button
                             onClick={() => toggleFavori(v)}
                             disabled={favLoading === v.id}
-                            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md hover:bg-white transition-colors cursor-pointer"
+                            className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors cursor-pointer"
                         >
                             <Heart className={cn("h-4 w-4 transition-colors", isFavori.has(v.id) ? "fill-red-500 text-red-500" : "text-zinc-500")} />
                         </button>
+
+                        {/* Badge PREMIUM / VÉRIFIÉ bottom-left */}
+                        {(isVerified || isPremium) && (
+                            <div className="absolute bottom-2.5 left-2.5">
+                                {isPremium
+                                    ? <span className="text-[10px] font-black tracking-widest px-2 py-0.5 rounded-sm bg-move-gold text-white uppercase">Premium</span>
+                                    : <span className="text-[10px] font-black tracking-widest px-2 py-0.5 rounded-sm bg-green-500 text-white uppercase">Vérifié</span>
+                                }
+                            </div>
+                        )}
                     </div>
-                    {/* Infos — sans Separator pour garder l'espace aéré */}
-                    <div className="p-4">
-                        <div className="mb-3">
-                            <h3 className="font-bold text-base text-zinc-900">{v.description?.marque} {v.description?.modele}</h3>
-                            <p className="text-xs text-zinc-500 mt-0.5">{v.description?.annee} &middot; {v.description?.kilometrage} km &middot; {v.description?.carburant}</p>
-                            {v.creator && (
-                                <Link
-                                    href={`/profil/${v.creator.id}`}
-                                    className="text-xs text-zinc-400 hover:text-zinc-700 hover:underline transition-colors mt-0.5 inline-block"
-                                    onClick={e => e.stopPropagation()}
-                                >
-                                    {v.creator.fullname}
-                                </Link>
+
+                    {/* ── Infos ── */}
+                    <div className="p-4 flex flex-col flex-1 min-w-0">
+                        {/* Prix */}
+                        <p className="text-xl font-black text-move-gold mb-2">
+                            {v.prix?.toLocaleString("fr-FR")}
+                            <span className="text-xs font-normal text-zinc-400 ml-1">FCFA</span>
+                        </p>
+
+                        {/* Specs */}
+                        <div className="flex items-center gap-3 text-xs text-zinc-500 mb-1.5">
+                            <span className="flex items-center gap-1">
+                                <span className="w-3.5 h-3.5 rounded-full border border-zinc-300 flex items-center justify-center text-[8px]">⊙</span>
+                                {Number(v.description?.kilometrage ?? 0).toLocaleString("fr-FR")} km
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <Fuel className="h-3 w-3" />
+                                {v.description?.carburant}
+                            </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 mb-3">{v.description?.annee}</p>
+
+                        <Separator className="mb-3" />
+
+                        {/* Vendeur */}
+                        <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-zinc-200 flex items-center justify-center shrink-0 text-[10px] font-bold text-zinc-600">
+                                {v.creator?.fullname?.charAt(0).toUpperCase() ?? "?"}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-zinc-800 truncate">{v.creator?.fullname ?? "Vendeur"}</p>
+                            </div>
+                            {v.creator?.adresse && (
+                                <span className="text-[10px] text-zinc-400 bg-zinc-100 px-1.5 py-0.5 rounded-full shrink-0">
+                                    {v.creator.adresse}
+                                </span>
                             )}
                         </div>
-                        <p className="text-lg font-black text-zinc-900 mb-3">{v.prix?.toLocaleString()} <span className="text-xs font-normal text-zinc-500">FCFA</span></p>
-                        <div className="flex items-center justify-between text-xs text-zinc-500">
-                            <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> {v.views_count} vues</span>
-                            <div className="flex items-center gap-1.5">
-                                {/* Lien vers la page détail partageable */}
-                                <Link href={`/vehicles/${v.id}`}>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="rounded-lg text-xs cursor-pointer border-zinc-200"
-                                    >
-                                        Voir détails
-                                    </Button>
-                                </Link>
-                                {/* Conserve l'ouverture du Dialog pour accès rapide depuis le catalogue */}
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="rounded-lg text-xs cursor-pointer text-zinc-400 hover:text-zinc-700 px-2"
-                                    onClick={() => setSelectedVehicule(v)}
-                                    title="Aperçu rapide"
-                                >
-                                    <Eye className="h-3.5 w-3.5" />
+
+                        {/* Actions rapides */}
+                        <div className="flex items-center gap-1.5 mt-3">
+                            <Link href={`/vehicles/${v.id}`} className="flex-1">
+                                <Button size="sm" className="w-full rounded-lg text-xs bg-zinc-900 hover:bg-zinc-800 text-white cursor-pointer">
+                                    Voir détails
                                 </Button>
-                                {/* Bouton d'ajout/retrait de la sélection de comparaison */}
-                                <button
-                                    onClick={() => toggleCompare(v.id)}
-                                    title={compareIds.includes(v.id) ? "Retirer de la comparaison" : "Ajouter à la comparaison"}
-                                    className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer
-                                        ${compareIds.includes(v.id)
-                                            ? "bg-amber-500 text-white shadow-sm"
-                                            : "bg-zinc-100 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
-                                        }`}
-                                >
-                                    <GitCompare className="h-3.5 w-3.5" />
-                                </button>
-                            </div>
+                            </Link>
+                            <button
+                                onClick={() => toggleCompare(v.id)}
+                                title={compareIds.includes(v.id) ? "Retirer de la comparaison" : "Ajouter à la comparaison"}
+                                className={cn(
+                                    "w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors",
+                                    compareIds.includes(v.id) ? "bg-move-gold text-white" : "bg-zinc-100 hover:bg-zinc-200 text-zinc-500"
+                                )}
+                            >
+                                <GitCompare className="h-3.5 w-3.5" />
+                            </button>
                         </div>
                     </div>
                 </CardContent>
@@ -331,542 +355,347 @@ const VehiclesPage = () => {
         )
     }
 
-    // ── Skeleton de chargement ──
-    if (isLoading) {
+    // ── Pagination ───────────────────────────────────────────────────────────
+
+    const Pagination = () => {
+        const pages: (number | "…")[] = []
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i)
+        } else {
+            pages.push(1)
+            if (page > 3) pages.push("…")
+            for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i)
+            if (page < totalPages - 2) pages.push("…")
+            pages.push(totalPages)
+        }
+
         return (
-            <div className="pt-20 px-4 md:px-6 max-w-5xl mx-auto mb-16 space-y-8">
-                {/* Header skeleton */}
-                <div className="space-y-2">
-                    <Skeleton className="h-7 w-48" />
-                    <Skeleton className="h-4 w-72" />
-                </div>
-
-                {/* Search skeleton */}
-                <Skeleton className="h-10 w-full rounded-xl" />
-
-                {/* Cards skeleton */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                        <div key={i} className="rounded-2xl border border-zinc-200 overflow-hidden bg-white">
-                            <Skeleton className="h-48 w-full rounded-none" />
-                            <div className="p-4 space-y-2">
-                                <Skeleton className="h-5 w-3/4" />
-                                <Skeleton className="h-3 w-1/2" />
-                                <Skeleton className="h-6 w-1/3 mt-1" />
-                            </div>
-                        </div>
-                    ))}
-                </div>
+            <div className="flex items-center justify-center gap-1.5 mt-8">
+                <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center border border-zinc-200 text-zinc-500 hover:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                </button>
+                {pages.map((p, i) =>
+                    p === "…" ? (
+                        <span key={`ellipsis-${i}`} className="w-9 h-9 flex items-center justify-center text-sm text-zinc-400">…</span>
+                    ) : (
+                        <button
+                            key={p}
+                            onClick={() => setPage(p as number)}
+                            className={cn(
+                                "w-9 h-9 rounded-lg text-sm font-semibold transition-colors cursor-pointer",
+                                page === p
+                                    ? "bg-move-gold text-white shadow-sm"
+                                    : "border border-zinc-200 text-zinc-600 hover:bg-zinc-100"
+                            )}
+                        >
+                            {p}
+                        </button>
+                    )
+                )}
+                <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center border border-zinc-200 text-zinc-500 hover:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                >
+                    <ChevronRight className="h-4 w-4" />
+                </button>
             </div>
         )
     }
 
-    return (
-        <FadeIn>
-        <div className="pt-20 px-4 md:px-6 max-w-5xl mx-auto mb-16 space-y-8">
+    // ── Loading ──────────────────────────────────────────────────────────────
 
-            {/* ── Header ── */}
-            <SlideIn direction="left">
-            <section className="space-y-3">
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-                            {isVendeur ? "Mes Véhicules" : "Véhicules disponibles"}
-                        </h1>
-                        {/* Stats inline — pas de cards séparées */}
-                        <div className="flex items-center gap-3 mt-1.5 text-sm text-zinc-500 flex-wrap">
-                            <span>{stats?.total_vehicules ?? 0} au total</span>
-                            <span className="text-zinc-300">·</span>
-                            <span className="flex items-center gap-1">
-                                <Tag className="h-3.5 w-3.5 text-green-500" />
-                                {stats?.en_vente ?? 0} en vente
-                            </span>
-                            <span className="text-zinc-300">·</span>
-                            <span className="flex items-center gap-1">
-                                <KeyRound className="h-3.5 w-3.5 text-blue-500" />
-                                {stats?.en_location ?? 0} en location
-                            </span>
+    if (isLoading) return <PageSkeleton />
+
+    // ── Render ───────────────────────────────────────────────────────────────
+
+    return (
+        <div className="flex min-h-screen pt-16 bg-zinc-50">
+
+            {/* ══════════════ SIDEBAR FILTRES ══════════════ */}
+            <aside className={cn(
+                "flex-col w-64 shrink-0 border-r border-zinc-200 bg-white sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto transition-all duration-300",
+                sidebarOpen ? "hidden lg:flex" : "hidden"
+            )}>
+                <div className="p-5 space-y-6 flex-1">
+
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-base font-black text-zinc-900">Filtres</h2>
+                        {activeFilterCount > 0 && (
+                            <button
+                                onClick={resetFilters}
+                                className="text-xs font-semibold text-move-gold hover:underline cursor-pointer"
+                            >
+                                Réinitialiser
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Marque */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Marque</label>
+                        <Select value={filters.marque} onValueChange={v => setFilter("marque", v)}>
+                            <SelectTrigger className="h-10 rounded-xl border-zinc-200 bg-zinc-50 text-sm cursor-pointer">
+                                <SelectValue placeholder="Toutes les marques" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                                {marquesDisponibles.map(m => (
+                                    <SelectItem key={m} value={m} className="text-sm cursor-pointer">
+                                        {m === "Toutes" ? "Toutes les marques" : m}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Prix */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Gamme de prix (FCFA)</label>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                type="number"
+                                placeholder="Min"
+                                value={filters.prixMin}
+                                onChange={e => setFilter("prixMin", e.target.value)}
+                                className="h-9 rounded-xl border-zinc-200 bg-zinc-50 text-sm text-center"
+                            />
+                            <span className="text-zinc-400 shrink-0">—</span>
+                            <Input
+                                type="number"
+                                placeholder="Max"
+                                value={filters.prixMax}
+                                onChange={e => setFilter("prixMax", e.target.value)}
+                                className="h-9 rounded-xl border-zinc-200 bg-zinc-50 text-sm text-center"
+                            />
                         </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
-                        {isVendeur && (
-                            <Button
-                                size="sm"
-                                className="rounded-lg cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white"
-                                onClick={() => navigate()}
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                <span className="hidden sm:inline">Publier un véhicule</span>
-                                <span className="sm:hidden">Publier</span>
-                            </Button>
-                        )}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleRefresh}
-                            disabled={refreshing}
-                            className="rounded-lg cursor-pointer border-zinc-200 text-zinc-600 hover:bg-zinc-50"
-                        >
-                            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-                        </Button>
-                        <Button
-                            variant={showFilters ? "default" : "outline"}
-                            size="sm"
-                            className={`rounded-lg cursor-pointer ${showFilters ? "bg-zinc-900 hover:bg-zinc-800 text-white" : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"}`}
-                            onClick={() => setShowFilters(!showFilters)}
-                        >
-                            <Filter className="h-4 w-4 mr-2" />
-                            Filtrer
-                            {activeFilterCount > 0 && (
-                                <Badge className="ml-1.5 bg-zinc-700 text-white rounded-full text-[10px] px-1.5 py-0">
-                                    {activeFilterCount}
-                                </Badge>
-                            )}
-                        </Button>
-                    </div>
-                </div>
 
-                {/* Bannière non-connecté — visible uniquement pour les visiteurs anonymes */}
+                    {/* Année minimum */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Année minimum</label>
+                        <div className="flex flex-wrap gap-1.5">
+                            {ANNEES_PILLS.map(a => (
+                                <button
+                                    key={a}
+                                    onClick={() => setFilter("anneeMin", filters.anneeMin === a ? "" : a)}
+                                    className={cn(
+                                        "px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer",
+                                        filters.anneeMin === a
+                                            ? "bg-move-gold text-white shadow-sm"
+                                            : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                                    )}
+                                >
+                                    {a}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Énergie */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Énergie</label>
+                        <div className="space-y-2">
+                            {CARBURANTS.map(c => (
+                                <label key={c} className="flex items-center gap-2.5 cursor-pointer group">
+                                    <Checkbox
+                                        checked={filters.carburant.includes(c)}
+                                        onCheckedChange={checked => {
+                                            setFilter("carburant", checked
+                                                ? [...filters.carburant, c]
+                                                : filters.carburant.filter(x => x !== c)
+                                            )
+                                        }}
+                                        className="rounded data-[state=checked]:bg-move-gold data-[state=checked]:border-move-gold"
+                                    />
+                                    <span className="text-sm text-zinc-700 group-hover:text-zinc-900">{c}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Transmission */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Transmission</label>
+                        <div className="flex rounded-xl border border-zinc-200 overflow-hidden">
+                            {TRANSMISSIONS.map((t, i) => (
+                                <button
+                                    key={t}
+                                    onClick={() => setFilter("transmission", filters.transmission === t ? "" : t)}
+                                    className={cn(
+                                        "flex-1 py-2 text-xs font-semibold transition-all cursor-pointer",
+                                        i === 0 && "border-r border-zinc-200",
+                                        filters.transmission === t
+                                            ? "bg-zinc-900 text-white"
+                                            : "bg-white text-zinc-600 hover:bg-zinc-50"
+                                    )}
+                                >
+                                    {t}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Localisation */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Localisation</label>
+                        <div className="relative">
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                            <Input
+                                placeholder="Ville ou quartier"
+                                value={filters.localisation}
+                                onChange={e => setFilter("localisation", e.target.value)}
+                                className="pl-9 h-9 rounded-xl border-zinc-200 bg-zinc-50 text-sm"
+                            />
+                        </div>
+                    </div>
+
+                </div>
+            </aside>
+
+            {/* ══════════════ CONTENU PRINCIPAL ══════════════ */}
+            <main className="flex-1 min-w-0 p-5 md:p-6 space-y-5">
+
+                {/* Bannière non connecté */}
                 {!user && (
-                    <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
+                    <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-move-gold/10 border border-move-gold/20">
                         <div className="flex items-center gap-2.5 min-w-0">
-                            <Building2 className="h-4 w-4 text-amber-600 shrink-0" />
-                            <p className="text-sm text-amber-800 truncate">
-                                Parcourez librement — Connectez-vous pour contacter les vendeurs et prendre rendez-vous.
+                            <Building2 className="h-4 w-4 text-move-gold shrink-0" />
+                            <p className="text-sm text-zinc-700 truncate">
+                                Parcourez librement — Connectez-vous pour contacter les vendeurs.
                             </p>
                         </div>
                         <Link href="/auth" className="shrink-0">
-                            <Button size="sm" className="rounded-lg bg-amber-500 hover:bg-amber-600 text-white cursor-pointer gap-1.5">
+                            <Button size="sm" className="rounded-lg bg-move-gold hover:bg-[oklch(0.72_0.175_83)] text-white cursor-pointer gap-1.5">
                                 <LogIn className="h-3.5 w-3.5" />
                                 Se connecter
                             </Button>
                         </Link>
                     </div>
                 )}
-            </section>
-            </SlideIn>
 
-            {/* ── Search Bar ── */}
-            <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
-                <Input
-                    placeholder="Rechercher par marque ou modèle..."
-                    value={filters.search}
-                    onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                    className="pl-10 pr-10 h-10 rounded-xl border-zinc-200 bg-zinc-50/50 text-sm placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-zinc-300"
-                />
-                {filters.search && (
+                {/* Barre de recherche + tri */}
+                <div className="flex gap-3">
+                    {/* Bouton toggle sidebar */}
                     <button
-                        onClick={() => setFilters({ ...filters, search: "" })}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
+                        onClick={() => setSidebarOpen(o => !o)}
+                        title={sidebarOpen ? "Masquer les filtres" : "Afficher les filtres"}
+                        className={cn(
+                            "hidden lg:flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-all cursor-pointer",
+                            sidebarOpen
+                                ? "border-move-gold bg-move-gold/10 text-move-gold"
+                                : "border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50"
+                        )}
                     >
-                        <X className="h-4 w-4" />
+                        <SlidersHorizontal className="h-4 w-4" />
                     </button>
-                )}
-            </div>
 
-            {/* ── Filters Panel ── */}
-            {showFilters && (
-                <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <SlidersHorizontal className="h-4 w-4 text-zinc-500" />
-                            <span className="text-sm font-semibold text-zinc-900">Filtres avancés</span>
-                        </div>
-                        <div className="flex gap-2">
-                            {activeFilterCount > 0 && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="rounded-lg cursor-pointer text-zinc-500 hidden sm:flex text-xs"
-                                    onClick={resetFilters}
-                                >
-                                    <X className="h-3.5 w-3.5 mr-1" />
-                                    Réinitialiser
-                                </Button>
-                            )}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="rounded-lg cursor-pointer h-8 w-8"
-                                onClick={() => setShowFilters(false)}
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+                        <Input
+                            placeholder="Rechercher une voiture, une marque, un modèle..."
+                            value={filters.search}
+                            onChange={e => setFilter("search", e.target.value)}
+                            className="pl-10 pr-9 h-11 rounded-xl border-zinc-200 bg-white text-sm placeholder:text-zinc-400"
+                        />
+                        {filters.search && (
+                            <button
+                                onClick={() => setFilter("search", "")}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 cursor-pointer"
                             >
                                 <X className="h-4 w-4" />
-                            </Button>
-                        </div>
+                            </button>
+                        )}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {/* Marque */}
-                        <div className="space-y-2 sm:col-span-2 lg:col-span-4">
-                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
-                                <Car className="h-3.5 w-3.5" />
-                                Marque
-                            </label>
-                            <div className="flex flex-wrap gap-1.5">
-                                {marquesDisponibles.map(m => (
-                                    <button
-                                        key={m}
-                                        onClick={() => setFilters({ ...filters, marque: m })}
-                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${filters.marque === m
-                                            ? "bg-zinc-900 text-white"
-                                            : "bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200"
-                                            }`}
-                                    >
-                                        {m}
-                                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs text-zinc-500 hidden sm:block whitespace-nowrap">Trier par :</span>
+                        <Select value={sortBy} onValueChange={v => { setSortBy(v as SortKey); setPage(1) }}>
+                            <SelectTrigger className="h-11 min-w-40 rounded-xl border-zinc-200 bg-white text-sm cursor-pointer">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                                {Object.entries(SORT_LABELS).map(([k, label]) => (
+                                    <SelectItem key={k} value={k} className="text-sm cursor-pointer">
+                                        {label}
+                                    </SelectItem>
                                 ))}
-                            </div>
-                        </div>
-
-                        {/* Carburant */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
-                                <Fuel className="h-3.5 w-3.5" />
-                                Carburant
-                            </label>
-                            <div className="flex flex-wrap gap-1.5">
-                                {CARBURANTS.map((c) => (
-                                    <button
-                                        key={c}
-                                        onClick={() => setFilters({ ...filters, carburant: c })}
-                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${filters.carburant === c
-                                            ? "bg-zinc-900 text-white"
-                                            : "bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200"
-                                            }`}
-                                    >
-                                        {c}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Statut */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                Statut
-                            </label>
-                            <div className="flex flex-wrap gap-1.5">
-                                {STATUTS.map((s) => (
-                                    <button
-                                        key={s}
-                                        onClick={() => setFilters({ ...filters, statut: s })}
-                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${filters.statut === s
-                                            ? "bg-zinc-900 text-white"
-                                            : "bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200"
-                                            }`}
-                                    >
-                                        {s}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Prix */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
-                                <CircleDollarSign className="h-3.5 w-3.5" />
-                                Prix (FCFA)
-                            </label>
-                            <div className="flex gap-2">
-                                <Input
-                                    type="number"
-                                    placeholder="Min"
-                                    value={filters.prixMin}
-                                    onChange={(e) => setFilters({ ...filters, prixMin: e.target.value })}
-                                    className="rounded-lg h-8 bg-zinc-50 border-zinc-200 text-xs"
-                                />
-                                <Input
-                                    type="number"
-                                    placeholder="Max"
-                                    value={filters.prixMax}
-                                    onChange={(e) => setFilters({ ...filters, prixMax: e.target.value })}
-                                    className="rounded-lg h-8 bg-zinc-50 border-zinc-200 text-xs"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Année */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5" />
-                                Année
-                            </label>
-                            <div className="flex gap-2">
-                                <Input
-                                    type="number"
-                                    placeholder="De"
-                                    value={filters.anneeMin}
-                                    onChange={(e) => setFilters({ ...filters, anneeMin: e.target.value })}
-                                    className="rounded-lg h-8 bg-zinc-50 border-zinc-200 text-xs"
-                                />
-                                <Input
-                                    type="number"
-                                    placeholder="À"
-                                    value={filters.anneeMax}
-                                    onChange={(e) => setFilters({ ...filters, anneeMax: e.target.value })}
-                                    className="rounded-lg h-8 bg-zinc-50 border-zinc-200 text-xs"
-                                />
-                            </div>
-                        </div>
+                            </SelectContent>
+                        </Select>
                     </div>
+                </div>
 
-                    {/* Active filters summary + mobile reset */}
-                    {activeFilterCount > 0 && (
-                        <div className="pt-3 border-t border-zinc-100 flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-semibold text-zinc-400">Actifs :</span>
-                            {filters.search && (
-                                <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-50 text-zinc-700 border-zinc-200">
-                                    Recherche: {filters.search}
-                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, search: "" })} />
-                                </Badge>
+                {/* Compteur + toggle vue */}
+                <div className="flex items-center justify-between">
+                    <p className="text-sm text-zinc-500">
+                        <span className="font-black text-zinc-900">{filteredAndSorted.length.toLocaleString("fr-FR")}</span>
+                        {" "}véhicule{filteredAndSorted.length > 1 ? "s" : ""} disponible{filteredAndSorted.length > 1 ? "s" : ""}
+                    </p>
+                    <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-0.5">
+                        <button
+                            onClick={() => setViewMode("grid")}
+                            className={cn(
+                                "w-8 h-8 rounded-md flex items-center justify-center transition-all cursor-pointer",
+                                viewMode === "grid" ? "bg-zinc-900 text-white" : "text-zinc-400 hover:text-zinc-700"
                             )}
-                            {filters.marque !== "Toutes" && (
-                                <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-50 text-zinc-700 border-zinc-200">
-                                    {filters.marque}
-                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, marque: "Toutes" })} />
-                                </Badge>
+                        >
+                            <LayoutGrid className="h-4 w-4" />
+                        </button>
+                        <button
+                            onClick={() => setViewMode("list")}
+                            className={cn(
+                                "w-8 h-8 rounded-md flex items-center justify-center transition-all cursor-pointer",
+                                viewMode === "list" ? "bg-zinc-900 text-white" : "text-zinc-400 hover:text-zinc-700"
                             )}
-                            {filters.carburant !== "Tous" && (
-                                <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-50 text-zinc-700 border-zinc-200">
-                                    {filters.carburant}
-                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, carburant: "Tous" })} />
-                                </Badge>
-                            )}
-                            {filters.statut !== "Tous" && (
-                                <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-50 text-zinc-700 border-zinc-200">
-                                    {filters.statut}
-                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, statut: "Tous" })} />
-                                </Badge>
-                            )}
-                            {(filters.prixMin || filters.prixMax) && (
-                                <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-50 text-zinc-700 border-zinc-200">
-                                    Prix: {filters.prixMin || "0"} - {filters.prixMax || "..."}
-                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, prixMin: "", prixMax: "" })} />
-                                </Badge>
-                            )}
-                            {(filters.anneeMin || filters.anneeMax) && (
-                                <Badge variant="outline" className="rounded-full text-xs gap-1 bg-zinc-50 text-zinc-700 border-zinc-200">
-                                    Année: {filters.anneeMin || "..."} - {filters.anneeMax || "..."}
-                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters({ ...filters, anneeMin: "", anneeMax: "" })} />
-                                </Badge>
-                            )}
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="rounded-lg cursor-pointer text-zinc-500 sm:hidden ml-auto text-xs"
-                                onClick={resetFilters}
-                            >
+                        >
+                            <List className="h-4 w-4" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Grille / liste */}
+                {paginated.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                        <div className="w-16 h-16 rounded-2xl bg-zinc-100 flex items-center justify-center mb-4">
+                            <PackageX className="h-8 w-8 text-zinc-300" />
+                        </div>
+                        <h3 className="text-base font-bold text-zinc-900 mb-1.5">Aucun véhicule trouvé</h3>
+                        <p className="text-sm text-zinc-500 max-w-sm mb-5">
+                            Essayez de modifier vos filtres pour voir plus de résultats.
+                        </p>
+                        {activeFilterCount > 0 && (
+                            <Button variant="outline" size="sm" onClick={resetFilters} className="rounded-lg cursor-pointer border-zinc-200">
                                 <X className="h-3.5 w-3.5 mr-1" />
-                                Réinitialiser
+                                Réinitialiser les filtres
                             </Button>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* ── Tabs véhicules ── */}
-            <Tabs defaultValue="tous" className="w-full">
-                {/* TabsList style underline — pas de Card wrapper */}
-                <TabsList className="bg-transparent border-b border-zinc-200 rounded-none h-auto p-0 gap-0 justify-start w-full">
-                    <TabsTrigger
-                        value="tous"
-                        className="gap-2 rounded-none px-4 py-2.5 text-sm font-medium text-zinc-500 border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                    >
-                        <Car className="h-4 w-4" />
-                        <span className="hidden sm:inline">Tous</span>
-                        <Badge variant="secondary" className="rounded-full text-xs">
-                            {stats?.total_vehicules ?? 0}
-                        </Badge>
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="vente"
-                        className="gap-2 rounded-none px-4 py-2.5 text-sm font-medium text-zinc-500 border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                    >
-                        <Tag className="h-4 w-4" />
-                        <span className="hidden sm:inline">En vente</span>
-                        <Badge variant="secondary" className="rounded-full text-xs">
-                            {stats?.en_vente ?? 0}
-                        </Badge>
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="location"
-                        className="gap-2 rounded-none px-4 py-2.5 text-sm font-medium text-zinc-500 border-b-2 border-transparent data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                    >
-                        <KeyRound className="h-4 w-4" />
-                        <span className="hidden sm:inline">En location</span>
-                        <Badge variant="secondary" className="rounded-full text-xs">
-                            {stats?.en_location ?? 0}
-                        </Badge>
-                    </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="tous" className="mt-6">
-                    {getVehiclesFiltres("tous").length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-center">
-                            <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
-                                <PackageX className="h-8 w-8 text-zinc-300" />
-                            </div>
-                            <h3 className="text-base font-bold text-zinc-900 mb-1.5">
-                                {isVendeur ? "Aucun véhicule publié" : "Aucun véhicule disponible"}
-                            </h3>
-                            <p className="text-sm text-zinc-500 max-w-sm mb-5">
-                                {isVendeur
-                                    ? "Vous n'avez pas encore publié de véhicule. Commencez par ajouter votre premier véhicule."
-                                    : "Aucun véhicule n'est disponible pour le moment. Revenez plus tard."
-                                }
-                            </p>
-                            {isVendeur ? (
-                                <Button className="rounded-lg cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white" onClick={() => navigate()}>
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Publier mon premier véhicule
-                                </Button>
-                            ) : (
-                                <Button className="rounded-lg cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white">
-                                    <ShoppingBag className="h-4 w-4 mr-2" />
-                                    Explorer les catégories
-                                </Button>
-                            )}
-                        </div>
-                    ) : (
-                        <StaggerList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                            {getVehiclesFiltres("tous").map(v => (
-                                <StaggerItem key={v.id}>
-                                    <VehicleCard v={v} />
-                                </StaggerItem>
-                            ))}
-                        </StaggerList>
-                    )}
-                </TabsContent>
-
-                <TabsContent value="vente" className="mt-6">
-                    {getVehiclesFiltres("vente").length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-center">
-                            <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
-                                <Tag className="h-8 w-8 text-zinc-300" />
-                            </div>
-                            <h3 className="text-base font-bold text-zinc-900 mb-1.5">
-                                {isVendeur ? "Aucun véhicule en vente" : "Aucun véhicule en vente disponible"}
-                            </h3>
-                            <p className="text-sm text-zinc-500 max-w-sm mb-5">
-                                {isVendeur
-                                    ? "Publiez un véhicule en vente pour le rendre visible aux acheteurs."
-                                    : "Aucun véhicule n'est actuellement proposé à la vente."
-                                }
-                            </p>
-                            {isVendeur && (
-                                <Button className="rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white cursor-pointer">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Mettre un véhicule en vente
-                                </Button>
-                            )}
-                        </div>
-                    ) : (
-                        <StaggerList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                            {getVehiclesFiltres("vente").map(v => (
-                                <StaggerItem key={v.id}>
-                                    <VehicleCard v={v} />
-                                </StaggerItem>
-                            ))}
-                        </StaggerList>
-                    )}
-                </TabsContent>
-
-                <TabsContent value="location" className="mt-6">
-                    {getVehiclesFiltres("location").length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-center">
-                            <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
-                                <KeyRound className="h-8 w-8 text-zinc-300" />
-                            </div>
-                            <h3 className="text-base font-bold text-zinc-900 mb-1.5">
-                                {isVendeur ? "Aucun véhicule en location" : "Aucun véhicule en location disponible"}
-                            </h3>
-                            <p className="text-sm text-zinc-500 max-w-sm mb-5">
-                                {isVendeur
-                                    ? "Proposez un véhicule en location pour le rendre disponible."
-                                    : "Aucun véhicule n'est actuellement proposé à la location."
-                                }
-                            </p>
-                            {isVendeur && (
-                                <Button className="rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white cursor-pointer">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Mettre un véhicule en location
-                                </Button>
-                            )}
-                        </div>
-                    ) : (
-                        <StaggerList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                            {getVehiclesFiltres("location").map(v => (
-                                <StaggerItem key={v.id}>
-                                    <VehicleCard v={v} />
-                                </StaggerItem>
-                            ))}
-                        </StaggerList>
-                    )}
-                </TabsContent>
-
-            </Tabs>
-
-            {/* ── Tips vendeur — section légère, pas de Card lourde ── */}
-            {isVendeur && (
-                <div className="rounded-xl border border-zinc-200 bg-white p-4">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Search className="h-4 w-4 text-zinc-400" />
-                        <span className="text-sm font-semibold text-zinc-900">Conseils pour vendre</span>
-                        <span className="text-xs text-zinc-400 ml-1">Optimisez vos annonces</span>
+                        )}
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div className="flex items-start gap-3 p-3 rounded-lg bg-zinc-50 border border-zinc-100">
-                            <div className="w-7 h-7 rounded-md bg-zinc-200 flex items-center justify-center shrink-0 mt-0.5">
-                                <span className="text-xs font-black text-zinc-700">1</span>
-                            </div>
-                            <div>
-                                <p className="font-semibold text-sm text-zinc-900">Photos de qualité</p>
-                                <p className="text-xs text-zinc-500 mt-0.5">
-                                    Ajoutez plusieurs photos claires de votre véhicule
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3 p-3 rounded-lg bg-zinc-50 border border-zinc-100">
-                            <div className="w-7 h-7 rounded-md bg-zinc-200 flex items-center justify-center shrink-0 mt-0.5">
-                                <span className="text-xs font-black text-zinc-700">2</span>
-                            </div>
-                            <div>
-                                <p className="font-semibold text-sm text-zinc-900">Description détaillée</p>
-                                <p className="text-xs text-zinc-500 mt-0.5">
-                                    Décrivez l&apos;état, le kilométrage et les options
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3 p-3 rounded-lg bg-zinc-50 border border-zinc-100">
-                            <div className="w-7 h-7 rounded-md bg-zinc-200 flex items-center justify-center shrink-0 mt-0.5">
-                                <span className="text-xs font-black text-zinc-700">3</span>
-                            </div>
-                            <div>
-                                <p className="font-semibold text-sm text-zinc-900">Prix compétitif</p>
-                                <p className="text-xs text-zinc-500 mt-0.5">
-                                    Fixez un prix juste par rapport au marché
-                                </p>
-                            </div>
-                        </div>
+                ) : (
+                    <div className={cn(
+                        viewMode === "grid"
+                            ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
+                            : "flex flex-col gap-4"
+                    )}>
+                        {paginated.map(v => <VehicleCard key={v.id} v={v} />)}
                     </div>
-                </div>
-            )}
+                )}
 
-            {selectedVehicule && (
-                <VehicleDetails
-                    isOpen={!!selectedVehicule}
-                    vehicule={selectedVehicule}
-                    onClose={() => setSelectedVehicule(null)}
-                />
-            )}
+                {/* Pagination */}
+                {totalPages > 1 && <Pagination />}
 
-            {/* ── Barre de comparaison flottante ── */}
+            </main>
+
+            {/* ══════════════ DIALOGS & OVERLAYS ══════════════ */}
+
+
+            {/* Barre de comparaison flottante */}
             {compareIds.length > 0 && (
                 <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-zinc-200 shadow-2xl shadow-black/10 px-4 py-3">
-                    <div className="max-w-5xl mx-auto flex items-center gap-3">
-                        {/* Miniatures des véhicules sélectionnés */}
+                    <div className="max-w-7xl mx-auto flex items-center gap-3">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                             <span className="text-xs font-bold text-zinc-500 shrink-0">Comparer :</span>
                             <div className="flex items-center gap-2">
@@ -884,7 +713,6 @@ const VehiclesPage = () => {
                                         </div>
                                     )
                                 })}
-                                {/* Slots vides si moins de 3 */}
                                 {Array.from({ length: 3 - compareIds.length }).map((_, i) => (
                                     <div key={i} className="w-24 h-7 rounded-lg border-2 border-dashed border-zinc-200 flex items-center justify-center">
                                         <span className="text-[10px] text-zinc-300">+ véhicule</span>
@@ -911,7 +739,6 @@ const VehiclesPage = () => {
                 </div>
             )}
         </div>
-        </FadeIn>
     )
 }
 

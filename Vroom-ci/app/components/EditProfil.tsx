@@ -72,44 +72,42 @@ export function EditProfil({ open, onOpenChange, onSubmit, user }: EditProfilPro
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-106.25">
                 <DialogHeader>
-                    <DialogTitle>Edit profile</DialogTitle>
+                    <DialogTitle>Mise à jour</DialogTitle>
                     <DialogDescription>
                         Mettez à jour votre profil à jour.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="fullname" className="text-sm font-semibold text-zinc-700">
-                                Nom Complet
-                            </Label>
-                            <div className="relative">
-                                <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-                                <Input
-                                    id="fullname"
-                                    value={formEdit.fullname}
-                                    onChange={(e) => handleEditChange("fullname", e.target.value)}
-                                    type="text"
-                                    placeholder="John Doe"
-                                    className="pl-11 h-11 rounded-xl border-zinc-200 focus-visible:ring-zinc-400"
-                                />
-                            </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="fullname" className="text-sm font-semibold text-zinc-700">
+                            Nom Complet
+                        </Label>
+                        <div className="relative">
+                            <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                            <Input
+                                id="fullname"
+                                value={formEdit.fullname}
+                                onChange={(e) => handleEditChange("fullname", e.target.value)}
+                                type="text"
+                                placeholder="John Doe"
+                                className="pl-11 h-11 rounded-xl border-zinc-200 focus-visible:ring-zinc-400"
+                            />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email" className="text-sm font-semibold text-zinc-700">
-                                Email
-                            </Label>
-                            <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-                                <Input
-                                    id="email"
-                                    value={formEdit.email}
-                                    onChange={(e) => handleEditChange("email", e.target.value)}
-                                    type="email"
-                                    placeholder="jd@gmail.com"
-                                    className="pl-11 h-11 rounded-xl border-zinc-200 focus-visible:ring-zinc-400"
-                                />
-                            </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="email" className="text-sm font-semibold text-zinc-700">
+                            Email
+                        </Label>
+                        <div className="relative">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                            <Input
+                                id="email"
+                                value={formEdit.email}
+                                onChange={(e) => handleEditChange("email", e.target.value)}
+                                type="email"
+                                placeholder="jd@gmail.com"
+                                className="pl-11 h-11 rounded-xl border-zinc-200 focus-visible:ring-zinc-400"
+                            />
                         </div>
                     </div>
                     <div className="space-y-2">
