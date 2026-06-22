@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     const resultat = registerValidator.safeParse(body)
     if (!resultat.success) {
         return NextResponse.json(
-            { errors: resultat.error.flatten() },
+            { errors: resultat.error.flatten().fieldErrors },
             { status: 400 }
         )
     }
