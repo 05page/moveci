@@ -79,6 +79,9 @@ const ALLOWED_PATHS = [
   "/me",                    // /me/update, /me/contact
   "/avis",                  // /avis/vendeur/:id
   "/transactions-conclues", // /transactions-conclues/mes-demandes, /mes-transactions
+  "/favoris",               // /favoris, /favoris/:id
+  "/stats",                 // /stats/mes-stats, /stats/*
+  "/conversations",         // /conversations, /conversations/:id/messages
 ]
 
 async function proxyToLaravel(request: NextRequest) {
@@ -91,7 +94,7 @@ async function proxyToLaravel(request: NextRequest) {
   if(!isAllowed){
     return NextResponse.json({message: "Route non autorisée"}, {status: 403})
   }
-  const backendUrl = `${process.env.BACKEND_URL}${path}${search}`
+  const backendUrl = `${process.env.BACKEND_URL ?? "http://127.0.0.1:8000/api"}${path}${search}`
 
   // Lire le token depuis le cookie httpOnly
   const cookieStore = await cookies()
