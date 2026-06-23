@@ -371,12 +371,6 @@ const VehicleDetailPage = () => {
                                 <Badge variant="outline" className="rounded-full text-xs font-semibold border-zinc-300 text-zinc-600">
                                     {vehiculeData.type === "neuf" ? "Neuf" : "Occasion"}
                                 </Badge>
-                                {isVerified && (
-                                    <Badge className="rounded-full text-xs font-bold bg-zinc-900 text-white gap-1 border-0">
-                                        <ShieldCheck className="h-3 w-3" />
-                                        VÉRIFIÉ MOVE
-                                    </Badge>
-                                )}
                                 <Badge className={cn("rounded-full text-xs font-semibold border-0", isVente ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700")}>
                                     {isVente ? "Vente" : "Location"}
                                 </Badge>
