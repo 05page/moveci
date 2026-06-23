@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Calendar, MapPin, Star, Edit, Car, ShoppingBag, ShieldCheck, Lock } from "lucide-react"
 import { useEffect, useState } from "react"
 import { EditProfil } from "@/app/components/EditProfil"
+import { ChangerMotDePasse } from "@/app/components/ChangerMotDePasse"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { api } from "@/src/lib/api"
@@ -29,8 +30,8 @@ function ProfileLoading() {
                     </div>
                 </CardContent>
             </Card>
-            <div className="grid grid-cols-3 gap-4">
-                {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-3xl" />)}
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 sm:h-24 rounded-2xl sm:rounded-3xl" />)}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Skeleton className="h-64 rounded-3xl" />
@@ -43,7 +44,8 @@ function ProfileLoading() {
 export function ProfileContent() {
     const { user } = useUser()
     const [transactions, setTransactions] = useState<TransactionConclue[]>([])
-    const [open, setOpen] = useState(false)
+    const [open, setOpen]                           = useState(false)
+    const [changePasswordOpen, setChangePasswordOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [avisData, setAvisData] = useState<{ avis: Avis[]; note_moyenne: number; total: number } | null>(null)
 
@@ -124,41 +126,41 @@ export function ProfileContent() {
             </Card>
 
             {/* ── Stats ────────────────────────────────────────── */}
-            <div className="grid grid-cols-3 gap-4">
-                <Card className="rounded-3xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="w-11 h-11 rounded-2xl bg-move-gold/10 flex items-center justify-center shrink-0">
-                            <Car className="h-5 w-5 text-move-gold" />
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                <Card className="rounded-2xl sm:rounded-3xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
+                    <CardContent className="p-3 sm:p-5 flex flex-col sm:flex-row items-center gap-1.5 sm:gap-4">
+                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-move-gold/10 flex items-center justify-center shrink-0">
+                            <Car className="h-4 w-4 sm:h-5 sm:w-5 text-move-gold" />
                         </div>
-                        <div>
-                            <p className="text-2xl font-black text-zinc-900">{mesVoituresLouees.length}</p>
-                            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Voitures louées</p>
+                        <div className="text-center sm:text-left">
+                            <p className="text-xl sm:text-2xl font-black text-zinc-900">{mesVoituresLouees.length}</p>
+                            <p className="text-[9px] sm:text-xs font-semibold text-zinc-400 uppercase tracking-wide leading-tight">Voitures louées</p>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="rounded-3xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="w-11 h-11 rounded-2xl bg-amber-50 flex items-center justify-center shrink-0">
-                            <Star className="h-5 w-5 text-move-gold" />
+                <Card className="rounded-2xl sm:rounded-3xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
+                    <CardContent className="p-3 sm:p-5 flex flex-col sm:flex-row items-center gap-1.5 sm:gap-4">
+                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-amber-50 flex items-center justify-center shrink-0">
+                            <Star className="h-4 w-4 sm:h-5 sm:w-5 text-move-gold" />
                         </div>
-                        <div>
-                            <p className="text-2xl font-black text-zinc-900">
+                        <div className="text-center sm:text-left">
+                            <p className="text-xl sm:text-2xl font-black text-zinc-900">
                                 {user?.role === "vendeur" ? (avisData?.total ?? 0) : "—"}
                             </p>
-                            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Notes générales</p>
+                            <p className="text-[9px] sm:text-xs font-semibold text-zinc-400 uppercase tracking-wide leading-tight">Notes générales</p>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="rounded-3xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="w-11 h-11 rounded-2xl bg-purple-500/10 flex items-center justify-center shrink-0">
-                            <ShoppingBag className="h-5 w-5 text-purple-600" />
+                <Card className="rounded-2xl sm:rounded-3xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
+                    <CardContent className="p-3 sm:p-5 flex flex-col sm:flex-row items-center gap-1.5 sm:gap-4">
+                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-purple-500/10 flex items-center justify-center shrink-0">
+                            <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                         </div>
-                        <div>
-                            <p className="text-2xl font-black text-zinc-900">{mesVoituresAchetees.length}</p>
-                            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Voitures achetées</p>
+                        <div className="text-center sm:text-left">
+                            <p className="text-xl sm:text-2xl font-black text-zinc-900">{mesVoituresAchetees.length}</p>
+                            <p className="text-[9px] sm:text-xs font-semibold text-zinc-400 uppercase tracking-wide leading-tight">Voitures achetées</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -211,7 +213,12 @@ export function ProfileContent() {
                     <CardContent className="p-6 space-y-5">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-black text-zinc-900">Sécurité</h2>
-                            <Button size="sm" variant="ghost" className="text-move-gold hover:text-move-gold hover:bg-move-gold/10 font-semibold cursor-pointer">
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setChangePasswordOpen(true)}
+                                className="text-move-gold hover:text-move-gold hover:bg-move-gold/10 font-semibold cursor-pointer"
+                            >
                                 Mettre à jour
                             </Button>
                         </div>
@@ -245,6 +252,7 @@ export function ProfileContent() {
             </div>
 
             {user && <EditProfil open={open} onOpenChange={setOpen} onSubmit={() => {}} user={user} />}
+            <ChangerMotDePasse open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
         </div>
     )
 }
