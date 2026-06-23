@@ -291,7 +291,7 @@ const VehicleDetailPage = () => {
                                 {photos.length > 1 && (
                                     <div className="absolute bottom-3 right-3">
                                         <button className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 text-xs font-semibold text-zinc-800 shadow hover:bg-white transition-colors cursor-pointer">
-                                            📷 Voir toutes les photos ({photos.length})
+                                            Voir toutes les photos ({photos.length})
                                         </button>
                                     </div>
                                 )}
@@ -471,7 +471,7 @@ const VehicleDetailPage = () => {
                             {/* Card CTA */}
                             <Card className="rounded-2xl border border-zinc-200 shadow-md">
                                 <CardContent className="p-5 space-y-3">
-                                    <h3 className="text-base font-black text-zinc-900">Prêt à rouler ?</h3>
+                                    <h3 className="text-base font-black text-zinc-900">Prêt à conduire ?</h3>
 
                                     {/* Contacter le vendeur */}
                                     {vehiculeData.creator && user?.id !== vehiculeData.creator.id && (
@@ -537,23 +537,10 @@ const VehicleDetailPage = () => {
                                                     <span>{vehiculeData.creator.adresse}</span>
                                                 </div>
                                             )}
-                                            <div className="flex items-center gap-2 text-xs text-zinc-500">
-                                                <Clock className="h-3.5 w-3.5 shrink-0" />
-                                                <span>Répond généralement en 1h</span>
-                                            </div>
                                         </div>
                                     )}
                                 </CardContent>
                             </Card>
-
-                            {/* Achat sécurisé MOVE */}
-                            <div className="flex items-start gap-3 p-4 rounded-2xl border border-zinc-200 bg-zinc-50">
-                                <ShieldCheck className="h-5 w-5 text-move-gold shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-bold text-zinc-900">Achat sécurisé MOVE</p>
-                                    <p className="text-xs text-zinc-500 mt-0.5">Paiement sécurisé et vérification du véhicule certifiée par nos experts.</p>
-                                </div>
-                            </div>
 
                             {/* Actions secondaires */}
                             <div className="flex gap-2">
