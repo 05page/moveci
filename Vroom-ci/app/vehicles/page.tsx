@@ -92,7 +92,7 @@ function PageSkeleton() {
 
 const VehiclesPage = () => {
     const { user, loading: userLoading } = useUser()
-    const [isLoading, setIsLoading]   = useState(true)
+    const [isLoading, setIsLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [vehiculesList, setVehiculesList] = useState<vehicule[]>([])
     const [isFavori, setIsFavori] = useState<Set<string>>(new Set())
@@ -126,7 +126,7 @@ const VehiclesPage = () => {
         if (userLoading || !user) return
         getFavoris()
             .then(res => setIsFavori(new Set((res?.data ?? []).map((f: Favori) => f.vehicule_id))))
-            .catch(() => {})
+            .catch(() => { })
     }, [user, userLoading])
 
     // WebSocket — nouveaux véhicules validés en temps réel
@@ -146,8 +146,8 @@ const VehiclesPage = () => {
         connectEcho()
         return () => {
             import("@/src/lib/echo").then(({ getEcho }) =>
-                getEcho().then(echo => echo.leave("vehicules")).catch(() => {})
-            ).catch(() => {})
+                getEcho().then(echo => echo.leave("vehicules")).catch(() => { })
+            ).catch(() => { })
         }
     }, [])
 
@@ -288,6 +288,9 @@ const VehiclesPage = () => {
 
                     {/* ── Infos ── */}
                     <div className="p-4 flex flex-col flex-1 min-w-0">
+                        <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-900">
+                            {v.description?.marque} {v.description?.modele}
+                        </h1>
                         {/* Prix */}
                         <p className="text-xl font-black text-move-gold mb-2">
                             {v.prix?.toLocaleString("fr-FR")}
