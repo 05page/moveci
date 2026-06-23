@@ -82,6 +82,7 @@ const ALLOWED_PATHS = [
   "/favoris",               // /favoris, /favoris/:id
   "/stats",                 // /stats/mes-stats, /stats/*
   "/conversations",         // /conversations, /conversations/:id/messages
+  "/crm",                   // /crm/clients, /crm/clients/:id, /crm/notes/:id
 ]
 
 async function proxyToLaravel(request: NextRequest) {

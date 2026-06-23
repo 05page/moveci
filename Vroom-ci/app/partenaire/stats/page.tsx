@@ -212,7 +212,7 @@ export default function StatsPage() {
                     className="gap-2 cursor-pointer shrink-0"
                 >
                     <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-                    {refreshing ? "Chargement..." : "Rafraîchir"}
+                    {refreshing ? "Chargement..." : "Actualiser"}
                 </Button>
             </div>
             </SlideIn>

@@ -10,7 +10,7 @@ import {
     Car, Search, PackageX, X, Fuel,
     Heart, GitCompare, LogIn, Building2, MapPin,
     LayoutGrid, List, ChevronLeft, ChevronRight, MoreVertical,
-    SlidersHorizontal,
+    SlidersHorizontal, RefreshCw,
 } from "lucide-react"
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -98,7 +98,8 @@ function PageSkeleton() {
 
 const VehiclesPage = () => {
     const { user, loading: userLoading } = useUser()
-    const [isLoading, setIsLoading] = useState(true)
+    const [isLoading, setIsLoading]   = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [vehiculesList, setVehiculesList] = useState<vehicule[]>([])
     const [isFavori, setIsFavori] = useState<Set<string>>(new Set())
     const [favLoading, setFavLoading] = useState<string | null>(null)
@@ -111,8 +112,9 @@ const VehiclesPage = () => {
 
     // ── Fetch données ───────────────────────────────────────────────────────
 
-    const fetchVehicules = useCallback(async () => {
-        setIsLoading(true)
+    const fetchVehicules = useCallback(async (silent = false) => {
+        if (!silent) setIsLoading(true)
+        else setRefreshing(true)
         try {
             const res = await getVehicules()
             setVehiculesList(res?.data?.vehicules ?? [])
@@ -120,6 +122,7 @@ const VehiclesPage = () => {
             toast.error("Erreur lors du chargement des véhicules")
         } finally {
             setIsLoading(false)
+            setRefreshing(false)
         }
     }, [])
 
@@ -631,10 +634,20 @@ const VehiclesPage = () => {
 
                 {/* Compteur + toggle vue */}
                 <div className="flex items-center justify-between">
-                    <p className="text-sm text-zinc-500">
-                        <span className="font-black text-zinc-900">{filteredAndSorted.length.toLocaleString("fr-FR")}</span>
-                        {" "}véhicule{filteredAndSorted.length > 1 ? "s" : ""} disponible{filteredAndSorted.length > 1 ? "s" : ""}
-                    </p>
+                    <div className="flex items-center gap-3">
+                        <p className="text-sm text-zinc-500">
+                            <span className="font-black text-zinc-900">{filteredAndSorted.length.toLocaleString("fr-FR")}</span>
+                            {" "}véhicule{filteredAndSorted.length > 1 ? "s" : ""} disponible{filteredAndSorted.length > 1 ? "s" : ""}
+                        </p>
+                        <button
+                            onClick={() => fetchVehicules(true)}
+                            disabled={refreshing}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800 rounded-lg hover:bg-zinc-100 transition-colors cursor-pointer"
+                        >
+                            <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
+                            Actualiser
+                        </button>
+                    </div>
                     <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-0.5">
                         <button
                             onClick={() => setViewMode("grid")}

@@ -18,7 +18,7 @@ import {
     Car, Plus, Eye, Search, Tag, Key, PackageX,
     Edit, Trash2, Trash2Icon, Fuel,
     LayoutGrid, List, ChevronLeft, ChevronRight, MoreVertical,
-    SlidersHorizontal, X,
+    SlidersHorizontal, X, RefreshCw,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -143,7 +143,8 @@ function PageSkeleton() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function VehiclesPage() {
-    const [isLoading, setIsLoading] = useState(true)
+    const [isLoading, setIsLoading]   = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [mesvehicules, setMesVehicules] = useState<vehicule[]>([])
     const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
     const [sortBy, setSortBy] = useState<SortKey>("recent")
@@ -159,8 +160,9 @@ export default function VehiclesPage() {
 
     // ── Fetch ────────────────────────────────────────────────────────────────
 
-    const fetchVehicles = useCallback(async () => {
-        setIsLoading(true)
+    const fetchVehicles = useCallback(async (silent = false) => {
+        if (!silent) setIsLoading(true)
+        else setRefreshing(true)
         try {
             const res = await getMesVehicules()
             setMesVehicules(res.data?.vehicules ?? [])
@@ -168,6 +170,7 @@ export default function VehiclesPage() {
             toast.error(getErrorMessage(error))
         } finally {
             setIsLoading(false)
+            setRefreshing(false)
         }
     }, [])
 
@@ -570,57 +573,69 @@ export default function VehiclesPage() {
             <main className="flex-1 min-w-0 p-5 md:p-6 space-y-5">
 
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                         <h1 className="text-2xl font-black text-zinc-900">Mes véhicules</h1>
                         <p className="text-sm text-zinc-500 mt-0.5">
                             {mesvehicules.length} annonce{mesvehicules.length > 1 ? "s" : ""} au total
                         </p>
                     </div>
-                    <Link href="/vendeur/addVehicle">
-                        <Button className="gap-2 bg-zinc-900 hover:bg-zinc-700 text-white font-bold cursor-pointer rounded-xl">
-                            <Plus className="h-4 w-4" /> Publier un Véhicule
-                        </Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => fetchVehicles(true)}
+                            disabled={refreshing}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800 rounded-lg hover:bg-zinc-100 transition-colors cursor-pointer"
+                        >
+                            <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
+                            Actualiser
+                        </button>
+                        <Link href="/vendeur/addVehicle">
+                            <Button className="gap-2 bg-zinc-900 hover:bg-zinc-700 text-white font-bold cursor-pointer rounded-xl">
+                                <Plus className="h-4 w-4" /> Publier un Véhicule
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Barre recherche + tri */}
-                <div className="flex gap-3">
-                    <button
-                        onClick={() => setSidebarOpen(o => !o)}
-                        title={sidebarOpen ? "Masquer les filtres" : "Afficher les filtres"}
-                        className={cn(
-                            "hidden lg:flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-all cursor-pointer",
-                            sidebarOpen
-                                ? "border-move-gold bg-move-gold/10 text-move-gold"
-                                : "border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50"
-                        )}
-                    >
-                        <SlidersHorizontal className="h-4 w-4" />
-                    </button>
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex gap-3 flex-1">
+                        <button
+                            onClick={() => setSidebarOpen(o => !o)}
+                            title={sidebarOpen ? "Masquer les filtres" : "Afficher les filtres"}
+                            className={cn(
+                                "hidden lg:flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-all cursor-pointer",
+                                sidebarOpen
+                                    ? "border-move-gold bg-move-gold/10 text-move-gold"
+                                    : "border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50"
+                            )}
+                        >
+                            <SlidersHorizontal className="h-4 w-4" />
+                        </button>
 
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
-                        <Input
-                            placeholder="Rechercher un véhicule..."
-                            value={filters.search}
-                            onChange={e => setFilter("search", e.target.value)}
-                            className="pl-10 pr-9 h-11 rounded-xl border-zinc-200 bg-white text-sm placeholder:text-zinc-400"
-                        />
-                        {filters.search && (
-                            <button
-                                onClick={() => setFilter("search", "")}
-                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 cursor-pointer"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                        )}
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+                            <Input
+                                placeholder="Rechercher un véhicule..."
+                                value={filters.search}
+                                onChange={e => setFilter("search", e.target.value)}
+                                className="pl-10 pr-9 h-11 rounded-xl border-zinc-200 bg-white text-sm placeholder:text-zinc-400"
+                            />
+                            {filters.search && (
+                                <button
+                                    onClick={() => setFilter("search", "")}
+                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 cursor-pointer"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-zinc-500 hidden sm:block whitespace-nowrap">Trier par :</span>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-zinc-500 whitespace-nowrap">Trier par :</span>
                         <Select value={sortBy} onValueChange={v => { setSortBy(v as SortKey); setPage(1) }}>
-                            <SelectTrigger className="h-11 min-w-36 rounded-xl border-zinc-200 bg-white text-sm cursor-pointer">
+                            <SelectTrigger className="h-11 flex-1 sm:min-w-36 rounded-xl border-zinc-200 bg-white text-sm cursor-pointer">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl">

@@ -64,6 +64,7 @@ Route::middleware(['auth:sanctum', 'check.statut'])->group(function () {
     Route::post('/geo/geocode',   [GeolocalisationController::class, 'geocodeAdresse']);
     Route::put('/me/update',               [AuthController::class, 'update']);
     Route::put('/me/contact',              [AuthController::class, 'updatePhoneAndAddress']);
+    Route::put('/me/change-password',      [AuthController::class, 'changePassword']);
     Route::post('/auth/complete-onboarding', [AuthController::class, 'completeOnboarding']);
     Route::post('/auth/finish-onboarding',   [AuthController::class, 'finishOnboarding']);
     Route::post('/logout',                 [AuthController::class, 'logout']);

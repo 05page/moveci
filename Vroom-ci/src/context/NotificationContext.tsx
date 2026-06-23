@@ -11,6 +11,7 @@ interface NotificationContextType {
     resetCount: () => void
     markAsRead: (id: number) => void
     markAllRead: () => void
+    refetch: () => void
 }
 const NotificationContext = createContext<NotificationContextType | null>(null)
 
@@ -21,8 +22,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     // Récupère l'utilisateur connecté pour connaître son ID de canal WebSocket
     const { user } = useUser()
 
-    // Charge les notifications uniquement si l'utilisateur est connecté
-    useEffect(() => {
+    const fetchNotifications = () => {
         if (!user) { setIsLoading(false); return }
         setIsLoading(true)
         api.get<MesNotifs>("/notifications/mes-notifs")
@@ -33,7 +33,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             })
             .catch(() => setNotifications([]))
             .finally(() => setIsLoading(false))
-    }, [user]);
+    }
+
+    // Charge les notifications uniquement si l'utilisateur est connecté
+    useEffect(() => { fetchNotifications() }, [user]);
 
         function playNotificationSound() {
         try {
@@ -119,7 +122,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         setUnreadCount(0)
     }
 
-    return (<NotificationContext.Provider value={{ notifications, isLoading, unreadCount, resetCount, markAsRead, markAllRead }}>
+    return (<NotificationContext.Provider value={{ notifications, isLoading, unreadCount, resetCount, markAsRead, markAllRead, refetch: fetchNotifications }}>
         {children}
     </NotificationContext.Provider>)
 }

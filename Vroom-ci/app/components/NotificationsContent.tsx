@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
     Bell, CalendarDays, Car, CheckCheck,
-    CreditCard, GraduationCap, KeyRound, Shield,
+    CreditCard, GraduationCap, KeyRound, Shield, RefreshCw,
 } from "lucide-react"
 import { Notifications } from "@/src/types"
 import { fr } from "date-fns/locale"
@@ -170,7 +170,7 @@ function NotificationItem({
 // ─── Content ─────────────────────────────────────────────────────────────────
 
 export function NotificationsContent() {
-    const { notifications: notifs, unreadCount, isLoading, markAsRead, markAllRead } = useNotification()
+    const { notifications: notifs, unreadCount, isLoading, markAsRead, markAllRead, refetch } = useNotification()
     const { user } = useUser()
     const [tab, setTab] = useState<TabKey>("toutes")
 
@@ -218,9 +218,8 @@ export function NotificationsContent() {
                     )
                 })}
 
-                {/* Tout lire — visible uniquement s'il y a des non-lues */}
-                {unreadCount > 0 && (
-                    <div className="ml-auto pb-2 shrink-0">
+                <div className="ml-auto pb-2 flex items-center gap-1 shrink-0">
+                    {unreadCount > 0 && (
                         <button
                             onClick={markAllRead}
                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800 rounded-lg hover:bg-zinc-100 transition-colors cursor-pointer"
@@ -228,8 +227,15 @@ export function NotificationsContent() {
                             <CheckCheck className="h-3.5 w-3.5" />
                             Tout lire
                         </button>
-                    </div>
-                )}
+                    )}
+                    <button
+                        onClick={refetch}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800 rounded-lg hover:bg-zinc-100 transition-colors cursor-pointer"
+                    >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Actualiser
+                    </button>
+                </div>
             </div>
 
             {/* ── Liste / vide ──────────────────────────────────────── */}

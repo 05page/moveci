@@ -352,6 +352,51 @@ class AuthController extends Controller
         }
     }
 
+    public function changePassword(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            // Les comptes Google n'ont pas de mot de passe défini par l'utilisateur
+            if ($user->auth_provider === 'google') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Votre compte est lié à Google. Vous ne pouvez pas définir de mot de passe.',
+                ], 422);
+            }
+
+            $request->validate([
+                'current_password'      => 'required|string',
+                'new_password'          => 'required|string|min:8|confirmed',
+            ]);
+
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Le mot de passe actuel est incorrect.',
+                    'errors'  => ['current_password' => ['Le mot de passe actuel est incorrect.']],
+                ], 422);
+            }
+
+            if (Hash::check($request->new_password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Le nouveau mot de passe doit être différent de l\'actuel.',
+                    'errors'  => ['new_password' => ['Choisissez un mot de passe différent de l\'actuel.']],
+                ], 422);
+            }
+
+            $user->update(['password' => Hash::make($request->new_password)]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Mot de passe modifié avec succès.',
+            ]);
+        } catch (\Exception $e) {
+            return $this->serverError($e, 'Erreur lors de la modification du mot de passe. Réessayez dans quelques instants.');
+        }
+    }
+
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();

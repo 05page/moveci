@@ -31,6 +31,7 @@ import { getMesStats } from "@/src/actions/stats.actions"
 import { getAvisVendeur } from "@/src/actions/avis.actions"
 import { updateProfile, updateContact } from "@/src/actions/auth.actions"
 import { useUser } from "@/src/context/UserContext"
+import { ChangerMotDePasse } from "@/app/components/ChangerMotDePasse"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -89,8 +90,9 @@ export default function VendeurDashboard() {
     const [stats, setStats]           = useState<VendeurStats | null>(null)
     const [avisData, setAvisData]     = useState<{ avis: Avis[]; note_moyenne: number; total: number } | null>(null)
 
-    // Dialog modifier profil
-    const [editOpen, setEditOpen] = useState(false)
+    // Dialogs
+    const [editOpen, setEditOpen]               = useState(false)
+    const [changePasswordOpen, setChangePasswordOpen] = useState(false)
     const [saving, setSaving]     = useState(false)
     const [editForm, setEditForm] = useState({ fullname: "", telephone: "", adresse: "" })
 
@@ -226,7 +228,7 @@ export default function VendeurDashboard() {
                                 className="rounded-xl gap-2 cursor-pointer border-zinc-200"
                             >
                                 <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-                                {refreshing ? "..." : "Rafraîchir"}
+                                {refreshing ? "..." : "Actualiser"}
                             </Button>
                             <Link href="/vendeur/addVehicle">
                                 <Button size="sm" className="rounded-xl gap-2 cursor-pointer bg-zinc-900 hover:bg-zinc-700 text-white font-bold">
@@ -337,7 +339,12 @@ export default function VendeurDashboard() {
                     <CardContent className="p-6 space-y-5">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-black text-zinc-900">Sécurité</h2>
-                            <Button size="sm" variant="ghost" className="text-move-gold hover:text-move-gold hover:bg-move-gold/10 font-semibold cursor-pointer">
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setChangePasswordOpen(true)}
+                                className="text-move-gold hover:text-move-gold hover:bg-move-gold/10 font-semibold cursor-pointer"
+                            >
                                 Mettre à jour
                             </Button>
                         </div>
@@ -656,6 +663,8 @@ export default function VendeurDashboard() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <ChangerMotDePasse open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
         </>
     )
 }
