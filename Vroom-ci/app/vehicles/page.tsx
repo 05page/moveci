@@ -288,7 +288,7 @@ const VehiclesPage = () => {
 
                     {/* ── Infos ── */}
                     <div className="p-4 flex flex-col flex-1 min-w-0">
-                        <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-900">
+                        <h1 className="text-xl md:text-xl font-black tracking-tight text-zinc-900">
                             {v.description?.marque} {v.description?.modele}
                         </h1>
                         {/* Prix */}
