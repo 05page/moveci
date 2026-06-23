@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
-    Car, Search, PackageX, X, Fuel,
+    Car, Search, PackageX, X, Fuel, Eye,
     Heart, GitCompare, LogIn, Building2, MapPin,
     LayoutGrid, List, ChevronLeft, ChevronRight,
     SlidersHorizontal, RefreshCw,
@@ -239,7 +239,6 @@ const VehiclesPage = () => {
     const VehicleCard = ({ v }: { v: vehicule }) => {
         const primaryPhoto = v.photos?.find(p => p.is_primary) ?? v.photos?.[0]
         const imageUrl = primaryPhoto ? getPhotoUrl(primaryPhoto.path) : null
-        const isVerified = v.status_validation === "validee"
         const isPremium = v.creator?.role === "concessionnaire" || v.creator?.role === "auto_ecole"
 
         return (
@@ -259,6 +258,14 @@ const VehiclesPage = () => {
                             : <div className="w-full h-full flex items-center justify-center"><Car className="h-12 w-12 text-zinc-300" /></div>
                         }
 
+                        {/* Vues top-left */}
+                        {Number(v.views_count ?? 0) > 0 && (
+                            <div className="absolute top-2.5 left-2.5 flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-0.5">
+                                <Eye className="h-3 w-3 text-white" />
+                                <span className="text-[11px] text-white font-medium">{v.views_count}</span>
+                            </div>
+                        )}
+
                         {/* ♡ heart top-right */}
                         <button
                             onClick={() => toggleFavori(v)}
@@ -268,12 +275,12 @@ const VehiclesPage = () => {
                             <Heart className={cn("h-4 w-4 transition-colors", isFavori.has(v.id) ? "fill-red-500 text-red-500" : "text-zinc-500")} />
                         </button>
 
-                        {/* Badge PREMIUM / VÉRIFIÉ bottom-left */}
-                        {(isVerified || isPremium) && (
+                        {/* Badge PREMIUM / DISPONIBLE bottom-left */}
+                        {(isPremium || v.statut === "disponible") && (
                             <div className="absolute bottom-2.5 left-2.5">
                                 {isPremium
                                     ? <span className="text-[10px] font-black tracking-widest px-2 py-0.5 rounded-sm bg-move-gold text-white uppercase">Premium</span>
-                                    : <span className="text-[10px] font-black tracking-widest px-2 py-0.5 rounded-sm bg-green-500 text-white uppercase">Vérifié</span>
+                                    : <span className="text-[10px] font-black tracking-widest px-2 py-0.5 rounded-sm bg-green-500 text-white uppercase">Disponible</span>
                                 }
                             </div>
                         )}
