@@ -120,6 +120,23 @@ class ValidateVehiculeWithGemini implements ShouldQueue
 
             if ($aiResult['valide']) {
                 Log::info("ValidateVehiculeWithGemini : véhicule {$this->vehicule->id} validé par Gemini.");
+
+                // Notifier les admins pour qu'ils puissent valider manuellement.
+                // Indique si c'est une resoumission après rejet pour prioriser la modération.
+                $wasRejected = $this->vehicule->description_validation !== null;
+                $label = $wasRejected
+                    ? "Annonce corrigée à revalider"
+                    : "Nouvelle annonce à modérer";
+                $detail = $desc->marque . ' ' . $desc->modele
+                    . ($wasRejected ? ' — corrigée après rejet, en attente de validation admin.' : ' — validée par IA, en attente de validation admin.');
+
+                Notifications::notifyAdmins(
+                    Notifications::TYPE_MODERATION,
+                    $label,
+                    $detail,
+                    ['vehicule_id' => $this->vehicule->id]
+                );
+
                 return;
             }
 
