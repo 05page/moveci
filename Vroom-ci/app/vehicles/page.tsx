@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
     Car, Search, PackageX, X, Fuel,
     Heart, GitCompare, LogIn, Building2, MapPin,
-    LayoutGrid, List, ChevronLeft, ChevronRight, MoreVertical,
+    LayoutGrid, List, ChevronLeft, ChevronRight,
     SlidersHorizontal, RefreshCw,
 } from "lucide-react"
 import {
@@ -38,7 +38,7 @@ interface Filters {
     localisation: string
 }
 
-type SortKey = "recent" | "prix_asc" | "prix_desc" | "km_asc"
+type PostTypeFilter = "tous" | "vente" | "location"
 type ViewMode = "grid" | "list"
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
@@ -48,12 +48,6 @@ const ANNEES_PILLS = ["2018+", "2020+", "2022+", "2024+"]
 const TRANSMISSIONS = ["Automatique", "Manuelle"]
 const PER_PAGE = 9
 
-const SORT_LABELS: Record<SortKey, string> = {
-    recent: "Plus récents",
-    prix_asc: "Prix croissant",
-    prix_desc: "Prix décroissant",
-    km_asc: "Kilométrage ↑",
-}
 
 const EMPTY_FILTERS: Filters = {
     search: "",
@@ -105,7 +99,7 @@ const VehiclesPage = () => {
     const [favLoading, setFavLoading] = useState<string | null>(null)
     const [compareIds, setCompareIds] = useState<string[]>([])
     const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
-    const [sortBy, setSortBy] = useState<SortKey>("recent")
+    const [postType, setPostType] = useState<PostTypeFilter>("tous")
     const [viewMode, setViewMode] = useState<ViewMode>("grid")
     const [page, setPage] = useState(1)
     const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -198,6 +192,7 @@ const VehiclesPage = () => {
 
     const filteredAndSorted = useMemo(() => {
         let list = vehiculesList.filter(v => {
+            if (postType !== "tous" && v.post_type !== postType) return false
             if (filters.search) {
                 const q = filters.search.toLowerCase()
                 if (!v.description?.marque?.toLowerCase().includes(q) && !v.description?.modele?.toLowerCase().includes(q)) return false
@@ -214,15 +209,8 @@ const VehiclesPage = () => {
             return true
         })
 
-        list = [...list].sort((a, b) => {
-            if (sortBy === "prix_asc") return a.prix - b.prix
-            if (sortBy === "prix_desc") return b.prix - a.prix
-            if (sortBy === "km_asc") return Number(a.description?.kilometrage ?? 0) - Number(b.description?.kilometrage ?? 0)
-            return 0 // recent: ordre API
-        })
-
         return list
-    }, [vehiculesList, filters, sortBy])
+    }, [vehiculesList, filters, postType])
 
     const totalPages = Math.max(1, Math.ceil(filteredAndSorted.length / PER_PAGE))
     const paginated = filteredAndSorted.slice((page - 1) * PER_PAGE, page * PER_PAGE)
@@ -270,11 +258,6 @@ const VehiclesPage = () => {
                             ? <Image src={imageUrl} alt={`${v.description?.marque} ${v.description?.modele}`} fill className="object-cover" unoptimized />
                             : <div className="w-full h-full flex items-center justify-center"><Car className="h-12 w-12 text-zinc-300" /></div>
                         }
-
-                        {/* ⋮ menu top-left */}
-                        <button className="absolute top-2.5 left-2.5 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition-colors cursor-pointer">
-                            <MoreVertical className="h-4 w-4 text-white" />
-                        </button>
 
                         {/* ♡ heart top-right */}
                         <button
@@ -615,21 +598,16 @@ const VehiclesPage = () => {
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-zinc-500 hidden sm:block whitespace-nowrap">Trier par :</span>
-                        <Select value={sortBy} onValueChange={v => { setSortBy(v as SortKey); setPage(1) }}>
-                            <SelectTrigger className="h-11 min-w-40 rounded-xl border-zinc-200 bg-white text-sm cursor-pointer">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl">
-                                {Object.entries(SORT_LABELS).map(([k, label]) => (
-                                    <SelectItem key={k} value={k} className="text-sm cursor-pointer">
-                                        {label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <Select value={postType} onValueChange={v => { setPostType(v as PostTypeFilter); setPage(1) }}>
+                        <SelectTrigger className="h-11 min-w-36 rounded-xl border-zinc-200 bg-white text-sm cursor-pointer shrink-0">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                            <SelectItem value="tous" className="text-sm cursor-pointer">Tous</SelectItem>
+                            <SelectItem value="vente" className="text-sm cursor-pointer">Vente</SelectItem>
+                            <SelectItem value="location" className="text-sm cursor-pointer">Location</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 {/* Compteur + toggle vue */}
