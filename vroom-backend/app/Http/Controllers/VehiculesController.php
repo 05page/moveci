@@ -87,7 +87,9 @@ class VehiculesController extends Controller
     public function vehicule($id): JsonResponse
     {
         try {
-            $user = Auth::user();
+            // auth('sanctum')->user() lit le Bearer token même sur route publique,
+            // permettant au guard d'owner dans registerView() de s'exécuter.
+            $user = auth('sanctum')->user();
 
             $vehicule = Vehicules::with([
                 'creator:id,fullname,email',
