@@ -4,11 +4,12 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { vehicule, Avis } from "@/src/types"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
-    MapPin, Phone, Star, Car, CalendarDays, PackageX, MessageSquare,
+    MapPin, Phone, Star, Car, CalendarDays, PackageX, MessageSquare, ArrowLeft,
 } from "lucide-react"
 import { cn, getPhotoUrl } from "@/src/lib/utils"
 import { format } from "date-fns"
@@ -77,6 +78,7 @@ function ProfilSkeleton() {
 
 export default function ProfilVendeurPage() {
     const { id } = useParams<{ id: string }>()
+    const router = useRouter()
     const [data, setData]         = useState<ProfilData | null>(null)
     const [loading, setLoading]   = useState(true)
     const [notFound, setNotFound] = useState(false)
@@ -114,7 +116,16 @@ export default function ProfilVendeurPage() {
             <div className="max-w-4xl mx-auto px-4 md:px-8">
 
                 {/* ── Header ─────────────────────────────────────────── */}
-                <div className="py-8 flex items-center gap-5">
+                <div className="pt-6 pb-2">
+                    <button
+                        onClick={() => router.back()}
+                        className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition-colors cursor-pointer"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Retour
+                    </button>
+                </div>
+                <div className="py-6 flex items-center gap-5">
                     <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center shrink-0">
                         <span className="text-white text-xl font-black">{initiales}</span>
                     </div>
