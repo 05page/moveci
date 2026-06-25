@@ -6,7 +6,7 @@ import Image from "next/image"
 import { toast } from "sonner"
 import { api } from "@/src/lib/api"
 import { useUser } from "@/src/context/UserContext"
-import { User } from "@/src/types"
+import {finishOnboarding} from "@/src/actions/onboarding.actions"
 
 type Role = "client" | "vendeur"
 
@@ -35,20 +35,20 @@ export default function OnboardingPage() {
                 adresse,
             })
 
+            const finishRes = await finishOnboarding()
             // Mettre à jour le cookie user_role côté client
             document.cookie = `user_role=${res.data?.role}; path=/; max-age=${60 * 60 * 24 * 7}`
             // Supprimer le cookie onboarding_pending
             document.cookie = "onboarding_pending=; path=/; max-age=0"
 
             // Rafraîchir le contexte utilisateur avec les nouvelles données (téléphone, adresse, rôle)
-            const meRes = await api.get<User>("/me")
-            setUser(meRes?.data ?? null)
+            setUser(finishRes?.data?.user ?? null)
 
             toast.dismiss(id)
             toast.success("Profil complété !")
 
             // Rediriger vers le bon dashboard
-            router.push(res.data?.role === "vendeur" ? "/vendeur/dashboard" : "/client/favorites")
+            router.push(res.data?.role === "vendeur" ? "/vendeur/dashboard" : "/client/profil")
         } catch {
             toast.dismiss(id)
             toast.error("Une erreur est survenue, réessaie.")
@@ -74,7 +74,7 @@ export default function OnboardingPage() {
                 {/* Étape 1 — Choix du rôle */}
                 {step === 1 && (
                     <div className="space-y-4">
-                        <p className="text-sm font-medium text-zinc-700">Tu viens sur Vroom pour :</p>
+                        <p className="text-sm font-medium text-zinc-700">Tu viens sur Move Ci pour :</p>
 
                         <button
                             onClick={() => { setRole("client"); setStep(2) }}

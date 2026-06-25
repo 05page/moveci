@@ -41,18 +41,17 @@ import { useUser } from "@/src/context/UserContext"
 import { useNotification } from "@/src/context/NotificationContext"
 import { getConversations } from "@/src/actions/conversations.actions"
 import { useState, useEffect } from "react"
-import OnboardingWizard from "@/app/components/OnboardingWizard"
 
 // Tous les items de nav avec leur restriction éventuelle par rôle
 const ALL_NAV_ITEMS = [
-    { href: "/partenaire/dashboard",  label: "Dashboard",       icon: LayoutDashboard, roles: null },
-    { href: "/partenaire/mongarage",  label: "Mon Garage",      icon: Warehouse,       roles: ["concessionnaire"] },
-    { href: "/partenaire/stats",      label: "Statistiques",    icon: BarChart3,       roles: null },
-    { href: "/partenaire/trend",      label: "Tendances",       icon: TrendingUp,      roles: null },
-    { href: "/partenaire/rdv",        label: "Nos Rendez-vous", icon: Calendar,        roles: null },
-    { href: "/partenaire/formations", label: "Formations",      icon: BookOpen,        roles: ["auto_ecole"] },
-    { href: "/partenaire/aide",       label: "Aide",            icon: HelpCircle,      roles: null },
-    { href: "/partenaire/settings",   label: "Paramètres",      icon: Settings,        roles: null },
+    { href: "/partenaire/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: null },
+    { href: "/partenaire/mongarage", label: "Mon Garage", icon: Warehouse, roles: ["concessionnaire"] },
+    { href: "/partenaire/stats", label: "Statistiques", icon: BarChart3, roles: null },
+    { href: "/partenaire/trend", label: "Tendances", icon: TrendingUp, roles: null },
+    { href: "/partenaire/rdv", label: "Nos Rendez-vous", icon: Calendar, roles: null },
+    { href: "/partenaire/formations", label: "Formations", icon: BookOpen, roles: ["auto_ecole"] },
+    { href: "/partenaire/aide", label: "Aide", icon: HelpCircle, roles: null },
+    { href: "/partenaire/settings", label: "Paramètres", icon: Settings, roles: null },
 ]
 
 export default function PartenaireLayout({
@@ -63,11 +62,9 @@ export default function PartenaireLayout({
     const pathname = usePathname()
     const { user } = useUser()
     const isMessagesPage = pathname === "/partenaire/messages"
-
+    const [unreadMessages, setUnreadMessages] = useState(0)
     // Remet le compteur messages à 0 quand l'utilisateur ouvre la page messages
-    useEffect(() => {
-        if (isMessagesPage) setUnreadMessages(0)
-    }, [isMessagesPage])
+    const displayedUnreadMessages = isMessagesPage ? 0 : unreadMessages
 
     // Filtre les items selon le rôle : null = visible par tous
     const navItems = ALL_NAV_ITEMS.filter(item =>
@@ -75,7 +72,6 @@ export default function PartenaireLayout({
     )
 
     const { unreadCount } = useNotification()
-    const [unreadMessages, setUnreadMessages] = useState(0)
 
     // Charge les conversations, calcule le total non lu, puis s'abonne en temps réel
     useEffect(() => {
@@ -102,7 +98,7 @@ export default function PartenaireLayout({
                         }
                     })
             })
-            .catch(() => {})
+            .catch(() => { })
 
         return () => {
             if (echoRef) {
@@ -111,8 +107,8 @@ export default function PartenaireLayout({
         }
     }, [user?.id])
 
-    const isAutoEcole      = user?.role === "auto_ecole"
-    const roleLabel        = isAutoEcole ? "Auto-école" : "Concessionnaire"
+    const isAutoEcole = user?.role === "auto_ecole"
+    const roleLabel = isAutoEcole ? "Auto-école" : "Concessionnaire"
     const router = useRouter()
     const handleLogout = async () => {
         await api.logout()
@@ -120,125 +116,123 @@ export default function PartenaireLayout({
     }
     return (
         <>
-        {/* Wizard d'onboarding — s'affiche automatiquement si non terminé */}
-        <OnboardingWizard />
-        <SidebarProvider>
-            <Sidebar collapsible="icon">
-                <SidebarHeader>
-                    <SidebarMenu>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton size="lg" asChild>
-                                <Link href="/partenaire/dashboard">
-                                    <Image src="/logo.svg" alt="Move CI" width={52} height={30} />
-                                    <div className="flex flex-col gap-0.5 leading-none">
-                                        <Badge className="bg-white text-[10px] w-fit">{roleLabel}</Badge>
-                                    </div>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    </SidebarMenu>
-                </SidebarHeader>
+            <SidebarProvider>
+                <Sidebar collapsible="icon">
+                    <SidebarHeader>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton size="lg" asChild>
+                                    <Link href="/partenaire/dashboard">
+                                        <Image src="/logo.svg" alt="Move CI" width={52} height={30} />
+                                        <div className="flex flex-col gap-0.5 leading-none">
+                                            <Badge className="bg-white text-[10px] w-fit">{roleLabel}</Badge>
+                                        </div>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarHeader>
 
-                <SidebarContent>
-                    <SidebarGroup>
-                        <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-                        <SidebarGroupContent>
-                            <SidebarMenu>
-                                {navItems.map((item) => (
-                                    <SidebarMenuItem key={item.href}>
-                                        <SidebarMenuButton
-                                            asChild
-                                            isActive={pathname === item.href}
-                                            tooltip={item.label}
-                                        >
-                                            <Link href={item.href}>
-                                                <item.icon />
-                                                <span>{item.label}</span>
+                    <SidebarContent>
+                        <SidebarGroup>
+                            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    {navItems.map((item) => (
+                                        <SidebarMenuItem key={item.href}>
+                                            <SidebarMenuButton
+                                                asChild
+                                                isActive={pathname === item.href}
+                                                tooltip={item.label}
+                                            >
+                                                <Link href={item.href}>
+                                                    <item.icon />
+                                                    <span>{item.label}</span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    ))}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+
+                        <SidebarGroup>
+                            <SidebarGroupLabel>Accès rapide</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton asChild tooltip="Accueil site">
+                                            <Link href="/">
+                                                <Home />
+                                                <span>Accueil site</span>
                                             </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
-                                ))}
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+                    </SidebarContent>
 
-                    <SidebarGroup>
-                        <SidebarGroupLabel>Accès rapide</SidebarGroupLabel>
-                        <SidebarGroupContent>
-                            <SidebarMenu>
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton asChild tooltip="Accueil site">
-                                        <Link href="/">
-                                            <Home />
-                                            <span>Accueil site</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
-                </SidebarContent>
+                    <SidebarFooter>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton size="lg">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-amber-500">
+                                        <User className="h-4 w-4" />
+                                    </div>
+                                    <div className="flex flex-col gap-0.5 leading-none">
+                                        <span className="text-sm font-medium truncate">{user?.fullname ?? "Partenaire"}</span>
+                                        <span className="text-xs text-muted-foreground">{roleLabel}</span>
+                                    </div>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                    onClick={handleLogout}>
+                                    <LogOut />
+                                    <span>Déconnexion</span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarFooter>
 
-                <SidebarFooter>
-                    <SidebarMenu>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton size="lg">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-amber-500">
-                                    <User className="h-4 w-4" />
-                                </div>
-                                <div className="flex flex-col gap-0.5 leading-none">
-                                    <span className="text-sm font-medium truncate">{user?.fullname ?? "Partenaire"}</span>
-                                    <span className="text-xs text-muted-foreground">{roleLabel}</span>
-                                </div>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                            onClick={handleLogout}>
-                                <LogOut />
-                                <span>Déconnexion</span>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    </SidebarMenu>
-                </SidebarFooter>
+                    <SidebarRail />
+                </Sidebar>
 
-                <SidebarRail />
-            </Sidebar>
-
-            <SidebarInset>
-                <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-                    <SidebarTrigger className="-ml-1" />
-                    <Separator orientation="vertical" className="mr-2 h-4" />
-                    <span className="text-sm font-medium text-muted-foreground">
-                        Dashboard
-                    </span>
-                    <div className="ml-auto flex items-center gap-4">
-                        <Link href="/partenaire/messages" className="relative text-muted-foreground hover:text-foreground transition-colors">
-                            <MessageSquare className="h-5 w-5" />
-                            {unreadMessages > 0 && (
-                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                                    {unreadMessages > 9 ? "9+" : unreadMessages}
-                                </span>
-                            )}
-                        </Link>
-                        <Link href="/partenaire/notifications" className="relative text-muted-foreground hover:text-foreground transition-colors">
-                            <Bell className="h-5 w-5" />
-                            {unreadCount > 0 && (
-                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                                    {unreadCount > 9 ? "9+" : unreadCount}
-                                </span>
-                            )}
-                        </Link>
+                <SidebarInset>
+                    <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+                        <SidebarTrigger className="-ml-1" />
+                        <Separator orientation="vertical" className="mr-2 h-4" />
                         <span className="text-sm font-medium text-muted-foreground">
-                            Espace Partenaire
+                            Dashboard
                         </span>
-                    </div>
-                </header>
-                <main className={isMessagesPage ? "flex-1 flex flex-col overflow-hidden" : "flex-1 overflow-auto p-4 md:p-6"}>
-                    {children}
-                </main>
-            </SidebarInset>
-        </SidebarProvider>
+                        <div className="ml-auto flex items-center gap-4">
+                            <Link href="/partenaire/messages" className="relative text-muted-foreground hover:text-foreground transition-colors">
+                                <MessageSquare className="h-5 w-5" />
+                                {displayedUnreadMessages > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                                        {displayedUnreadMessages  > 9 ? "9+" : displayedUnreadMessages }
+                                    </span>
+                                )}
+                            </Link>
+                            <Link href="/partenaire/notifications" className="relative text-muted-foreground hover:text-foreground transition-colors">
+                                <Bell className="h-5 w-5" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                                        {unreadCount > 9 ? "9+" : unreadCount}
+                                    </span>
+                                )}
+                            </Link>
+                            <span className="text-sm font-medium text-muted-foreground">
+                                Espace Partenaire
+                            </span>
+                        </div>
+                    </header>
+                    <main className={isMessagesPage ? "flex-1 flex flex-col overflow-hidden" : "flex-1 overflow-auto p-4 md:p-6"}>
+                        {children}
+                    </main>
+                </SidebarInset>
+            </SidebarProvider>
         </>
     )
 }

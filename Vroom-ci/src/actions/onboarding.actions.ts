@@ -4,6 +4,7 @@ import { User } from "../types";
 export async function submitOnboardingProfile(data: {
     telephone: string
     adresse: string
+    role: string
 }) {
     return api.post("/auth/complete-onboarding", data)
 }
