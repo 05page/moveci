@@ -55,16 +55,6 @@ class AuthController extends Controller
             // Nouveau user Google = pas encore de rôle → onboarding requis
             $needsOnboarding = $user->wasRecentlyCreated || $user->role === null;
 
-            // Mail de bienvenue uniquement pour les nouveaux comptes Google
-            // Le try/catch isole l'envoi — un échec SMTP ne bloque pas la connexion
-            if ($user->wasRecentlyCreated) {
-                try {
-                    Mail::to($user->email)->queue(new WelcomeMail($user));
-                } catch (\Exception $e) {
-                    Log::error('Mail queue failed: ' . $e->getMessage());
-                }
-            }
-
             $token = $user->createToken('auth_token')->plainTextToken;
 
             // Stocker le token sous un code UUID temporaire (60s) — le token brut ne passe jamais dans l'URL
@@ -186,13 +176,6 @@ class AuthController extends Controller
             'onboarding_completed_at' => now()
         ]);
 
-        try {
-            Mail::to($user->email)->queue(new WelcomeMail($user));
-        } catch (\Exception $e) {
-            Log::error('Mail queue failed: ' . $e->getMessage());
-        }
-
-
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -256,7 +239,7 @@ class AuthController extends Controller
                 $validated = $request->validate([
                     'telephone' => 'required|string|max:20',
                     'adresse'   => 'required|string|max:500',
-                    'role'=> 'required|in:client,vendeur'
+                    'role' => 'required|in:client,vendeur'
                 ]);
             }
 
@@ -297,6 +280,11 @@ class AuthController extends Controller
 
         $user->update(['onboarding_completed_at' => now()]);
 
+        try {
+            Mail::to($user->email)->queue(new WelcomeMail($user));
+        } catch (\Exception $e) {
+            Log::error('Mail queue failed: ' . $e->getMessage());
+        }
         return response()->json([
             'success' => true,
             'data'    => ["user" => $user->fresh()],
