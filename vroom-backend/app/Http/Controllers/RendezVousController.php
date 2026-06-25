@@ -137,7 +137,7 @@ class RendezVousController extends Controller
                     $rdv->load('client');
                     $start    = $rdv->date_heure->toDateTime();
                     $end      = $rdv->date_heure->copy()->addHour()->toDateTime();
-                    $summary  = 'Rendez-vous Vroom — ' . ucfirst($rdv->type);
+                    $summary  = 'Rendez-vous Move Ci — ' . ucfirst($rdv->type);
                     $desc     = $rdv->motif ?? $rdv->notes ?? '';
 
                     $calendar      = new GoogleCalendarService($user);

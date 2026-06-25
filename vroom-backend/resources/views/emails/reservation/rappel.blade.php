@@ -103,8 +103,8 @@
                     <tr>
                         <td style="background:#f4f4f5;padding:24px 40px;text-align:center;border-top:1px solid #e4e4e7;">
                             <p style="margin:0;font-size:12px;color:#a1a1aa;">
-                                Vous recevez cet email car vous avez une réservation active sur Vroom.<br>
-                                © {{ date('Y') }} Vroom — Tous droits réservés.
+                                Vous recevez cet email car vous avez une réservation active sur Move Ci.<br>
+                                © {{ date('Y') }} Move Ci — Tous droits réservés.
                             </p>
                         </td>
                     </tr>

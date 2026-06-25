@@ -21,7 +21,7 @@ class GeocodingService
         try {
             $response = Http::withHeaders([
                 // Nominatim exige un User-Agent identifiant l'application
-                'User-Agent' => 'VroomCI/1.0 (contact@vroomci.com)',
+                'User-Agent' => 'Move Ci/1.0 (contact@vroomci.com)',
                 'Accept-Language' => 'fr',
             ])->get(self::NOMINATIM_URL, [
                 'q'              => $adresse,
