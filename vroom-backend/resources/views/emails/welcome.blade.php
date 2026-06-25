@@ -74,7 +74,7 @@
                 </p>
             @endif
 
-            <a href="{{ config('app.frontend_url') }}" class="cta">
+            <a href="{{ config('app.frontend_url') }}" class="cta" style="color: #18181b;">
                 Accéder à MoveCi →
             </a>
 
