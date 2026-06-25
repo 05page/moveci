@@ -10,7 +10,7 @@
         .wrapper { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
         .header { background: #18181b; padding: 32px 40px; text-align: center; }
         .header h1 { color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
-        .header span { color: #f97316; }
+        .header span { color: #efbf04; }
         .body { padding: 40px; }
         .greeting { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
         .text { font-size: 15px; line-height: 1.7; color: #52525b; margin-bottom: 24px; }
@@ -18,7 +18,7 @@
         .role-client      { background: #fff7ed; color: #ea580c; }
         .role-vendeur     { background: #f0fdf4; color: #16a34a; }
         .role-pro         { background: #eff6ff; color: #2563eb; }
-        .cta { display: block; width: fit-content; margin: 0 auto 32px; padding: 14px 32px; background: #18181b; color: #ffffff; text-decoration: none; border-radius: 8px; font-size: 15px; font-weight: 600; }
+        .cta { display: block; width: fit-content; margin: 0 auto 32px; padding: 14px 32px; background: #efbf04; color: #18181b; text-decoration: none; border-radius: 8px; font-size: 15px; font-weight: 600; }
         .divider { border: none; border-top: 1px solid #f4f4f5; margin: 32px 0; }
         .features { display: grid; gap: 16px; margin-bottom: 32px; }
         .feature { display: flex; gap: 12px; align-items: flex-start; }
@@ -33,11 +33,11 @@
 <body>
     <div class="wrapper">
         <div class="header">
-            <h1>Vr<span>oo</span>m</h1>
+            <h1>Move<span>Ci</span></h1>
         </div>
 
         <div class="body">
-            <p class="greeting">Bonjour {{ $user->fullname }} 👋</p>
+            <p class="greeting">Bonjour {{ $user->fullname }} </p>
 
             @php
                 $roleLabel = match($user->role) {
@@ -82,21 +82,21 @@
 
             <div class="features">
                 <div class="feature">
-                    <span class="feature-icon">🔍</span>
+                    <span class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#efbf04" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></span>
                     <div>
                         <p class="feature-title">Catalogue complet</p>
                         <p class="feature-desc">Des milliers de véhicules disponibles à l'achat et à la location.</p>
                     </div>
                 </div>
                 <div class="feature">
-                    <span class="feature-icon">📅</span>
+                    <span class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#efbf04" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
                     <div>
                         <p class="feature-title">Rendez-vous en ligne</p>
                         <p class="feature-desc">Planifiez vos essais directement sur la plateforme.</p>
                     </div>
                 </div>
                 <div class="feature">
-                    <span class="feature-icon">🛡️</span>
+                    <span class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#efbf04" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
                     <div>
                         <p class="feature-title">Annonces vérifiées</p>
                         <p class="feature-desc">Chaque véhicule est analysé par notre IA avant publication.</p>
