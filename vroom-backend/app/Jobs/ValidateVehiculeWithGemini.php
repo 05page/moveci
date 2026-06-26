@@ -119,26 +119,26 @@ class ValidateVehiculeWithGemini implements ShouldQueue
             }
 
             if ($aiResult['valide']) {
-                Log::info("ValidateVehiculeWithGemini : véhicule {$this->vehicule->id} validé par Gemini.");
+                $this->vehicule->update([
+                    'status_validation'      => Vehicules::STATUS_VALIDATED,
+                    'prix_suggere'           => $aiResult['prix_suggere'] ?? null,
+                    'description_validation' => null,
+                ]);
 
-                // Notifier les admins pour qu'ils puissent valider manuellement.
-                // Indique si c'est une resoumission après rejet pour prioriser la modération.
-                $wasRejected = $this->vehicule->description_validation !== null;
-                $label = $wasRejected
-                    ? "Annonce corrigée à revalider"
-                    : "Nouvelle annonce à modérer";
-                $detail = $desc->marque . ' ' . $desc->modele
-                    . ($wasRejected ? ' — corrigée après rejet, en attente de validation admin.' : ' — validée par IA, en attente de validation admin.');
-
-                Notifications::notifyAdmins(
-                    Notifications::TYPE_MODERATION,
-                    $label,
-                    $detail,
-                    ['vehicule_id' => $this->vehicule->id]
-                );
+                Notifications::create([
+                    'user_id'    => $this->vehicule->created_by,
+                    'type'       => Notifications::TYPE_MODERATION,
+                    'level'      => 'success',
+                    'title'      => 'Annonce validée',
+                    'message'    => 'Votre annonce ' . $desc->marque . ' ' . $desc->modele . ' a été validée et est maintenant en ligne.',
+                    'data'       => ['vehicule_id' => $this->vehicule->id],
+                    'lu'         => false,
+                    'date_envoi' => now(),
+                ]);
 
                 return;
             }
+
 
             $this->vehicule->update([
                 'status_validation'      => Vehicules::STATUS_REJETEE,
