@@ -497,6 +497,11 @@ class VehiculesController extends Controller
                 'message' => 'Votre véhicule ' . $vehiculeDescription->marque . ' ' . $vehiculeDescription->modele . ' a été modifié avec succès.',
                 'data'    => ['vehicule_id' => $vehicule->id],
             ]);
+            
+            $vehicule->update([
+                'status_validation'      => Vehicules::STATUS_PENDING,
+                'description_validation' => null,
+            ]);
 
             DB::commit();
             ValidateVehiculeWithGemini::dispatch($vehicule);
