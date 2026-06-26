@@ -181,6 +181,10 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
             prixParJour: "",
             negociable: vehicule.negociable ?? false,
         })
+        setPhotoUrls(
+            vehicule.photos?.map(p => `${process.env.NEXT_PUBLIC_BACKEND_URL}/storage/${p.path}`) ?? []
+        )
+
     }, [isOpen])
 
     const updateFormData = <K extends keyof FormData>(field: K, value: FormData[K]) => {

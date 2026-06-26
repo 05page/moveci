@@ -445,7 +445,8 @@ export default function LandingPage() {
                                             className="group rounded-2xl border border-zinc-200 bg-white overflow-hidden hover:border-zinc-300 hover:shadow-xl transition-all duration-300 cursor-pointer">
                                             <div className="h-48 bg-zinc-50 flex items-center justify-center relative overflow-hidden">
                                                 {photo
-                                                    ? <Image src={photo.path} alt={`${v.description?.marque} ${v.description?.modele}`}
+                                                    ? <Image src={`${process.env.NEXT_PUBLIC_BACKEND_URL}/storage/${photo.path}`}
+                                                        alt={`${v.description?.marque} ${v.description?.modele}`}
                                                         fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
                                                     : <>
                                                         <div className="absolute inset-0 bg-linear-to-br from-zinc-50 to-zinc-100" />
@@ -578,9 +579,9 @@ export default function LandingPage() {
             <section className="py-24 px-6 relative overflow-hidden">
                 {/* Orbe ambre subtil en arrière-plan */}
                 <div className="flex items-center gap-3 mb-4">
-                        <div className="h-px flex-1 bg-zinc-200" />
-                        <div className="h-px flex-1 bg-zinc-200" />
-                    </div>
+                    <div className="h-px flex-1 bg-zinc-200" />
+                    <div className="h-px flex-1 bg-zinc-200" />
+                </div>
                 <div className="absolute top-0 right-0 w-150 h-150 bg-[radial-gradient(circle,oklch(0.68_0.17_72/0.06),transparent_65%)] pointer-events-none" />
 
                 <div className="relative max-w-6xl mx-auto">
