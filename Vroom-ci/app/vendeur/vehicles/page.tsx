@@ -17,12 +17,11 @@ import {
 import {
     Car, Plus, Eye, Search, Tag, Key, PackageX,
     Edit, Trash2, Trash2Icon, Fuel,
-    LayoutGrid, List, ChevronLeft, ChevronRight, MoreVertical,
-    SlidersHorizontal, X, RefreshCw,
+    LayoutGrid, List, ChevronLeft, ChevronRight,
+    SlidersHorizontal, X, RefreshCw
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import DetailsCard from "./DetailsVehicles"
 import { EditVehicle } from "./EditVehicle"
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -143,7 +142,7 @@ function PageSkeleton() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function VehiclesPage() {
-    const [isLoading, setIsLoading]   = useState(true)
+    const [isLoading, setIsLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [mesvehicules, setMesVehicules] = useState<vehicule[]>([])
     const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
@@ -297,14 +296,6 @@ export default function VehiclesPage() {
                             : <div className="w-full h-full flex items-center justify-center"><Car className="h-12 w-12 text-zinc-300" /></div>
                         }
 
-                        {/* ⋮ → ouvre le panneau Détails */}
-                        <button
-                            onClick={() => setDetailVehicle(v)}
-                            className="absolute top-2.5 left-2.5 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition-colors cursor-pointer"
-                        >
-                            <MoreVertical className="h-4 w-4 text-white" />
-                        </button>
-
                         {/* Badge type top-right */}
                         <div className="absolute top-2.5 right-2.5">
                             {v.post_type === "vente"
@@ -355,15 +346,9 @@ export default function VehiclesPage() {
 
                         {/* Actions vendeur */}
                         <div className="flex items-center gap-1.5">
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 rounded-lg text-xs cursor-pointer border-zinc-200"
-                                onClick={() => setDetailVehicle(v)}
-                            >
-                                <Eye className="h-3.5 w-3.5 mr-1" />
-                                Détails
-                            </Button>
+                            <Link href={`/vehicles/${v.id}`}>
+
+                            </Link>
                             <Button
                                 size="sm"
                                 className="flex-1 rounded-lg text-xs bg-zinc-900 hover:bg-zinc-800 text-white cursor-pointer"
@@ -750,16 +735,6 @@ export default function VehiclesPage() {
 
                 {totalPages > 1 && <Pagination />}
             </main>
-
-            {/* ══════════════ DIALOGS ══════════════ */}
-
-            {detailVehicle && (
-                <DetailsCard
-                    isOpen={!!detailVehicle}
-                    vehicule={detailVehicle}
-                    onClose={() => setDetailVehicle(null)}
-                />
-            )}
 
             {editingVehicle && (
                 <EditVehicle
