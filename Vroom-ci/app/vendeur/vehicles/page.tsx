@@ -152,7 +152,6 @@ export default function VehiclesPage() {
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [activeTab, setActiveTab] = useState<StatusTab>("tous")
 
-    const [detailVehicle, setDetailVehicle] = useState<vehicule | null>(null)
     const [editingVehicle, setEditingVehicle] = useState<vehicule | null>(null)
     const [vehicleToDelete, setVehicleToDelete] = useState<vehicule | null>(null)
     const [deleteOpen, setDeleteOpen] = useState(false)
@@ -346,8 +345,11 @@ export default function VehiclesPage() {
 
                         {/* Actions vendeur */}
                         <div className="flex items-center gap-1.5">
-                            <Link href={`/vehicles/${v.id}`}>
-
+                            <Link href={`/vendeur/vehicles/${v.id}`} className="flex-1">
+                                <Button size="sm" variant="outline" className="w-full rounded-lg text-xs border-zinc-200 cursor-pointer">
+                                    <Eye className="h-3.5 w-3.5 mr-1" />
+                                    Voir détails
+                                </Button>
                             </Link>
                             <Button
                                 size="sm"
