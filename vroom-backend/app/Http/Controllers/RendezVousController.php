@@ -22,7 +22,7 @@ class RendezVousController extends Controller
         try {
             $user = Auth::user();
 
-            $rdvs = RendezVous::with(['vendeur:id,fullname,avatar', 'vehicule.description'])
+            $rdvs = RendezVous::with(['vendeur:id,fullname,avatar', 'vehicule.description', 'vehicule.photos'])
                 ->where('client_id', $user->id)
                 ->orderBy('date_heure', 'desc')
                 ->get();
@@ -50,7 +50,7 @@ class RendezVousController extends Controller
         try {
             $user = Auth::user();
 
-            $rdvs = RendezVous::with(['client:id,fullname,avatar', 'vehicule.description'])
+            $rdvs = RendezVous::with(['client:id,fullname,avatar', 'vehicule.description', 'vehicule.photos'])
                 ->where('vendeur_id', $user->id)
                 ->orderBy('date_heure', 'desc')
                 ->get();
