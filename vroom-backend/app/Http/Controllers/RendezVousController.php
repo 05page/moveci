@@ -175,7 +175,7 @@ class RendezVousController extends Controller
     }
 
     //Proprietaire refuse
-    public function refuser(Request $request, $id): JsonResponse
+    public function refuser($id): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -260,10 +260,6 @@ class RendezVousController extends Controller
             DB::beginTransaction();
 
             $rdv->terminer();
-
-            // Verrouille le véhicule le temps de la confirmation double
-            // → plus visible dans le catalogue, plus de nouveaux RDV possibles
-            $rdv->vehicule->update(['statut' => Vehicules::STATUS_EN_TRANSACTION]);
 
             // Génère le code de confirmation et crée la TransactionConclue
             $code = TransactionConclue::genererCode();
