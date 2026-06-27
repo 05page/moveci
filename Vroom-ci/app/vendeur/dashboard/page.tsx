@@ -290,7 +290,7 @@ export default function VendeurDashboard() {
                                 {Array.from({ length: 5 }).map((_, i) => (
                                     <Star key={i} className={cn("h-3 w-3", i < Math.floor(noteMoyenne) ? "fill-move-gold text-move-gold" : "text-zinc-200")} />
                                 ))}
-                                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mt-0.5">Vues ce mois</p>
+                                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mt-0.5">Note Générale</p>
                                 <span className="text-xs text-zinc-400 ml-1">({avisData?.total ?? 0})</span>
                             </div>
                         </CardContent>
