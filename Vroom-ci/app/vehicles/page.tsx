@@ -11,6 +11,10 @@ import {
     Heart, GitCompare, LogIn, Building2, MapPin,
     LayoutGrid, List, ChevronLeft, ChevronRight,
     SlidersHorizontal, RefreshCw,
+    CircleUserRound,
+    MessageCircle,
+    CircleAlert,
+    MoreVertical,
 } from "lucide-react"
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -24,6 +28,7 @@ import { getVehicules } from "@/src/actions/vehicules.actions"
 import { getFavoris, removeFavori, addFavori } from "@/src/actions/favoris.actions"
 import { useUser } from "@/src/context/UserContext"
 import { cn, getPhotoUrl } from "@/src/lib/utils"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -344,6 +349,7 @@ const VehiclesPage = () => {
                             >
                                 <GitCompare className="h-3.5 w-3.5" />
                             </button>
+                            <DropDown />
                         </div>
                     </div>
                 </CardContent>
@@ -403,6 +409,34 @@ const VehiclesPage = () => {
         )
     }
 
+    const DropDown = () => {
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <button>
+                        <MoreVertical />
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuGroup>
+                        <DropdownMenuItem>
+                            <CircleAlert className="h-4 w-4 mr-2" />
+                            Signaler le véhicule
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                            <MessageCircle className="h-4 w-4 mr-2" />
+                            Discuter avec le vendeur
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                            <CircleUserRound className="h-4 w-4 mr-2" />
+                            Voir le profil du vendeur
+                        </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+        )
+    }
     // ── Loading ──────────────────────────────────────────────────────────────
 
     if (isLoading) return <PageSkeleton />
