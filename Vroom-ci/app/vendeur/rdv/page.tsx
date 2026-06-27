@@ -26,31 +26,31 @@ import { getMesTransactions, confirmerVendeur } from "@/src/actions/transactions
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
 const TYPE_LABELS: Record<string, string> = {
-    visite:             "Visite",
-    essai_routier:      "Essai routier",
+    visite: "Visite",
+    essai_routier: "Essai routier",
     premiere_rencontre: "Première rencontre",
 }
 
 type TabKey = "tous" | "a_venir" | "passes" | "annules"
 
 const TABS: { key: TabKey; label: string }[] = [
-    { key: "tous",    label: "Tous" },
+    { key: "tous", label: "Tous" },
     { key: "a_venir", label: "À venir" },
-    { key: "passes",  label: "Passés" },
+    { key: "passes", label: "Passés" },
     { key: "annules", label: "Annulés" },
 ]
 
 const STATUT_STYLE: Record<string, { label: string; className: string }> = {
     en_attente: { label: "EN ATTENTE", className: "bg-amber-100 text-amber-700" },
-    "confirmé": { label: "CONFIRMÉ",   className: "bg-green-100 text-green-700" },
-    "terminé":  { label: "TERMINÉ",    className: "bg-zinc-100 text-zinc-500" },
-    "annulé":   { label: "ANNULÉ",     className: "bg-red-100 text-red-600" },
-    "refusé":   { label: "REFUSÉ",     className: "bg-red-100 text-red-600" },
+    "confirmé": { label: "CONFIRMÉ", className: "bg-green-100 text-green-700" },
+    "terminé": { label: "TERMINÉ", className: "bg-zinc-100 text-zinc-500" },
+    "annulé": { label: "ANNULÉ", className: "bg-red-100 text-red-600" },
+    "refusé": { label: "REFUSÉ", className: "bg-red-100 text-red-600" },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const fmtDate  = (d: string) => format(new Date(d), "d MMM yyyy", { locale: fr })
+const fmtDate = (d: string) => format(new Date(d), "d MMM yyyy", { locale: fr })
 const fmtHeure = (d: string) => format(new Date(d), "HH:mm")
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -67,15 +67,15 @@ const PageSkeleton = () => (
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function NosRdv() {
-    const [rdvList, setRdvList]           = useState<RendezVous[]>([])
+    const [rdvList, setRdvList] = useState<RendezVous[]>([])
     const [transactions, setTransactions] = useState<TransactionConclue[]>([])
-    const [isLoading, setIsLoading]       = useState(true)
+    const [isLoading, setIsLoading] = useState(true)
     const [actionLoading, setActionLoading] = useState<string | null>(null)
-    const [tab, setTab]                   = useState<TabKey>("a_venir")
+    const [tab, setTab] = useState<TabKey>("a_venir")
 
     // Dialog finalisation
-    const [finaliserOpen, setFinaliserOpen]               = useState(false)
-    const [finaliserLoading, setFinaliserLoading]         = useState(false)
+    const [finaliserOpen, setFinaliserOpen] = useState(false)
+    const [finaliserLoading, setFinaliserLoading] = useState(false)
     const [finaliserTransaction, setFinaliserTransaction] = useState<TransactionConclue | null>(null)
     const [finaliserForm, setFinaliserForm] = useState({
         code: "", prix_final: "", date_debut: "", date_fin: "",
@@ -115,8 +115,8 @@ export default function NosRdv() {
         setActionLoading(id + action)
         try {
             if (action === "confirmer") await confirmerRdv(id)
-            else if (action === "refuser")  await refuserRdv(id)
-            else if (action === "annuler")  await annulerRdv(id)
+            else if (action === "refuser") await refuserRdv(id)
+            else if (action === "annuler") await annulerRdv(id)
             else if (action === "terminer") await terminerRdv(id)
             updateStatut(id, nouveauStatut)
             toast.success(successMsg)
@@ -152,12 +152,12 @@ export default function NosRdv() {
         setFinaliserLoading(true)
         try {
             await confirmerVendeur(finaliserTransaction.id, {
-                code:       finaliserForm.code,
-                type:       finaliserTransaction.type!,
+                code: finaliserForm.code,
+                type: finaliserTransaction.type!,
                 prix_final: Number(finaliserForm.prix_final),
                 ...(isLocation && {
                     date_debut_location: finaliserForm.date_debut,
-                    date_fin_location:   finaliserForm.date_fin,
+                    date_fin_location: finaliserForm.date_fin,
                 }),
             })
             toast.success("Transaction confirmée ! En attente de la confirmation du client.")
@@ -178,9 +178,9 @@ export default function NosRdv() {
     const getByTab = (key: TabKey): RendezVous[] => {
         switch (key) {
             case "a_venir": return rdvList.filter(r => r.statut === "en_attente" || r.statut === "confirmé")
-            case "passes":  return rdvList.filter(r => r.statut === "terminé")
+            case "passes": return rdvList.filter(r => r.statut === "terminé")
             case "annules": return rdvList.filter(r => r.statut === "annulé" || r.statut === "refusé")
-            default:        return rdvList
+            default: return rdvList
         }
     }
 
@@ -250,9 +250,9 @@ export default function NosRdv() {
                 <div className="space-y-3">
                     {filtered.map(rdv => {
                         const v = rdv.vehicule
-                        const photo    = v?.photos?.find(p => p.is_primary) ?? v?.photos?.[0]
+                        const photo = v?.photos?.find(p => p.is_primary) ?? v?.photos?.[0]
                         const imageUrl = photo ? getPhotoUrl(photo.path) : null
-                        const statut   = STATUT_STYLE[rdv.statut] ?? { label: rdv.statut, className: "bg-zinc-100 text-zinc-500" }
+                        const statut = STATUT_STYLE[rdv.statut] ?? { label: rdv.statut, className: "bg-zinc-100 text-zinc-500" }
                         const txEnAttente = transactions.find(
                             t => t.rendez_vous_id === rdv.id && t.statut === "en_attente" && !t.confirme_par_vendeur
                         )
@@ -263,7 +263,8 @@ export default function NosRdv() {
                                 {/* Photo véhicule */}
                                 <div className="relative w-36 h-24 rounded-xl overflow-hidden bg-zinc-100 shrink-0">
                                     {imageUrl
-                                        ? <Image src={imageUrl} alt={`${v?.description?.marque} ${v?.description?.modele}`} fill className="object-cover" unoptimized />
+                                        ? <Image src={imageUrl}
+                                            alt={`${v?.description?.marque} ${v?.description?.modele}`} fill className="object-cover" unoptimized />
                                         : <div className="absolute inset-0 flex items-center justify-center"><Car className="h-8 w-8 text-zinc-300" /></div>
                                     }
                                 </div>

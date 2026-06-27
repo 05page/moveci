@@ -38,18 +38,18 @@ const TYPE_LABELS: Record<RendezVous["type"], string> = {
 type TabKey = "tous" | "a_venir" | "termines" | "annules"
 
 const TABS: { key: TabKey; label: string }[] = [
-    { key: "tous",     label: "Tous" },
-    { key: "a_venir",  label: "À venir" },
+    { key: "tous", label: "Tous" },
+    { key: "a_venir", label: "À venir" },
     { key: "termines", label: "Terminés" },
-    { key: "annules",  label: "Annulés" },
+    { key: "annules", label: "Annulés" },
 ]
 
 const STATUT_STYLE: Record<string, { label: string; className: string }> = {
     en_attente: { label: "EN ATTENTE", className: "bg-amber-100 text-amber-700" },
-    "confirmé":  { label: "CONFIRMÉ",  className: "bg-green-100 text-green-700" },
-    "terminé":   { label: "TERMINÉ",   className: "bg-zinc-100 text-zinc-500" },
-    "annulé":    { label: "ANNULÉ",    className: "bg-red-100 text-red-600" },
-    "refusé":    { label: "REFUSÉ",    className: "bg-red-100 text-red-600" },
+    "confirmé": { label: "CONFIRMÉ", className: "bg-green-100 text-green-700" },
+    "terminé": { label: "TERMINÉ", className: "bg-zinc-100 text-zinc-500" },
+    "annulé": { label: "ANNULÉ", className: "bg-red-100 text-red-600" },
+    "refusé": { label: "REFUSÉ", className: "bg-red-100 text-red-600" },
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -130,10 +130,10 @@ const MesRdv = () => {
 
     const getByTab = (key: TabKey): RendezVous[] => {
         switch (key) {
-            case "a_venir":  return rdvList.filter(r => r.statut === "confirmé" || r.statut === "en_attente")
+            case "a_venir": return rdvList.filter(r => r.statut === "confirmé" || r.statut === "en_attente")
             case "termines": return rdvList.filter(r => r.statut === "terminé")
-            case "annules":  return rdvList.filter(r => r.statut === "annulé" || r.statut === "refusé")
-            default:         return rdvList
+            case "annules": return rdvList.filter(r => r.statut === "annulé" || r.statut === "refusé")
+            default: return rdvList
         }
     }
 
@@ -217,7 +217,8 @@ const MesRdv = () => {
                                 {/* Photo ou icône calendrier */}
                                 <div className="relative w-36 h-24 rounded-xl overflow-hidden bg-zinc-100 shrink-0">
                                     {imageUrl
-                                        ? <Image src={imageUrl} alt={`${v?.description?.marque} ${v?.description?.modele}`} fill className="object-cover" unoptimized />
+                                        ? <Image src={imageUrl}
+                                            alt={`${v?.description?.marque} ${v?.description?.modele}`} fill className="object-cover" unoptimized />
                                         : <div className="absolute inset-0 flex items-center justify-center"><Car className="h-8 w-8 text-zinc-300" /></div>
                                     }
                                 </div>

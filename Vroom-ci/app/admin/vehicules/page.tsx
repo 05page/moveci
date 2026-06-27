@@ -57,6 +57,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { getVehicules, validerVehicule, rejeterVehicule, suspendreVehicule, supprimerVehicule, getCorbeille, restaurerVehicule, forcerSupprimerVehicule } from "@/src/actions/admin.actions"
+import { getPhotoUrl } from "@/src/lib/utils"
 
 // Interface complète du véhicule avec tous les champs renvoyés par le backend
 interface Vehicule {
@@ -128,7 +129,7 @@ function labelStatut(statut: string) {
     }
 }
 
-const photoUrl = (path: string) => path.startsWith('http') ? path : `${process.env.NEXT_PUBLIC_BACKEND_URL}/storage/${path}`
+const photoUrl = getPhotoUrl
 
 export default function AdminVehiculesPage() {
     const [vehicules, setVehicules] = useState<Vehicule[]>([])

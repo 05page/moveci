@@ -53,6 +53,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { traiterSignalement, getSignalementsPaginated } from "@/src/actions/admin.actions"
+import { getPhotoUrl } from "@/src/lib/utils"
 
 
 interface SignalementAdmin {
@@ -477,7 +478,7 @@ export default function AdminSignalementsPage() {
                                             {detail.cible_vehicule.photos.map((photo, i) => (
                                                 <img
                                                     key={i}
-                                                    src={photo.path.startsWith('http') ? photo.path : `${process.env.NEXT_PUBLIC_BACKEND_URL}/storage/${photo.path}`}
+                                                    src={getPhotoUrl(photo.path)}
                                                     alt={`Photo ${i + 1}`}
                                                     className="w-full h-32 object-cover rounded-md border"
                                                 />

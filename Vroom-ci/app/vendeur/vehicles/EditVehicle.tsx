@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { toast } from "sonner"
-import { cn } from "@/src/lib/utils"
+import { cn, getPhotoUrl } from "@/src/lib/utils"
 import { api } from "@/src/lib/api"
 import { vehicule } from "@/src/types"
 
@@ -182,7 +182,7 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
             negociable: vehicule.negociable ?? false,
         })
         setPhotoUrls(
-            vehicule.photos?.map(p => `${process.env.NEXT_PUBLIC_BACKEND_URL}/storage/${p.path}`) ?? []
+            vehicule.photos?.map(p => getPhotoUrl(p.path)) ?? []
         )
 
     }, [isOpen])

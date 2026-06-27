@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { getVehicule } from "@/src/actions/vehicules.actions"
 import type { vehicule } from "@/src/types"
+import { getPhotoUrl } from "@/src/lib/utils"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -208,7 +209,7 @@ function ComparerContent() {
 
                                 const primaryPhoto = v.photos?.find(p => p.is_primary) ?? v.photos?.[0]
                                 const imageUrl = primaryPhoto
-                                    ? (primaryPhoto.path.startsWith('http') ? primaryPhoto.path : `${process.env.NEXT_PUBLIC_BACKEND_URL}/storage/${primaryPhoto.path}`)
+                                    ? getPhotoUrl(primaryPhoto.path)
                                     : null
 
                                 return (

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api } from "@/src/lib/api"
+import { getPhotoUrl as buildPhotoUrl } from "@/src/lib/utils"
 import { vehicule } from "@/src/types"
 import { FadeIn, SlideIn, StaggerList, StaggerItem } from "@/components/ui/motion-primitives"
 
@@ -39,7 +40,7 @@ const formatPrix = (prix: number): string =>
 const getPhotoUrl = (v: vehicule): string | null => {
   const photo = v.photos?.find((p) => p.is_primary) ?? v.photos?.[0]
   if (!photo) return null
-  return photo.path.startsWith('http') ? photo.path : `${process.env.NEXT_PUBLIC_BACKEND_URL}/storage/${photo.path}`
+  return buildPhotoUrl(photo.path)
 }
 
 // ─── Sous-composant : skeleton d'une card ────────────────────────────────────

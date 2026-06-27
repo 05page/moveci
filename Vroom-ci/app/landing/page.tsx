@@ -41,7 +41,7 @@ import {
 } from "lucide-react"
 import { DevenirPartenaire } from "../components/DevenirPartenaire"
 
-import { cn } from "@/src/lib/utils"
+import { cn, getPhotoUrl } from "@/src/lib/utils"
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
 import Autoplay from "embla-carousel-autoplay"
 
@@ -445,7 +445,7 @@ export default function LandingPage() {
                                             className="group rounded-2xl border border-zinc-200 bg-white overflow-hidden hover:border-zinc-300 hover:shadow-xl transition-all duration-300 cursor-pointer">
                                             <div className="h-48 bg-zinc-50 flex items-center justify-center relative overflow-hidden">
                                                 {photo
-                                                    ? <Image src={`${process.env.NEXT_PUBLIC_BACKEND_URL}/storage/${photo.path}`}
+                                                    ? <Image src={getPhotoUrl(photo.path)}
                                                         alt={`${v.description?.marque} ${v.description?.modele}`}
                                                         fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
                                                     : <>

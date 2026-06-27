@@ -35,6 +35,7 @@ import { getMesFormations, createFormation, deleteFormation, getMesInscrits, get
 import { useUser } from "@/src/context/UserContext"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { getPhotoUrl } from "@/src/lib/utils"
 
 const PERMIS = ['A', 'A2', 'B', 'B1', 'C', 'D'] as const
 
@@ -701,7 +702,7 @@ export default function FormationsAutoEcolePage() {
                                                     <Avatar className="h-8 w-8 shrink-0">
                                                         <AvatarImage
                                                             src={inscription.client?.avatar
-                                                                ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/storage/${inscription.client.avatar}`
+                                                                ? getPhotoUrl(inscription.client.avatar)
                                                                 : undefined}
                                                         />
                                                         <AvatarFallback className="text-xs">
@@ -787,7 +788,7 @@ export default function FormationsAutoEcolePage() {
                                 <Avatar className="h-20 w-20">
                                     <AvatarImage
                                         src={profilInscrit.client.avatar
-                                            ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/storage/${profilInscrit.client.avatar}`
+                                            ? getPhotoUrl(profilInscrit.client.avatar)
                                             : undefined}
                                     />
                                     <AvatarFallback className="text-2xl font-semibold">
@@ -894,7 +895,7 @@ export default function FormationsAutoEcolePage() {
                                 <Avatar className="h-9 w-9 shrink-0">
                                     <AvatarImage
                                         src={editInscrit.client?.avatar
-                                            ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/storage/${editInscrit.client.avatar}`
+                                            ? getPhotoUrl(editInscrit.client.avatar)
                                             : undefined}
                                     />
                                     <AvatarFallback className="text-xs">
