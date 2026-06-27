@@ -28,7 +28,13 @@ import { getVehicules } from "@/src/actions/vehicules.actions"
 import { getFavoris, removeFavori, addFavori } from "@/src/actions/favoris.actions"
 import { useUser } from "@/src/context/UserContext"
 import { cn, getPhotoUrl } from "@/src/lib/utils"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useRouter } from "next/navigation"
+import { api } from "@/src/lib/api"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -108,6 +114,17 @@ const VehiclesPage = () => {
     const [viewMode, setViewMode] = useState<ViewMode>("grid")
     const [page, setPage] = useState(1)
     const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [contactLoading, setContactLoading] = useState(false)
+    const [signalVehicule, setSignalVehicule] = useState<vehicule | null>(null)
+    const [signalOpen, setSignalOpen] = useState(false)
+    const [signalLoading, setSignalLoading] = useState(false)
+    const [signalForm, setSignalForm] = useState({ motif: "", description: "" })
+    const router = useRouter()
+
+    const requireAuth = (): boolean => {
+        if (!user) { toast.info("Connectez-vous pour continuer"); router.push("/auth"); return false }
+        return true
+    }
 
     // ── Fetch données ───────────────────────────────────────────────────────
 
@@ -124,6 +141,34 @@ const VehiclesPage = () => {
             setRefreshing(false)
         }
     }, [])
+
+    const handleContact = async (v: vehicule) => {
+        if (!requireAuth() || !v?.creator?.id) return
+        if (user?.id === v.creator.id) return
+        setContactLoading(true)
+        try {
+            const { findOrCreateConversation } = await import("@/src/actions/conversations.actions")
+            const res = await findOrCreateConversation({ vehicule_id: v.id, other_user_id: v.creator.id })
+            const convId = (res as unknown as { conversation: { id: string } })?.conversation?.id
+            if (!convId) throw new Error()
+            const base = user?.role === "vendeur" ? "/vendeur" : user?.role === "partenaire" ? "/partenaire" : "/client"
+            router.push(`${base}/messages?conv=${convId}`)
+        } catch { toast.error("Impossible d'ouvrir la conversation") }
+        finally { setContactLoading(false) }
+    }
+
+    const handleSignalSubmit = async () => {
+        if (!requireAuth()) return
+        if (!signalForm.motif.trim()) { toast.error("Veuillez indiquer un motif"); return }
+        setSignalLoading(true)
+        try {
+            await api.post("/signalements/", { cible_vehicule_id: signalVehicule?.id, motif: signalForm.motif, description: signalForm.description || null })
+            toast.success("Signalement envoyé")
+            setSignalOpen(false)
+            setSignalForm({ motif: "", description: "" })
+        } catch { toast.error("Impossible d'envoyer le signalement") }
+        finally { setSignalLoading(false) }
+    }
 
     useEffect(() => { fetchVehicules() }, [fetchVehicules])
 
@@ -349,7 +394,7 @@ const VehiclesPage = () => {
                             >
                                 <GitCompare className="h-3.5 w-3.5" />
                             </button>
-                            <DropDown />
+                            <DropDown vehicule = {v}/>
                         </div>
                     </div>
                 </CardContent>
@@ -409,32 +454,31 @@ const VehiclesPage = () => {
         )
     }
 
-    const DropDown = () => {
+    const DropDown = ({vehicule}: {vehicule: vehicule}) => {
         return (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button>
+                    <button className="cursor-pointer">
                         <MoreVertical />
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                     <DropdownMenuGroup>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { if (requireAuth()) { setSignalVehicule(vehicule); setSignalOpen(true) } }}>
                             <CircleAlert className="h-4 w-4 mr-2" />
                             Signaler le véhicule
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleContact(vehicule)} disabled={contactLoading}>
                             <MessageCircle className="h-4 w-4 mr-2" />
                             Discuter avec le vendeur
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => vehicule.creator?.id && router.push(`/profil/${vehicule.creator.id}`)}>
                             <CircleUserRound className="h-4 w-4 mr-2" />
                             Voir le profil du vendeur
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
-
         )
     }
     // ── Loading ──────────────────────────────────────────────────────────────
@@ -726,6 +770,31 @@ const VehiclesPage = () => {
 
             {/* ══════════════ DIALOGS & OVERLAYS ══════════════ */}
 
+            {/* Signalement */}
+            <Dialog open={signalOpen} onOpenChange={open => { if (!open) { setSignalOpen(false); setSignalForm({ motif: "", description: "" }) } }}>
+                <DialogContent className="sm:max-w-md rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="font-black text-zinc-900">Signaler ce véhicule</DialogTitle>
+                        <p className="text-sm text-zinc-500">Votre signalement sera examiné par notre équipe de modération.</p>
+                    </DialogHeader>
+                    <div className="space-y-3 py-2">
+                        <div className="space-y-1">
+                            <Label className="text-xs text-zinc-500">Motif <span className="text-red-500">*</span></Label>
+                            <Input placeholder="Ex: Prix trompeur, photos fausses..." value={signalForm.motif} onChange={e => setSignalForm(f => ({ ...f, motif: e.target.value }))} className="rounded-lg text-sm" />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs text-zinc-500">Description (optionnel)</Label>
+                            <Textarea placeholder="Donnez plus de détails..." value={signalForm.description} onChange={e => setSignalForm(f => ({ ...f, description: e.target.value }))} className="rounded-lg text-sm resize-none" rows={3} />
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => { setSignalOpen(false); setSignalForm({ motif: "", description: "" }) }} className="rounded-xl cursor-pointer">Annuler</Button>
+                        <Button disabled={signalLoading} onClick={handleSignalSubmit} className="bg-red-600 hover:bg-red-700 text-white rounded-xl cursor-pointer">
+                            {signalLoading ? "Envoi..." : "Envoyer le signalement"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Barre de comparaison flottante */}
             {compareIds.length > 0 && (
