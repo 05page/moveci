@@ -52,10 +52,7 @@ interface FormData {
     description: string
     equipements: string[]
     dateDisponibilite: Date | undefined
-    dateDebutLocation: string
-    dateFinLocation: string
     prix: string
-    prixParJour: string
     negociable: boolean
 }
 
@@ -137,10 +134,7 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
         description: "",
         equipements: [],
         dateDisponibilite: undefined,
-        dateDebutLocation: "",
-        dateFinLocation: "",
         prix: "",
-        prixParJour: "",
         negociable: false,
     })
 
@@ -175,10 +169,7 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
             description: "",
             equipements: vehicule.description?.equipements ?? [],
             dateDisponibilite: vehicule.date_disponibilite ? new Date(vehicule.date_disponibilite) : undefined,
-            dateDebutLocation: "",
-            dateFinLocation: "",
             prix: String(vehicule.prix ?? ""),
-            prixParJour: "",
             negociable: vehicule.negociable ?? false,
         })
         setPhotoUrls(
@@ -257,18 +248,11 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
                     toast.error("Veuillez sélectionner une date de disponibilité")
                     return false
                 }
-                if (formData.typePublication === "location" && (!formData.dateDebutLocation || !formData.dateFinLocation)) {
-                    toast.error("Veuillez définir les dates de location")
-                    return false
-                }
+
                 return true
             case 5:
                 if (!formData.prix) {
                     toast.error("Veuillez indiquer le prix")
-                    return false
-                }
-                if (formData.typePublication === "location" && !formData.prixParJour) {
-                    toast.error("Veuillez indiquer le prix par jour")
                     return false
                 }
                 return true
@@ -724,8 +708,6 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
                                 <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
                                     {formData.typePublication === "vente" ? "Disponibilité" : "Période de location"}
                                 </h3>
-
-                                {formData.typePublication === "vente" ? (
                                     <div className="space-y-3">
                                         <div className="flex justify-center">
                                             <Calendar
@@ -744,35 +726,6 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
                                             </div>
                                         )}
                                     </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs">Date de début <span className="text-red-500">*</span></Label>
-                                                <Input
-                                                    type="date"
-                                                    value={formData.dateDebutLocation}
-                                                    onChange={e => updateFormData("dateDebutLocation", e.target.value)}
-                                                />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs">Date de fin <span className="text-red-500">*</span></Label>
-                                                <Input
-                                                    type="date"
-                                                    value={formData.dateFinLocation}
-                                                    onChange={e => updateFormData("dateFinLocation", e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
-                                        {formData.dateDebutLocation && formData.dateFinLocation && (
-                                            <div className="text-center">
-                                                <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 rounded-full px-3 py-1">
-                                                    Du {new Date(formData.dateDebutLocation).toLocaleDateString("fr-FR")} au {new Date(formData.dateFinLocation).toLocaleDateString("fr-FR")}
-                                                </Badge>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
                             </div>
                         )}
 
@@ -800,20 +753,6 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
                                                 <p className="text-[10px] text-muted-foreground">{formatMontant(formData.prix)} FCFA</p>
                                             )}
                                         </div>
-                                        {formData.typePublication === "location" && (
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs">Prix par jour (FCFA) <span className="text-red-500">*</span></Label>
-                                                <Input
-                                                    type="number"
-                                                    placeholder="Ex: 25000"
-                                                    value={formData.prixParJour}
-                                                    onChange={e => updateFormData("prixParJour", e.target.value)}
-                                                />
-                                                {formData.prixParJour && (
-                                                    <p className="text-[10px] text-muted-foreground">{formatMontant(formData.prixParJour)} FCFA / jour</p>
-                                                )}
-                                            </div>
-                                        )}
                                     </div>
 
                                     <div className="flex items-center gap-2.5 p-3 rounded-xl border border-border/40 bg-muted/20">
@@ -879,13 +818,6 @@ export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehicul
                                         </span>
 
                                         <span className="text-muted-foreground">Disponibilité</span>
-                                        <span className="font-medium">
-                                            {formData.typePublication === "vente"
-                                                ? formatDate(formData.dateDisponibilite)
-                                                : formData.dateDebutLocation && formData.dateFinLocation
-                                                    ? `${new Date(formData.dateDebutLocation).toLocaleDateString("fr-FR")} — ${new Date(formData.dateFinLocation).toLocaleDateString("fr-FR")}`
-                                                    : "—"}
-                                        </span>
 
                                         <span className="text-muted-foreground">Prix</span>
                                         <span className="font-bold text-zinc-700">{formatMontant(formData.prix)} FCFA</span>

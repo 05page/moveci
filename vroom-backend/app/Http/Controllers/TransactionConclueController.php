@@ -41,8 +41,6 @@ class TransactionConclueController extends Controller
             'code'               => 'required|string|size:6',
             'type'               => ['required', Rule::in(['vente', 'location'])],
             'prix_final'         => 'required|numeric|min:0',
-            'date_debut_location'=> 'required_if:type,location|nullable|date',
-            'date_fin_location'  => 'required_if:type,location|nullable|date|after:date_debut_location',
         ]);
 
         if ($validated['code'] !== $transaction->code_confirmation) {
@@ -98,6 +96,8 @@ class TransactionConclueController extends Controller
 
         $validated = $request->validate([
             'code' => 'required|string|size:6',
+            'date_debut_location'=> 'required_if:type,location|nullable|date',
+            'date_fin_location'  => 'required_if:type,location|nullable|date|after:date_debut_location',
         ]);
 
         if ($validated['code'] !== $transaction->code_confirmation) {

@@ -42,8 +42,6 @@ import {
 import { DevenirPartenaire } from "../components/DevenirPartenaire"
 
 import { cn, getPhotoUrl } from "@/src/lib/utils"
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
-import Autoplay from "embla-carousel-autoplay"
 
 /* ── DATA ── */
 type ProfileKey = "client" | "vendeur" | "concessionnaire" | "auto_ecole"
@@ -122,90 +120,48 @@ export default function LandingPage() {
     return (
         <div className="min-h-screen bg-white">
 
-            {/* ══════════════════════════════
-                HERO
-            ══════════════════════════════ */}
             <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-14">
-                {/* Dot grid subtil */}
                 <div className="absolute inset-0 bg-dot-grid" />
-
-                {/* Radial ambre très doux */}
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-5%,oklch(0.68_0.17_72/0.07),transparent)]" />
-
-                {/* Orbe ambre haut-droite */}
                 <div className="absolute -top-32 -right-32 w-125 h-125 bg-[radial-gradient(circle,oklch(0.68_0.17_72/0.08),transparent_70%)] pointer-events-none" />
-
-                {/* Orbe bleu bas-gauche */}
                 <div className="absolute -bottom-32 -left-32 w-100 h-100 bg-[radial-gradient(circle,oklch(0.55_0.16_225/0.05),transparent_70%)] pointer-events-none" />
 
-                <div className="relative z-10 w-full max-w-6xl mx-auto px-6 pt-28 pb-12">
-                    {/* 2 colonnes : texte gauche + image droite */}
-                    <div className="flex flex-col md:flex-row items-center gap-12 mb-16">
-
-                        {/* Colonne gauche — texte */}
-                        <div className="flex-1">
-                            <h1
-                                className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-none mb-6 text-zinc-900 animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-[both]"
-                                style={{ fontFamily: "var(--font-syne, sans-serif)", animationDelay: '120ms' }}
-                            >
-                                Trouvez votre
-                                <br />
-                                <span className="text-gradient-gold">véhicule idéal</span>
-                            </h1>
-                            <p
-                                className="text-base md:text-lg text-zinc-500 max-w-md mb-10 leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-[both]"
-                                style={{ animationDelay: '280ms' }}
-                            >
-                                Achetez, louez ou vendez votre voiture en toute confiance.
-                                Des centaines de véhicules vérifiés vous attendent sur Move.
-                            </p>
-
-                            {/* CTAs */}
-                            <div
-                                className="flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-[both]"
-                                style={{ animationDelay: '420ms' }}
-                            >
-                                <Link href="/vehicles">
-                                    <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-move-gold text-white font-semibold text-sm hover:bg-[oklch(0.72_0.175_83)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-md hover:shadow-move-gold/30 hover:shadow-lg cursor-pointer"
-                                        style={{ fontFamily: "var(--font-syne, sans-serif)" }}>
-                                        Explorer les véhicules
-                                        <ArrowRight className="h-4 w-4" />
-                                    </button>
-                                </Link>
-                                <Link href="/auth">
-                                    <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-zinc-200 text-zinc-600 font-medium text-sm hover:border-zinc-300 hover:text-zinc-900 hover:bg-zinc-50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer">
-                                        Devenir vendeur
-                                        <ChevronRight className="h-4 w-4" />
-                                    </button>
-                                </Link>
-                            </div>
-
-                        </div>
-                        <div className="flex-1 hidden md:block rounded-3xl overflow-hidden border border-zinc-200 shadow-xl rotate-2">
-                            <Carousel
-                                plugins={[Autoplay({ delay: 3000, stopOnInteraction: false })]}
-                                opts={{ loop: true }}
-                            >
-                                <CarouselContent>
-                                    {["img3.jpg", "img4.jpg", "img5.jpg"].map((src) => (
-                                        <CarouselItem key={src}>
-                                            <Image
-                                                src={`/vehicle/${src}`}
-                                                alt="Véhicule Move"
-                                                width={700}
-                                                height={500}
-                                                className="w-full h-auto"
-                                                priority
-                                            />
-                                        </CarouselItem>
-                                    ))}
-                                </CarouselContent>
-                            </Carousel>
-                        </div>
+                <div className="relative z-10 w-full max-w-3xl mx-auto px-6 text-center">
+                    <h1
+                        className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-none mb-6 text-zinc-900 animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-[both]"
+                        style={{ fontFamily: "var(--font-syne, sans-serif)", animationDelay: '120ms' }}
+                    >
+                        Trouvez votre
+                        <br />
+                        <span className="text-gradient-gold">véhicule idéal</span>
+                    </h1>
+                    <p
+                        className="text-base md:text-lg text-zinc-500 max-w-md mx-auto mb-10 leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-[both]"
+                        style={{ animationDelay: '280ms' }}
+                    >
+                        Achetez, louez ou vendez votre voiture en toute confiance.
+                        Des centaines de véhicules vérifiés vous attendent sur Move.
+                    </p>
+                    <div
+                        className="flex flex-wrap items-center justify-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-[both]"
+                        style={{ animationDelay: '420ms' }}
+                    >
+                        <Link href="/vehicles">
+                            <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-move-gold text-white font-semibold text-sm hover:bg-[oklch(0.72_0.175_83)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-md hover:shadow-move-gold/30 hover:shadow-lg cursor-pointer"
+                                style={{ fontFamily: "var(--font-syne, sans-serif)" }}>
+                                Explorer les véhicules
+                                <ArrowRight className="h-4 w-4" />
+                            </button>
+                        </Link>
+                        <Link href="/auth">
+                            <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-zinc-200 text-zinc-600 font-medium text-sm hover:border-zinc-300 hover:text-zinc-900 hover:bg-zinc-50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer">
+                                Devenir vendeur
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
+                        </Link>
                     </div>
                 </div>
 
-                {/* Fade bottom */}
                 <div className="absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-white to-transparent" />
             </section>
 
