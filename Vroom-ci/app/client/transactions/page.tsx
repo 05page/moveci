@@ -70,7 +70,6 @@ export default function TransactionsClientPage() {
         try {
             await confirmerClient(t.id, {
                 code,
-                type: t.type ?? undefined,
                 date_debut_location: t.type === "location" ? dates?.debut : undefined,
                 date_fin_location:   t.type === "location" ? dates?.fin   : undefined,
             })
