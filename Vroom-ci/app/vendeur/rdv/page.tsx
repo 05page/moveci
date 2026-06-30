@@ -151,16 +151,8 @@ export default function NosRdv() {
         }
         setFinaliserLoading(true)
         try {
-            await confirmerVendeur(finaliserTransaction.id, {
-                code: finaliserForm.code,
-                type: finaliserTransaction.type!,
-                prix_final: Number(finaliserForm.prix_final),
-                ...(isLocation && {
-                    date_debut_location: finaliserForm.date_debut,
-                    date_fin_location: finaliserForm.date_fin,
-                }),
-            })
-            toast.success("Transaction confirmée ! En attente de la confirmation du client.")
+            await confirmerVendeur(finaliserTransaction.id, finaliserForm.code)
+            toast.success("Transaction confirmée !.")
             setTransactions(prev =>
                 prev.map(t => t.id === finaliserTransaction.id ? { ...t, confirme_par_vendeur: true } : t)
             )
