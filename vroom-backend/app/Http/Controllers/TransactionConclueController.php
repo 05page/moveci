@@ -31,6 +31,7 @@ class TransactionConclueController extends Controller
             ->where('vendeur_id', $user->id)
             ->where('statut', TransactionConclue::STATUT_EN_ATTENTE)
             ->firstOrFail();
+            $transaction->load('vehicule');
 
         if (!$transaction->isCodeValide()) {
             $transaction->update(['statut' => TransactionConclue::STATUT_EXPIRE]);
@@ -39,8 +40,6 @@ class TransactionConclueController extends Controller
 
         $validated = $request->validate([
             'code'               => 'required|string|size:6',
-            'type'               => ['required', Rule::in(['vente', 'location'])],
-            'prix_final'         => 'required|numeric|min:0',
         ]);
 
         if ($validated['code'] !== $transaction->code_confirmation) {
@@ -50,10 +49,6 @@ class TransactionConclueController extends Controller
         DB::beginTransaction();
         try {
             $transaction->update([
-                'type'               => $validated['type'],
-                'prix_final'         => $validated['prix_final'],
-                'date_debut_location'=> $validated['date_debut_location'] ?? null,
-                'date_fin_location'  => $validated['date_fin_location'] ?? null,
                 'confirme_par_vendeur' => true,
             ]);
 
@@ -106,9 +101,17 @@ class TransactionConclueController extends Controller
 
         DB::beginTransaction();
         try {
-            $transaction->update(['confirme_par_client' => true]);
+            $updateData = ['confirme_par_client' => true];
 
-            // Si le vendeur avait déjà confirmé (et donc renseigné les infos), on finalise
+            // Sauvegarde les dates fournies par le client pour une location
+            if ($transaction->type === 'location') {
+                $updateData['date_debut_location'] = $validated['date_debut_location'] ?? null;
+                $updateData['date_fin_location']   = $validated['date_fin_location'] ?? null;
+            }
+
+            $transaction->update($updateData);
+
+            // Si le vendeur avait déjà confirmé, on finalise
             if ($transaction->confirme_par_vendeur) {
                 $this->finaliser($transaction);
             }

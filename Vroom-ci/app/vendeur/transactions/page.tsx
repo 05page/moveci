@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import {
     Wallet, Clock, CheckCircle2, Tag, Key, User,
-    FileText, XCircle, Car, KeyRound,
+    FileText, XCircle, Car, KeyRound, CircleDollarSign, Calendar,
 } from "lucide-react"
 import { TransactionConclue } from "@/src/types"
 import { getMesTransactions, confirmerVendeur, refuserTransactionVendeur } from "@/src/actions/transactions.actions"
@@ -210,6 +210,48 @@ export default function TransactionsVendeurPage() {
                                         <CardContent className="space-y-4 pt-0">
                                             <Separator />
                                             <p className="text-sm font-medium">Confirmez avec votre code reçu par notification</p>
+
+                                            {/* Infos du deal — lecture seule */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-xs flex items-center gap-1">
+                                                        <CircleDollarSign className="h-3.5 w-3.5" /> Prix total (FCFA)
+                                                    </Label>
+                                                    <Input
+                                                        disabled
+                                                        value={t.prix_final ? Number(t.prix_final).toLocaleString("fr-FR") : "—"}
+                                                        className="font-mono bg-muted"
+                                                    />
+                                                </div>
+                                                {t.type === "location" && (
+                                                    <>
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-xs flex items-center gap-1">
+                                                                <Calendar className="h-3.5 w-3.5" /> Date début
+                                                            </Label>
+                                                            <Input
+                                                                disabled
+                                                                value={t.date_debut_location
+                                                                    ? new Date(t.date_debut_location).toLocaleDateString("fr-FR")
+                                                                    : "En attente du client"}
+                                                                className="bg-muted"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-xs flex items-center gap-1">
+                                                                <Calendar className="h-3.5 w-3.5" /> Date fin
+                                                            </Label>
+                                                            <Input
+                                                                disabled
+                                                                value={t.date_fin_location
+                                                                    ? new Date(t.date_fin_location).toLocaleDateString("fr-FR")
+                                                                    : "En attente du client"}
+                                                                className="bg-muted"
+                                                            />
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
 
                                             <div className="flex items-end gap-3">
                                                 <div className="space-y-1.5">

@@ -270,9 +270,10 @@ class RendezVousController extends Controller
                 'vendeur_id'        => $rdv->vendeur_id,
                 'client_id'         => $rdv->client_id,
                 'type'              => $rdv->vehicule->post_type, // 'vente' ou 'location'
+                'prix_final'        => $rdv->vehicule->prix,
                 'code_confirmation' => $code,
                 'expires_at'        => now()->addHours(48),
-                'statut'         => TransactionConclue::STATUT_EN_ATTENTE,
+                'statut'            => TransactionConclue::STATUT_EN_ATTENTE,
             ]);
 
             // Notifie le vendeur avec le code (pour qu'il puisse le saisir)
