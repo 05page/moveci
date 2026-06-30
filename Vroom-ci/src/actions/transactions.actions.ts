@@ -9,21 +9,15 @@ export const getMesDemandes = () =>
 export const getMesTransactions = () =>
   api.get<TransactionConclue[]>("/transactions-conclues/mes-transactions")
 
-/** Vendeur — renseigne les infos du deal et confirme avec le code. */
-export const confirmerVendeur = (
-  id: string,
-  data: {
-    code: string
-    type: "vente" | "location"
-    prix_final: number
-    date_debut_location?: string
-    date_fin_location?: string
-  }
-) => api.post<TransactionConclue>(`/transactions-conclues/${id}/confirmer-vendeur`, data)
+/** Vendeur — confirme avec le code reçu par notification. */
+export const confirmerVendeur = (id: string, code: string) =>
+  api.post<TransactionConclue>(`/transactions-conclues/${id}/confirmer-vendeur`, { code })
 
-/** Client — confirme avec le code reçu par notification. */
-export const confirmerClient = (id: string, code: string) =>
-  api.post<TransactionConclue>(`/transactions-conclues/${id}/confirmer-client`, { code })
+/** Client — confirme avec le code et les dates si c'est une location. */
+export const confirmerClient = (
+  id: string,
+  data: { code: string; type?: string; date_debut_location?: string; date_fin_location?: string }
+) => api.post<TransactionConclue>(`/transactions-conclues/${id}/confirmer-client`, data)
 
 /** Client — refuse la transaction. */
 export const refuserTransaction = (id: string) =>

@@ -14,11 +14,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
-import {
-    Wallet, Clock, CheckCircle2, Tag, Key, Calendar, User,
-    FileText, XCircle, Car, CircleDollarSign, KeyRound,
+    Wallet, Clock, CheckCircle2, Tag, Key, User,
+    FileText, XCircle, Car, KeyRound,
 } from "lucide-react"
 import { TransactionConclue } from "@/src/types"
 import { getMesTransactions, confirmerVendeur, refuserTransactionVendeur } from "@/src/actions/transactions.actions"
@@ -34,10 +31,6 @@ const statutConfig: Record<string, { label: string; color: string }> = {
 
 interface ConfirmForm {
     code: string
-    type: "vente" | "location" | ""
-    prix_final: string
-    date_debut_location: string
-    date_fin_location: string
 }
 
 export default function TransactionsVendeurPage() {
@@ -62,7 +55,7 @@ export default function TransactionsVendeurPage() {
     useDataRefresh("transaction", fetchData)
 
     const getForm = (id: string): ConfirmForm =>
-        forms[id] ?? { code: "", type: "", prix_final: "", date_debut_location: "", date_fin_location: "" }
+        forms[id] ?? { code: "" }
 
     const setForm = (id: string, patch: Partial<ConfirmForm>) =>
         setForms(prev => ({ ...prev, [id]: { ...getForm(id), ...patch } }))
@@ -70,21 +63,10 @@ export default function TransactionsVendeurPage() {
     const handleConfirmerVendeur = async (t: TransactionConclue) => {
         const form = getForm(t.id)
         if (!form.code || form.code.length !== 6) { toast.error("Code à 6 chiffres requis"); return }
-        if (!form.type)                            { toast.error("Type de transaction requis"); return }
-        if (!form.prix_final)                      { toast.error("Prix final requis"); return }
-        if (form.type === "location" && (!form.date_debut_location || !form.date_fin_location)) {
-            toast.error("Dates de location requises"); return
-        }
 
         setConfirmLoading(t.id)
         try {
-            await confirmerVendeur(t.id, {
-                code: form.code,
-                type: form.type as "vente" | "location",
-                prix_final: Number(form.prix_final),
-                date_debut_location: form.type === "location" ? form.date_debut_location : undefined,
-                date_fin_location:   form.type === "location" ? form.date_fin_location : undefined,
-            })
+            await confirmerVendeur(t.id, form.code)
             toast.success("Confirmation envoyée !")
             const res = await getMesTransactions()
             setTransactions(res?.data ?? [])
@@ -227,46 +209,11 @@ export default function TransactionsVendeurPage() {
                                     {isEnAttente && !t.confirme_par_vendeur && (
                                         <CardContent className="space-y-4 pt-0">
                                             <Separator />
-                                            <p className="text-sm font-medium">Renseignez les détails du deal et confirmez avec votre code</p>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div className="space-y-1.5">
-                                                    <Label className="text-xs">Type de transaction</Label>
-                                                    <Select value={form.type} onValueChange={v => setForm(t.id, { type: v as "vente" | "location" })}>
-                                                        <SelectTrigger><SelectValue placeholder="Vente ou location ?" /></SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="vente">Vente</SelectItem>
-                                                            <SelectItem value="location">Location</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="space-y-1.5">
-                                                    <Label className="text-xs flex items-center gap-1"><CircleDollarSign className="h-3.5 w-3.5" /> Prix final (FCFA)</Label>
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="Ex: 15000000"
-                                                        value={form.prix_final}
-                                                        onChange={e => setForm(t.id, { prix_final: e.target.value })}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {form.type === "location" && (
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div className="space-y-1.5">
-                                                        <Label className="text-xs flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Date début</Label>
-                                                        <Input type="date" value={form.date_debut_location} onChange={e => setForm(t.id, { date_debut_location: e.target.value })} />
-                                                    </div>
-                                                    <div className="space-y-1.5">
-                                                        <Label className="text-xs flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Date fin</Label>
-                                                        <Input type="date" value={form.date_fin_location} onChange={e => setForm(t.id, { date_fin_location: e.target.value })} />
-                                                    </div>
-                                                </div>
-                                            )}
+                                            <p className="text-sm font-medium">Confirmez avec votre code reçu par notification</p>
 
                                             <div className="flex items-end gap-3">
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-xs flex items-center gap-1"><KeyRound className="h-3.5 w-3.5" /> Votre code (reçu par notification)</Label>
+                                                    <Label className="text-xs flex items-center gap-1"><KeyRound className="h-3.5 w-3.5" /> Code de confirmation</Label>
                                                     <Input
                                                         placeholder="000000"
                                                         maxLength={6}

@@ -36,6 +36,7 @@ export default function TransactionsClientPage() {
     const [transactions, setTransactions] = useState<TransactionConclue[]>([])
     const [loading, setLoading]           = useState(true)
     const [codes, setCodes]               = useState<Record<string, string>>({})
+    const [locationDates, setLocationDates] = useState<Record<string, { debut: string; fin: string }>>({})
     const [confirmLoading, setConfirmLoading] = useState<string | null>(null)
 
     const fetchData = useCallback(() => {
@@ -58,9 +59,21 @@ export default function TransactionsClientPage() {
             toast.error("Le code doit comporter 6 chiffres")
             return
         }
+        const dates = locationDates[t.id]
+        if (t.type === "location") {
+            if (!dates?.debut || !dates?.fin) {
+                toast.error("Les dates de début et de fin sont requises pour une location")
+                return
+            }
+        }
         setConfirmLoading(t.id)
         try {
-            await confirmerClient(t.id, code)
+            await confirmerClient(t.id, {
+                code,
+                type: t.type ?? undefined,
+                date_debut_location: t.type === "location" ? dates?.debut : undefined,
+                date_fin_location:   t.type === "location" ? dates?.fin   : undefined,
+            })
             toast.success("Transaction confirmée !")
             setTransactions(prev =>
                 prev.map(tx => tx.id === t.id ? { ...tx, confirme_par_client: true } : tx)
@@ -197,6 +210,36 @@ export default function TransactionsClientPage() {
                                 {/* Actions */}
                                 {isEnAttente && !t.confirme_par_client && (
                                     <div className="space-y-3">
+                                        {t.type === "location" && (
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-xs flex items-center gap-1">
+                                                        <Calendar className="h-3.5 w-3.5" /> Date début
+                                                    </Label>
+                                                    <Input
+                                                        type="date"
+                                                        value={locationDates[t.id]?.debut ?? ""}
+                                                        onChange={e => setLocationDates(prev => ({
+                                                            ...prev,
+                                                            [t.id]: { ...prev[t.id], debut: e.target.value }
+                                                        }))}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-xs flex items-center gap-1">
+                                                        <Calendar className="h-3.5 w-3.5" /> Date fin
+                                                    </Label>
+                                                    <Input
+                                                        type="date"
+                                                        value={locationDates[t.id]?.fin ?? ""}
+                                                        onChange={e => setLocationDates(prev => ({
+                                                            ...prev,
+                                                            [t.id]: { ...prev[t.id], fin: e.target.value }
+                                                        }))}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
                                         <div className="space-y-1.5">
                                             <Label className="text-sm flex items-center gap-1.5">
                                                 <KeyRound className="h-4 w-4" />
