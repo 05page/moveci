@@ -281,7 +281,7 @@ class RendezVousController extends Controller
                 'type'       => Notifications::TYPE_TRANSACTION,
                 'level'      => 'info',
                 'title'      => 'RDV terminé — confirmez la transaction',
-                'message'    => 'Rendez-vous du ' . $rdv->date_heure->format('d/m/Y') . ' terminé. Code de confirmation : ' . $code . '. Renseignez les détails du deal sur votre dashboard.',
+                'message'    => 'Rendez-vous du ' . $rdv->date_heure->format('d/m/Y') . ' terminé. En attente de confirmation du client. Vous recevrez une notification dès qu\'il confirme.',
                 'data'       => ['transaction_id' => $transaction->id, 'code' => $code],
                 'date_envoi' => now(),
             ]);
@@ -292,7 +292,7 @@ class RendezVousController extends Controller
                 'type'       => Notifications::TYPE_TRANSACTION,
                 'level'      => 'info',
                 'title'      => 'Confirmation de transaction requise',
-                'message'    => 'Votre rendez-vous du ' . $rdv->date_heure->format('d/m/Y') . ' est terminé. Code de confirmation : ' . $code . '. Confirmez la transaction sur votre dashboard.',
+                'message'    => 'Votre rendez-vous du ' . $rdv->date_heure->format('d/m/Y') . ' est terminé. Code de confirmation : ' . $code . '. Rendez-vous sur votre dashboard pour confirmer et renseigner les dates si c\'est une location.',
                 'data'       => ['transaction_id' => $transaction->id, 'code' => $code],
                 'date_envoi' => now(),
             ]);
