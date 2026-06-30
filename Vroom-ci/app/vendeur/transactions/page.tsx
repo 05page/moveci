@@ -167,6 +167,20 @@ export default function TransactionsVendeurPage() {
                             const form   = getForm(t.id)
                             const isEnAttente = t.statut === "en_attente"
 
+                            // Prix estimé calculé depuis vehicule.prix (tarif/jour pour location)
+                            const prixEstime = (() => {
+                                const base = t.vehicule?.prix ? Number(t.vehicule.prix) : null
+                                if (!base) return { valeur: "—", label: "Prix total (FCFA)" }
+                                if (t.type === "vente") return { valeur: base.toLocaleString("fr-FR"), label: "Prix total (FCFA)" }
+                                if (t.date_debut_location && t.date_fin_location) {
+                                    const jours = Math.max(1, Math.ceil(
+                                        (new Date(t.date_fin_location).getTime() - new Date(t.date_debut_location).getTime()) / 86400000
+                                    ))
+                                    return { valeur: (base * jours).toLocaleString("fr-FR"), label: `Prix estimé (${jours}j × ${base.toLocaleString("fr-FR")} FCFA)` }
+                                }
+                                return { valeur: `${base.toLocaleString("fr-FR")} /jour`, label: "Tarif journalier (dates non reçues)" }
+                            })()
+
                             return (
                                 <Card key={t.id} className={cn(isEnAttente && "border-amber-300")}>
                                     <CardHeader className="pb-3">
@@ -215,11 +229,11 @@ export default function TransactionsVendeurPage() {
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 <div className="space-y-1.5">
                                                     <Label className="text-xs flex items-center gap-1">
-                                                        <CircleDollarSign className="h-3.5 w-3.5" /> Prix total (FCFA)
+                                                        <CircleDollarSign className="h-3.5 w-3.5" /> {prixEstime.label}
                                                     </Label>
                                                     <Input
                                                         disabled
-                                                        value={t.prix_final ? Number(t.prix_final).toLocaleString("fr-FR") : "—"}
+                                                        value={prixEstime.valeur}
                                                         className="font-mono bg-muted"
                                                     />
                                                 </div>
