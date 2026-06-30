@@ -313,7 +313,7 @@ export default function LandingPage() {
                                 {/* Step card */}
                                 <div className="bg-white rounded-3xl border border-zinc-200 p-8 md:p-12 shadow-sm">
                                     <div className="flex flex-col md:flex-row items-center gap-8">
-                                        <div className="flex-shrink-0">
+                                        <div className="shrink-0">
                                             <div className="relative">
                                                 <div className="w-24 h-24 rounded-3xl bg-move-gold/10 border-2 border-move-gold/20 flex items-center justify-center">
                                                     <StepIcon className="h-12 w-12 text-move-gold" />
