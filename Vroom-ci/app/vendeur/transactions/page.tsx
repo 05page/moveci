@@ -1,4 +1,4 @@
-"use client"
+ "use client"
 
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
@@ -13,6 +13,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { Textarea } from "@/components/ui/textarea"
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import {
     Wallet, Clock, CheckCircle2, Tag, Key, User,
     FileText, XCircle, Car, KeyRound, CircleDollarSign, Calendar,
@@ -39,6 +45,7 @@ export default function TransactionsVendeurPage() {
     const [forms, setForms] = useState<Record<string, ConfirmForm>>({})
     const [confirmLoading, setConfirmLoading] = useState<string | null>(null)
     const [refusLoading, setRefusLoading] = useState<string | null>(null)
+    const [motifs, setMotifs] = useState<Record<string, string>>({})
 
     const fetchData = useCallback(() => {
         getMesTransactions()
@@ -81,7 +88,7 @@ export default function TransactionsVendeurPage() {
     const handleRefuserVendeur = async (t: TransactionConclue) => {
         setRefusLoading(t.id)
         try {
-            await refuserTransactionVendeur(t.id)
+            await refuserTransactionVendeur(t.id, motifs[t.id])
             toast.success("Transaction refusée — le véhicule est de nouveau disponible")
             fetchData()
         } catch (err) {
@@ -288,15 +295,40 @@ export default function TransactionsVendeurPage() {
                                                     <CheckCircle2 className="h-4 w-4" />
                                                     {confirmLoading === t.id ? "Envoi..." : "Confirmer"}
                                                 </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    onClick={() => handleRefuserVendeur(t)}
-                                                    disabled={confirmLoading === t.id || refusLoading === t.id}
-                                                    className="gap-1.5 text-red-500 hover:text-red-600 hover:border-red-200"
-                                                >
-                                                    <XCircle className="h-4 w-4" />
-                                                    {refusLoading === t.id ? "Refus..." : "Refuser"}
-                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            disabled={confirmLoading === t.id || refusLoading === t.id}
+                                                            className="gap-1.5 text-red-500 hover:text-red-600 hover:border-red-200"
+                                                        >
+                                                            <XCircle className="h-4 w-4" />
+                                                            {refusLoading === t.id ? "Refus..." : "Refuser"}
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Refuser la transaction ?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Le client sera notifié et un signalement sera créé sur votre compte.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <Textarea
+                                                            placeholder="Raison du refus (optionnel)"
+                                                            value={motifs[t.id] ?? ""}
+                                                            onChange={e => setMotifs(prev => ({ ...prev, [t.id]: e.target.value }))}
+                                                        />
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                            <AlertDialogAction
+                                                                onClick={() => handleRefuserVendeur(t)}
+                                                                className="bg-red-600 hover:bg-red-700 text-white"
+                                                            >
+                                                                Confirmer le refus
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             </div>
                                         </CardContent>
                                     )}

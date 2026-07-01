@@ -148,7 +148,7 @@ class TransactionConclueController extends Controller
      * Client refuse la transaction.
      * POST /transactions-conclues/{id}/refuser
      */
-    public function refuserClient(string $id): JsonResponse
+    public function refuserClient(Request $request, string $id): JsonResponse
     {
         $user = Auth::user();
 
@@ -157,18 +157,25 @@ class TransactionConclueController extends Controller
             ->where('statut', TransactionConclue::STATUT_EN_ATTENTE)
             ->firstOrFail();
 
+        $motif = $request->validate(['motif' => 'nullable|string|max:500'])['motif'] ?? null;
+
         $transaction->update(['statut' => TransactionConclue::STATUT_REFUSE]);
 
         // Déverrouille le véhicule — le client a refusé, deal annulé
         Vehicules::where('id', $transaction->vehicule_id)
             ->update(['statut' => Vehicules::STATUS_DISPONIBLE]);
 
+        $message = $transaction->client->fullname . ' a refusé de confirmer la transaction. Votre annonce est de nouveau disponible.';
+        if ($motif) {
+            $message .= ' Motif : ' . $motif;
+        }
+
         Notifications::create([
             'user_id'    => $transaction->vendeur_id,
             'type'       => Notifications::TYPE_TRANSACTION,
             'level'      => 'error',
             'title'      => 'Transaction refusée par le client',
-            'message'    => $transaction->client->fullname . ' a refusé de confirmer la transaction. Votre annonce est de nouveau disponible.',
+            'message'    => $message,
             'data'       => ['transaction_id' => $transaction->id],
             'date_envoi' => now(),
         ]);
@@ -187,7 +194,7 @@ class TransactionConclueController extends Controller
      *  - Compteur nb_refus_transaction du vendeur incrémenté
      *  - Client notifié
      */
-    public function refuserVendeur(string $id): JsonResponse
+    public function refuserVendeur(Request $request, string $id): JsonResponse
     {
         $user = Auth::user();
 
@@ -195,6 +202,8 @@ class TransactionConclueController extends Controller
             ->where('vendeur_id', $user->id)
             ->where('statut', TransactionConclue::STATUT_EN_ATTENTE)
             ->firstOrFail();
+
+        $motif = $request->validate(['motif' => 'nullable|string|max:500'])['motif'] ?? null;
 
         DB::beginTransaction();
         try {
@@ -218,12 +227,17 @@ class TransactionConclueController extends Controller
             User::where('id', $user->id)->increment('nb_refus_transaction');
 
             // Notifie le client
+            $message = 'Le vendeur a refusé de confirmer la transaction. Si vous avez effectué un paiement, contactez le support.';
+            if ($motif) {
+                $message .= ' Motif : ' . $motif;
+            }
+
             Notifications::create([
                 'user_id'    => $transaction->client_id,
                 'type'       => Notifications::TYPE_TRANSACTION,
                 'level'      => 'error',
                 'title'      => 'Transaction annulée par le vendeur',
-                'message'    => 'Le vendeur a refusé de confirmer la transaction. Si vous avez effectué un paiement, contactez le support.',
+                'message'    => $message,
                 'data'       => ['transaction_id' => $transaction->id],
                 'date_envoi' => now(),
             ]);

@@ -11,6 +11,7 @@ use App\Models\TransactionConclue;
 use App\Models\Vehicules;
 use App\Services\GoogleCalendarService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -204,7 +205,7 @@ class RendezVousController extends Controller
     }
 
     // ── Client ou vendeur annule ───────────────────────────
-    public function annuler($id): JsonResponse
+    public function annuler(Request $request, $id): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -219,6 +220,8 @@ class RendezVousController extends Controller
                 return response()->json(['success' => false, 'message' => 'Impossible d\'annuler un RDV terminé'], 422);
             }
 
+            $motif = $request->validate(['motif' => 'nullable|string|max:500'])['motif'] ?? null;
+
             DB::beginTransaction();
 
             $rdv->annuler();
@@ -226,12 +229,17 @@ class RendezVousController extends Controller
             // Notifier l'autre partie
             $destinataire = $user->id === $rdv->client_id ? $rdv->vendeur_id : $rdv->client_id;
 
+            $message = 'Le rendez-vous du ' . $rdv->date_heure->format('d/m/Y à H:i') . ' a été annulé.';
+            if ($motif) {
+                $message .= ' Motif : ' . $motif;
+            }
+
             Notifications::create([
                 'user_id' => $destinataire,
                 'type'    => Notifications::TYPE_RDV,
                 'level'   => 'error',
                 'title'   => 'Rendez-vous annulé',
-                'message' => 'Le rendez-vous du ' . $rdv->date_heure->format('d/m/Y à H:i') . ' a été annulé.',
+                'message' => $message,
                 'data'    => ['rdv_id' => $rdv->id],
             ]);
 

@@ -36,13 +36,12 @@ import {
     ImagePlus,
     X,
     Send,
-    ArrowLeft,
     Eye,
     Camera,
-    Link,
     RefreshCw
 } from "lucide-react"
 import StepView from "@/app/components/StepView";
+import { Progress } from "@/components/ui/progress";
 
 interface FormData {
     typePublication: "vente" | "location" | ""
@@ -216,8 +215,21 @@ export default function AddVehiclePage() {
             useWebWorker: true
         }
 
-        // Affiche un toast de chargement initial avant de commencer la compression
-        const toastId = toast.loading(`Compression des photos... (0/${validFiles.length})`)
+        const toastId = "compression-progress"
+
+        // Affiche la progression dans une carte custom avec barre de progression
+        const showProgress = (done: number) => {
+            toast.custom(
+                () => (
+                    <div className="flex flex-col gap-2 bg-white border rounded-lg p-4 shadow-md w-72">
+                        <p className="text-sm font-medium">Compression des photos... ({done}/{validFiles.length})</p>
+                        <Progress value={Math.round((done / validFiles.length) * 100)} />
+                    </div>
+                ),
+                { id: toastId, duration: Infinity }
+            )
+        }
+        showProgress(0)
 
         // Tableau qui va accumuler les photos compressées une par une
         const compressedFiles: File[] = []
@@ -226,17 +238,14 @@ export default function AddVehiclePage() {
         // pour pouvoir afficher la progression au vendeur
         let i = 0
         for (const file of validFiles) {
-            i++
-
-            // Met à jour le toast avec le numéro de la photo en cours
-            // ex: "Compression des photos... (2/5)"
-            toast.loading(`Compression des photos... (${i}/${validFiles.length})`, { id: toastId })
-
             // Compresse la photo : réduit le poids max à 0.8 MB et la résolution à 1920px
             const result = await imageCompression(file, compressionOptions)
 
             // Ajoute la photo compressée au tableau de résultats
             compressedFiles.push(result)
+
+            i++
+            showProgress(i)
         }
 
         // Toutes les photos sont compressées — on ferme le toast de chargement
@@ -903,75 +912,75 @@ export default function AddVehiclePage() {
                 </div>
             </CardHeader>
             <CardContent className="p-4 md:p-6 pt-4">
-                    <div className="space-y-4">
-                        {/* Sélection rapide de période */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {([
-                                { id: "maintenant", label: "Maintenant", days: 0 },
-                                { id: "1_semaine", label: "1 semaine", days: 7 },
-                                { id: "2_semaines", label: "2 semaines", days: 14 },
-                                { id: "1_mois", label: "1 mois", days: 30 },
-                            ] as const).map(({ id, label, days }) => (
-                                <button
-                                    key={id}
-                                    type="button"
-                                    onClick={() => {
-                                        setPeriodeChoisie(id)
-                                        const date = new Date()
-                                        date.setDate(date.getDate() + days)
-                                        updateFormData("dateDisponibilite", date)
-                                    }}
-                                    className={cn(
-                                        "rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
-                                        periodeChoisie === id
-                                            ? "bg-primary text-white border-primary"
-                                            : "border-border/40 hover:bg-muted"
-                                    )}
-                                >
-                                    {label}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Option date personnalisée */}
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setPeriodeChoisie("personnalisee")
-                                updateFormData("dateDisponibilite", undefined)
-                            }}
-                            className={cn(
-                                "w-full rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
-                                periodeChoisie === "personnalisee"
-                                    ? "bg-primary text-white border-primary"
-                                    : "border-border/40 hover:bg-muted"
-                            )}
-                        >
-                            Date personnalisée
-                        </button>
-
-                        {/* Calendar — uniquement si "personnalisée" sélectionné */}
-                        {periodeChoisie === "personnalisee" && (
-                            <div className="flex justify-center">
-                                <Calendar
-                                    mode="single"
-                                    selected={formData.dateDisponibilite}
-                                    onSelect={(date: Date | undefined) => updateFormData("dateDisponibilite", date)}
-                                    disabled={(date: Date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                    className="rounded-xl border border-border/40"
-                                />
-                            </div>
-                        )}
-
-                        {/* Badge récapitulatif */}
-                        {formData.dateDisponibilite && (
-                            <div className="text-center">
-                                <Badge variant="outline" className="bg-zinc-900/10 text-zinc-700 border-zinc-900/20 rounded-full px-4 py-1.5">
-                                    Disponible à partir du {formatDate(formData.dateDisponibilite)}
-                                </Badge>
-                            </div>
-                        )}
+                <div className="space-y-4">
+                    {/* Sélection rapide de période */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {([
+                            { id: "maintenant", label: "Maintenant", days: 0 },
+                            { id: "1_semaine", label: "1 semaine", days: 7 },
+                            { id: "2_semaines", label: "2 semaines", days: 14 },
+                            { id: "1_mois", label: "1 mois", days: 30 },
+                        ] as const).map(({ id, label, days }) => (
+                            <button
+                                key={id}
+                                type="button"
+                                onClick={() => {
+                                    setPeriodeChoisie(id)
+                                    const date = new Date()
+                                    date.setDate(date.getDate() + days)
+                                    updateFormData("dateDisponibilite", date)
+                                }}
+                                className={cn(
+                                    "rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
+                                    periodeChoisie === id
+                                        ? "bg-primary text-white border-primary"
+                                        : "border-border/40 hover:bg-muted"
+                                )}
+                            >
+                                {label}
+                            </button>
+                        ))}
                     </div>
+
+                    {/* Option date personnalisée */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setPeriodeChoisie("personnalisee")
+                            updateFormData("dateDisponibilite", undefined)
+                        }}
+                        className={cn(
+                            "w-full rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
+                            periodeChoisie === "personnalisee"
+                                ? "bg-primary text-white border-primary"
+                                : "border-border/40 hover:bg-muted"
+                        )}
+                    >
+                        Date personnalisée
+                    </button>
+
+                    {/* Calendar — uniquement si "personnalisée" sélectionné */}
+                    {periodeChoisie === "personnalisee" && (
+                        <div className="flex justify-center">
+                            <Calendar
+                                mode="single"
+                                selected={formData.dateDisponibilite}
+                                onSelect={(date: Date | undefined) => updateFormData("dateDisponibilite", date)}
+                                disabled={(date: Date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                className="rounded-xl border border-border/40"
+                            />
+                        </div>
+                    )}
+
+                    {/* Badge récapitulatif */}
+                    {formData.dateDisponibilite && (
+                        <div className="text-center">
+                            <Badge variant="outline" className="bg-zinc-900/10 text-zinc-700 border-zinc-900/20 rounded-full px-4 py-1.5">
+                                Disponible à partir du {formatDate(formData.dateDisponibilite)}
+                            </Badge>
+                        </div>
+                    )}
+                </div>
             </CardContent>
         </Card>
     )
@@ -1150,7 +1159,7 @@ export default function AddVehiclePage() {
                     </div>
 
                     <div className="flex items-start justify-between gap-4">
-                       <Button
+                        <Button
                             variant="outline"
                             size="sm"
                             onClick={handleRefresh}

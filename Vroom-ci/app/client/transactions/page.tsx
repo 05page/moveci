@@ -22,6 +22,7 @@ import {
 import { TransactionConclue } from "@/src/types"
 import { getMesDemandes, confirmerClient, refuserTransaction } from "@/src/actions/transactions.actions"
 import Image from "next/image"
+import { Textarea } from "@/components/ui/textarea";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? ""
 
@@ -36,6 +37,7 @@ export default function TransactionsClientPage() {
     const [transactions, setTransactions] = useState<TransactionConclue[]>([])
     const [loading, setLoading]           = useState(true)
     const [codes, setCodes]               = useState<Record<string, string>>({})
+    const [motif, setMotif]  = useState<Record<string, string>>({});
     const [locationDates, setLocationDates] = useState<Record<string, { debut: string; fin: string }>>({})
     const [confirmLoading, setConfirmLoading] = useState<string | null>(null)
 
@@ -89,7 +91,7 @@ export default function TransactionsClientPage() {
 
     const handleRefuser = async (id: string) => {
         try {
-            await refuserTransaction(id)
+            await refuserTransaction(id, motif[id])
             toast.success("Transaction refusée")
             setTransactions(prev => prev.map(tx => tx.id === id ? { ...tx, statut: "refusé" } : tx))
         } catch {
@@ -274,6 +276,12 @@ export default function TransactionsClientPage() {
                                                                 Le vendeur sera notifié et le véhicule restera disponible.
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
+                                                            <Textarea
+                                                            placeholder="Raison du Refus (Optionnel)"
+                                                            value={motif[t.id] ?? ""}
+                                                            onChange={e => setMotif(prev => ({...prev, [t.id]: e.target.value}))}
+                                                            >
+                                                            </Textarea>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>Annuler</AlertDialogCancel>
                                                             <AlertDialogAction

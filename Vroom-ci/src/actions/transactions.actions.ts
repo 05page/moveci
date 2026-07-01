@@ -20,9 +20,8 @@ export const confirmerClient = (
 ) => api.post<TransactionConclue>(`/transactions-conclues/${id}/confirmer-client`, data)
 
 /** Client — refuse la transaction. */
-export const refuserTransaction = (id: string) =>
-  api.post<void>(`/transactions-conclues/${id}/refuser`, {})
+export const refuserTransaction = (id: string, motif?: string) =>
+  api.post<void>(`/transactions-conclues/${id}/refuser`, { motif })
 
-/** Vendeur — refuse de confirmer la transaction. */
-export const refuserTransactionVendeur = (id: string) =>
-  api.post<void>(`/transactions-conclues/${id}/refuser-vendeur`, {})
+export const refuserTransactionVendeur = (id: string, motif?: string) =>
+  api.post<void>(`/transactions-conclues/${id}/refuser-vendeur`, { motif })
