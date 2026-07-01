@@ -23,10 +23,10 @@ import { getMesTransactions, confirmerVendeur, refuserTransactionVendeur } from 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? ""
 
 const statutConfig: Record<string, { label: string; color: string }> = {
-    en_attente: { label: "En attente",  color: "bg-amber-100 text-amber-700 border-amber-200" },
-    confirmé:   { label: "Confirmé",    color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-    expiré:     { label: "Expiré",      color: "bg-zinc-100 text-zinc-500 border-zinc-200" },
-    refusé:     { label: "Refusé",      color: "bg-red-100 text-red-600 border-red-200" },
+    en_attente: { label: "En attente", color: "bg-amber-100 text-amber-700 border-amber-200" },
+    confirmé: { label: "Confirmé", color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+    expiré: { label: "Expiré", color: "bg-zinc-100 text-zinc-500 border-zinc-200" },
+    refusé: { label: "Refusé", color: "bg-red-100 text-red-600 border-red-200" },
 }
 
 interface ConfirmForm {
@@ -35,10 +35,10 @@ interface ConfirmForm {
 
 export default function TransactionsVendeurPage() {
     const [transactions, setTransactions] = useState<TransactionConclue[]>([])
-    const [isLoading, setIsLoading]       = useState(true)
-    const [forms, setForms]               = useState<Record<string, ConfirmForm>>({})
+    const [isLoading, setIsLoading] = useState(true)
+    const [forms, setForms] = useState<Record<string, ConfirmForm>>({})
     const [confirmLoading, setConfirmLoading] = useState<string | null>(null)
-    const [refusLoading, setRefusLoading]     = useState<string | null>(null)
+    const [refusLoading, setRefusLoading] = useState<string | null>(null)
 
     const fetchData = useCallback(() => {
         getMesTransactions()
@@ -70,9 +70,10 @@ export default function TransactionsVendeurPage() {
             toast.success("Confirmation envoyée !")
             const res = await getMesTransactions()
             setTransactions(res?.data ?? [])
-        } catch {
-            toast.error("Code incorrect ou transaction expirée")
-        } finally {
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Code incorrect ou transaction expirée")
+        }
+        finally {
             setConfirmLoading(null)
         }
     }
@@ -83,21 +84,22 @@ export default function TransactionsVendeurPage() {
             await refuserTransactionVendeur(t.id)
             toast.success("Transaction refusée — le véhicule est de nouveau disponible")
             fetchData()
-        } catch {
-            toast.error("Erreur lors du refus de la transaction")
-        } finally {
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Erreur survenue lors de l'annulation")
+        }
+        finally {
             setRefusLoading(null)
         }
     }
 
-    const enAttente  = transactions.filter(t => t.statut === "en_attente")
-    const confirmes  = transactions.filter(t => t.statut === "confirmé")
-    const totalPrix  = confirmes.reduce((s, t) => s + (t.prix_final ?? 0), 0)
+    const enAttente = transactions.filter(t => t.statut === "en_attente")
+    const confirmes = transactions.filter(t => t.statut === "confirmé")
+    const totalPrix = confirmes.reduce((s, t) => s + (t.prix_final ?? 0), 0)
 
     const filterTab = (tab: string) => {
-        if (tab === "ventes")    return transactions.filter(t => t.type === "vente")
+        if (tab === "ventes") return transactions.filter(t => t.type === "vente")
         if (tab === "locations") return transactions.filter(t => t.type === "location")
-        if (tab === "attente")   return enAttente
+        if (tab === "attente") return enAttente
         return transactions
     }
 
@@ -106,9 +108,9 @@ export default function TransactionsVendeurPage() {
             <div className="space-y-6 p-6">
                 <Skeleton className="h-8 w-48" />
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
+                    {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
                 </div>
-                {[1,2,3].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)}
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)}
             </div>
         )
     }
@@ -129,10 +131,10 @@ export default function TransactionsVendeurPage() {
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: "Total confirmé",  value: `${totalPrix.toLocaleString("fr-FR")} FCFA`, icon: Wallet },
-                    { label: "En attente",       value: enAttente.length,                            icon: Clock },
-                    { label: "Ventes conclues",  value: confirmes.filter(t => t.type === "vente").length,    icon: Tag },
-                    { label: "Locations conclues",value: confirmes.filter(t => t.type === "location").length, icon: Key },
+                    { label: "Total confirmé", value: `${totalPrix.toLocaleString("fr-FR")} FCFA`, icon: Wallet },
+                    { label: "En attente", value: enAttente.length, icon: Clock },
+                    { label: "Ventes conclues", value: confirmes.filter(t => t.type === "vente").length, icon: Tag },
+                    { label: "Locations conclues", value: confirmes.filter(t => t.type === "location").length, icon: Key },
                 ].map((s, i) => (
                     <Card key={i}>
                         <CardContent className="p-4 flex flex-col gap-1">
@@ -162,9 +164,9 @@ export default function TransactionsVendeurPage() {
                             </div>
                         )}
                         {filterTab(tab).map(t => {
-                            const cfg    = statutConfig[t.statut]
-                            const photo  = t.vehicule?.photos?.find(p => p.is_primary) ?? t.vehicule?.photos?.[0]
-                            const form   = getForm(t.id)
+                            const cfg = statutConfig[t.statut]
+                            const photo = t.vehicule?.photos?.find(p => p.is_primary) ?? t.vehicule?.photos?.[0]
+                            const form = getForm(t.id)
                             const isEnAttente = t.statut === "en_attente"
 
                             // Prix estimé calculé depuis vehicule.prix (tarif/jour pour location)
@@ -220,7 +222,7 @@ export default function TransactionsVendeurPage() {
                                     </CardHeader>
 
                                     {/* Formulaire de confirmation vendeur */}
-                                    {isEnAttente && !t.confirme_par_vendeur && (
+                                    {isEnAttente && !t.confirme_par_vendeur && t.confirme_par_client && (
                                         <CardContent className="space-y-4 pt-0">
                                             <Separator />
                                             <p className="text-sm font-medium">Confirmez avec votre code reçu par notification</p>
@@ -299,7 +301,7 @@ export default function TransactionsVendeurPage() {
                                         </CardContent>
                                     )}
 
-                                    {isEnAttente && t.confirme_par_vendeur && !t.confirme_par_client && (
+                                    {isEnAttente && !t.confirme_par_vendeur && !t.confirme_par_client && (
                                         <CardContent className="pt-0">
                                             <p className="text-sm text-muted-foreground flex items-center gap-2">
                                                 <Clock className="h-4 w-4 text-amber-500" />

@@ -31,11 +31,18 @@ class TransactionConclueController extends Controller
             ->where('vendeur_id', $user->id)
             ->where('statut', TransactionConclue::STATUT_EN_ATTENTE)
             ->firstOrFail();
-            $transaction->load('vehicule');
+        $transaction->load('vehicule');
 
         if (!$transaction->isCodeValide()) {
             $transaction->update(['statut' => TransactionConclue::STATUT_EXPIRE]);
             return response()->json(['success' => false, 'message' => 'Le code a expiré'], 422);
+        }
+
+        if (!$transaction->confirme_par_client) {
+            return response()->json([
+                'success' => false,
+                'message' => 'En attente de la confirmation du client'
+            ], 422);
         }
 
         $validated = $request->validate([
@@ -91,7 +98,7 @@ class TransactionConclueController extends Controller
 
         $validated = $request->validate([
             'code' => 'required|string|size:6',
-            'date_debut_location'=> 'required_if:type,location|nullable|date',
+            'date_debut_location' => 'required_if:type,location|nullable|date',
             'date_fin_location'  => 'required_if:type,location|nullable|date|after:date_debut_location',
         ]);
 
@@ -115,7 +122,16 @@ class TransactionConclueController extends Controller
             if ($transaction->confirme_par_vendeur) {
                 $this->finaliser($transaction);
             }
-
+            Notifications::create([
+                'user_id' => $transaction->vendeur_id,
+                'type'       => Notifications::TYPE_TRANSACTION,
+                'level'      => 'info',
+                'title'      =>  'Le client ' . $user->fullname . ' vient de confirmer la transaction',
+                'message'    => 'Voici votre code de confirmation '. $transaction->code_confirmation .' afin de valider cette transaction.',
+                'data' => ['transaction_id' => $transaction->id],
+                'date_envoi' => now(),
+            ]);
+            
             DB::commit();
             return response()->json([
                 'success' => true,
@@ -285,10 +301,12 @@ class TransactionConclueController extends Controller
             ? 'Votre achat a été confirmé avec succès.'
             : 'Votre location a été confirmée avec succès.';
 
-        foreach ([
-            [$transaction->vendeur_id, $messageVendeur],
-            [$transaction->client_id,  $messageClient],
-        ] as [$userId, $message]) {
+        foreach (
+            [
+                [$transaction->vendeur_id, $messageVendeur],
+                [$transaction->client_id,  $messageClient],
+            ] as [$userId, $message]
+        ) {
             Notifications::create([
                 'user_id'    => $userId,
                 'type'       => Notifications::TYPE_TRANSACTION,
