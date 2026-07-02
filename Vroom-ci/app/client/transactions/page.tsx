@@ -109,7 +109,7 @@ export default function TransactionsClientPage() {
     }
 
     return (
-        <div className="space-y-6 p-6">
+        <div className="space-y-6 px-6 pb-6 pt-20">
             <div>
                 <h1 className="text-2xl font-bold tracking-tight">Mes transactions</h1>
                 <p className="text-muted-foreground">Confirmez vos achats et locations avec le code reçu.</p>
