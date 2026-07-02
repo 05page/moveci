@@ -47,7 +47,15 @@ export async function api<T = unknown>(
   }
 
   if (!res.ok) {
-    throw new ApiError(getFriendlyErrorMessage(res.status, data.message), res.status, data.errors)
+    // Pour les 422, on préfère le premier message de validation spécifique au champ
+    const firstFieldError = data.errors
+      ? Object.values(data.errors as Record<string, string[]>).flat()[0]
+      : undefined
+    throw new ApiError(
+      firstFieldError ?? getFriendlyErrorMessage(res.status, data.message),
+      res.status,
+      data.errors
+    )
   }
 
   return data as ApiResponse<T>

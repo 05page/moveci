@@ -21,7 +21,7 @@ class StoreRendezVousRequest extends FormRequest
     {
         return [
             'vehicule_id' => 'required|uuid|exists:vehicules,id',
-            'date_heure'  => 'required|date|after:now',
+            'date_heure'  => 'required|date|after_or_equal:today',
             'type'        => ['required', Rule::in([
                 RendezVous::TYPE_VISITE,
                 RendezVous::TYPE_ESSAI_ROUTIER,
@@ -39,7 +39,7 @@ class StoreRendezVousRequest extends FormRequest
             'vehicule_id.required' => 'Le véhicule est obligatoire.',
             'vehicule_id.exists'   => 'Ce véhicule n\'existe pas.',
             'date_heure.required'  => 'La date et l\'heure sont obligatoires.',
-            'date_heure.after'     => 'La date du rendez-vous doit être dans le futur.',
+            'date_heure.after_or_equal' => 'La date du rendez-vous doit être aujourd\'hui ou dans le futur.',
             'type.required'        => 'Le type de rendez-vous est obligatoire.',
             'type.in'              => 'Le type de rendez-vous est invalide.',
         ];

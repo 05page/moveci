@@ -179,7 +179,7 @@ const VehicleDetailPage = () => {
             toast.success("Demande de rendez-vous envoyée !")
             setRdvOpen(false)
             setRdvForm({ date: "", heure: "", type: "visite", motif: "", lieu: "" })
-        } catch { toast.error("Impossible d'envoyer la demande") }
+        } catch (err: unknown) { toast.error((err as { message?: string })?.message ?? "Impossible d'envoyer la demande") }
         finally { setRdvLoading(false) }
     }
 
