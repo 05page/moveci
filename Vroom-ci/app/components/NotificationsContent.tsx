@@ -24,27 +24,42 @@ import { cn } from "@/src/lib/utils"
 function getNotificationLink(
     type: Notifications["type"],
     role?: string,
+    partenaireType?: string,
     data?: Record<string, string | number>
 ): string | null {
     switch (type) {
         case "transaction":
-            return role === "vendeur" || role === "concessionnaire" ? "/vendeur/transactions" : "/client/transactions"
+            return role === "vendeur" ? "/vendeur/transactions" : role === "partenaire" ? null : "/client/transactions"
         case "rdv":
-            return role === "vendeur" || role === "concessionnaire" ? "/vendeur/rdv" : "/client/rdv"
+            if (role === "vendeur") return "/vendeur/rdv"
+            if (role === "partenaire") return "/partenaire/rdv"
+            return "/client/rdv"
         case "formation":
-            if (role === "auto_ecole") return "/partenaire/formations"
+            if (role === "admin") return "/admin/formations"
+            if (partenaireType === "auto_ecole") return "/partenaire/formations"
             if (data?.formation_id) return `/partenaire/formations/${data.formation_id}`
             return "/client/formations"
         case "tendance":
-            return role === "auto_ecole" ? "/partenaire/formations" : "/vendeur/vehicles"
-        case "moderation":
-            if (role === "admin") return "/admin/moderation"
-            if (data?.vehicule_id) return `/vendeur/vehicles/${data.vehicule_id}`
+            if (partenaireType === "auto_ecole") return "/partenaire/formations"
+            if (role === "partenaire") return "/partenaire/trend"
             return "/vendeur/vehicles"
+        case "moderation":
+            if (role === "admin") {
+                if (data?.signalement_id) return `/admin/signalements?open=${data.signalement_id}`
+                if (data?.vehicule_id) return `/admin/vehicules?open=${data.vehicule_id}`
+                return "/admin/vehicules"
+            }
+            if (role === "partenaire" && data?.vehicule_id) return `/partenaire/mongarage/${data.vehicule_id}`
+            if (data?.vehicule_id) return `/vendeur/vehicles/${data.vehicule_id}`
+            // Notification de modération liée au compte (suspension/bannissement/réactivation),
+            // sans vehicule_id — aucune page dédiée à rediriger, on n'affiche pas de lien.
+            return null
+        case "support":
+            return role === "admin" ? "/admin/support" : null
         case "alerte_vehicule":
             return "/client/favorites"
         case "reservation":
-            return role === "auto_ecole" || role === "partenaire" ? "/partenaire/rdv" : "/client/reservations"
+            return role === "partenaire" ? "/partenaire/rdv" : "/client/reservations"
         default:
             return null
     }
@@ -120,20 +135,22 @@ function NotificationItem({
     notification,
     onRead,
     role,
+    partenaireType,
 }: {
     notification: Notifications
     onRead: (id: number) => void
     role?: string
+    partenaireType?: string
 }) {
     const router = useRouter()
 
     const handleClick = () => {
         if (!notification.is_read) onRead(notification.id)
-        const link = getNotificationLink(notification.type, role, notification.data)
+        const link = getNotificationLink(notification.type, role, partenaireType, notification.data)
         if (link) router.push(link)
     }
 
-    const navigable = !!getNotificationLink(notification.type, role, notification.data)
+    const navigable = !!getNotificationLink(notification.type, role, partenaireType, notification.data)
 
     return (
         <div
@@ -262,6 +279,7 @@ export function NotificationsContent() {
                             notification={n}
                             onRead={markAsRead}
                             role={user?.role}
+                            partenaireType={user?.partenaire_type}
                         />
                     ))}
                 </div>

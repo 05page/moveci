@@ -124,9 +124,6 @@ export default function PartenaireLayout({
                                 <SidebarMenuButton size="lg" asChild>
                                     <Link href="/partenaire/dashboard">
                                         <Image src="/logo.svg" alt="Move CI" width={52} height={30} />
-                                        <div className="flex flex-col gap-0.5 leading-none">
-                                            <Badge className="bg-white text-[10px] w-fit">{roleLabel}</Badge>
-                                        </div>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>

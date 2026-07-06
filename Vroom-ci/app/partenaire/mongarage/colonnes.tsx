@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useState } from "react"
 import { toast } from "sonner"
-import DetailVehicule from "./detail-vehicule"
 import { api } from "@/src/lib/api"
 import { vehicule } from "@/src/types"
+import Link from "next/link"
 
 // On réexporte le type réel du backend pour que page.tsx puisse l'importer depuis ici
 export type { vehicule as Vehicules }
@@ -28,11 +28,11 @@ export type { vehicule as Vehicules }
 const getStatutConfig = (statut: string) => {
     switch (statut) {
         case "disponible": return { label: "Disponible", className: "bg-emerald-50 text-emerald-700 border-emerald-200" }
-        case "vendu":      return { label: "Vendu",      className: "bg-zinc-100 text-zinc-700 border-zinc-300" }
-        case "loué":       return { label: "Loué",       className: "bg-sky-50 text-sky-700 border-sky-200" }
-        case "suspendu":   return { label: "Suspendu",   className: "bg-amber-50 text-amber-700 border-amber-200" }
-        case "banni":      return { label: "Banni",      className: "bg-red-50 text-red-700 border-red-200" }
-        default:           return { label: statut,       className: "bg-muted text-muted-foreground" }
+        case "vendu": return { label: "Vendu", className: "bg-zinc-100 text-zinc-700 border-zinc-300" }
+        case "loué": return { label: "Loué", className: "bg-sky-50 text-sky-700 border-sky-200" }
+        case "suspendu": return { label: "Suspendu", className: "bg-amber-50 text-amber-700 border-amber-200" }
+        case "banni": return { label: "Banni", className: "bg-red-50 text-red-700 border-red-200" }
+        default: return { label: statut, className: "bg-muted text-muted-foreground" }
     }
 }
 
@@ -167,8 +167,7 @@ export function makeColonnes(onRefresh: () => void): ColumnDef<vehicule>[] {
 
 function ActionsCell({ vehicule: v, onRefresh }: { vehicule: vehicule; onRefresh: () => void }) {
     const [deleteOpen, setDeleteOpen] = useState(false)
-    const [detailOpen, setDetailOpen] = useState(false)
-    const [deleting, setDeleting]     = useState(false)
+    const [deleting, setDeleting] = useState(false)
 
     const handleDelete = async () => {
         setDeleting(true)
@@ -186,34 +185,15 @@ function ActionsCell({ vehicule: v, onRefresh }: { vehicule: vehicule; onRefresh
         }
     }
 
-    const detailData = {
-        typePublication: v.post_type,
-        marque:          v.description?.marque ?? "",
-        modele:          v.description?.modele ?? "",
-        annee:           String(v.description?.annee ?? ""),
-        kilometrage:     v.description?.kilometrage ?? "",
-        carburant:       v.description?.carburant ?? "",
-        transmission:    v.description?.transmission ?? "",
-        couleur:         v.description?.couleur ?? "",
-        nombrePortes:    String(v.description?.nombre_portes ?? ""),
-        nombrePlaces:    String(v.description?.nombre_places ?? ""),
-        description:     "",
-        equipements:     v.description?.equipements ?? [],
-        dateDisponibilite: v.date_disponibilite ? new Date(v.date_disponibilite) : undefined,
-        dateDebutLocation: "",
-        dateFinLocation:   "",
-        prix:       v.post_type === "vente"     ? String(v.prix) : "",
-        prixParJour: v.post_type === "location" ? String(v.prix) : "",
-        negociable: v.negociable ?? false,
-        photos:     v.photos ?? [],
-    }
-
     return (
         <>
             <div className="flex items-center justify-end gap-1">
-                <Button variant="ghost" size="icon-xs" className="cursor-pointer" onClick={() => setDetailOpen(true)}>
-                    <Eye className="h-3.5 w-3.5" />
+                <Button asChild variant="ghost" size="icon-xs" className="cursor-pointer">
+                    <Link href={`/partenaire/mongarage/${v.id}`}>
+                        <Eye className="h-3.5 w-3.5" />
+                    </Link>
                 </Button>
+
                 <Button variant="ghost" size="icon-xs" className="cursor-pointer">
                     <Pencil className="h-3.5 w-3.5" />
                 </Button>
@@ -226,14 +206,6 @@ function ActionsCell({ vehicule: v, onRefresh }: { vehicule: vehicule; onRefresh
                     <Trash2 className="h-3.5 w-3.5" />
                 </Button>
             </div>
-
-            <DetailVehicule
-                isOpen={detailOpen}
-                onClose={() => setDetailOpen(false)}
-                vehicule={detailData}
-                onEdit={() => { setDetailOpen(false); toast.info("Modification en cours...") }}
-                onDelete={() => { setDetailOpen(false); setDeleteOpen(true) }}
-            />
 
             <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <AlertDialogContent size="sm">

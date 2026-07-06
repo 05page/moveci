@@ -24,10 +24,6 @@ import { vehicule } from "@/src/types"
 import { getMonVehicule } from "@/src/actions/vehicules.actions"
 import { cn, getPhotoUrl } from "@/src/lib/utils"
 
-/**
- * Retourne les classes Tailwind du badge selon le statut de validation
- * et le statut opérationnel du véhicule.
- */
 const getValidationBadgeClass = (status_validation?: string): string => {
     switch (status_validation) {
         case "validee":
@@ -42,9 +38,6 @@ const getValidationBadgeClass = (status_validation?: string): string => {
     }
 }
 
-/**
- * Retourne les classes Tailwind du badge pour le statut opérationnel (statut).
- */
 const getStatutBadgeClass = (statut?: string): string => {
     switch (statut) {
         case "disponible":
@@ -57,21 +50,18 @@ const getStatutBadgeClass = (statut?: string): string => {
     }
 }
 
-/** Formate le label lisible du status_validation. */
 const getValidationLabel = (status_validation?: string): string => {
     switch (status_validation) {
-        case "validee":    return "Validé"
-        case "restauree":  return "Restauré"
-        case "rejetee":    return "Rejeté"
+        case "validee": return "Validé"
+        case "restauree": return "Restauré"
+        case "rejetee": return "Rejeté"
         case "en_attente": return "En attente"
-        default:           return status_validation ?? "—"
+        default: return status_validation ?? "—"
     }
 }
 
-// ─── Skeleton de chargement ───────────────────────────────────────────────────
-
 const VehicleDetailSkeleton = () => (
-    <div className="pt-20 px-4 md:px-6 max-w-4xl mx-auto mb-12 space-y-4">
+    <div className="max-w-4xl mx-auto space-y-4">
         <Skeleton className="h-8 w-28 rounded-lg" />
         <div className="space-y-2">
             <Skeleton className="h-8 w-64" />
@@ -86,20 +76,17 @@ const VehicleDetailSkeleton = () => (
     </div>
 )
 
-// ─── Page principale ──────────────────────────────────────────────────────────
-
 const MonVehiculeDetailPage = () => {
     const params = useParams()
-
     const [vehiculeData, setVehiculeData] = useState<vehicule | null>(null)
-    const [isLoading, setIsLoading]       = useState(true)
-    const [notFound, setNotFound]         = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+    const [notFound, setNotFound] = useState(false)
 
-    // ── Chargement ────────────────────────────────────────────────────────────
     useEffect(() => {
         const id = params?.id as string
         if (!id) return
 
+        //Récupération du Véhicule
         const fetchVehicule = async () => {
             setIsLoading(true)
             try {
@@ -119,13 +106,13 @@ const MonVehiculeDetailPage = () => {
         fetchVehicule()
     }, [params?.id])
 
-    // ── État chargement ───────────────────────────────────────────────────────
+    //Chargément
     if (isLoading) return <VehicleDetailSkeleton />
 
-    // ── État erreur / introuvable ─────────────────────────────────────────────
+    //En Cas d'erreur:
     if (notFound || !vehiculeData) {
         return (
-            <div className="pt-20 px-4 max-w-4xl mx-auto mb-12 flex flex-col items-center justify-center py-24 text-center">
+            <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-24 text-center">
                 <div className="w-20 h-20 rounded-full bg-zinc-100 flex items-center justify-center mb-6">
                     <Car className="h-10 w-10 text-zinc-300" />
                 </div>
@@ -133,7 +120,7 @@ const MonVehiculeDetailPage = () => {
                 <p className="text-sm text-zinc-500 mb-6 max-w-sm">
                     Ce véhicule n'existe pas ou ne vous appartient pas.
                 </p>
-                <Link href="/vendeur/vehicles">
+                <Link href="/partenaire/mongarage">
                     <Button className="rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white cursor-pointer">
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Retour à mes véhicules
@@ -143,36 +130,32 @@ const MonVehiculeDetailPage = () => {
         )
     }
 
-    // ── Données dérivées ──────────────────────────────────────────────────────
-    const photos  = vehiculeData.photos ?? []
+    const photos = vehiculeData.photos ?? []
     const isVente = vehiculeData.post_type === "vente"
     const isLocation = vehiculeData.post_type === "location"
     const isRejete = vehiculeData.status_validation === "rejetee"
 
     /** Caractéristiques clés affichées dans la grille. */
     const specs = [
-        { label: "Prix",          value: vehiculeData.prix ? `${vehiculeData.prix.toLocaleString("fr-FR")} FCFA${!isVente ? " / jour" : ""}` : "—", icon: Tag },
-        { label: "Kilométrage",   value: vehiculeData.description?.kilometrage ? `${Number(vehiculeData.description.kilometrage).toLocaleString("fr-FR")} km` : "—", icon: Gauge },
-        { label: "Carburant",     value: vehiculeData.description?.carburant ?? "—", icon: Fuel },
-        { label: "Transmission",  value: vehiculeData.description?.transmission ?? "—", icon: Settings },
-        { label: "Année",         value: vehiculeData.description?.annee ? String(vehiculeData.description.annee) : "—", icon: Calendar },
-        { label: "Type",          value: isVente ? "Vente" : "Location", icon: KeyRound },
+        { label: "Prix", value: vehiculeData.prix ? `${vehiculeData.prix.toLocaleString("fr-FR")} FCFA${!isVente ? " / jour" : ""}` : "—", icon: Tag },
+        { label: "Kilométrage", value: vehiculeData.description?.kilometrage ? `${Number(vehiculeData.description.kilometrage).toLocaleString("fr-FR")} km` : "—", icon: Gauge },
+        { label: "Carburant", value: vehiculeData.description?.carburant ?? "—", icon: Fuel },
+        { label: "Transmission", value: vehiculeData.description?.transmission ?? "—", icon: Settings },
+        { label: "Année", value: vehiculeData.description?.annee ? String(vehiculeData.description.annee) : "—", icon: Calendar },
+        { label: "Type", value: isVente ? "Vente" : "Location", icon: KeyRound },
     ]
 
-    // ── Rendu ─────────────────────────────────────────────────────────────────
     return (
-        <div className="pt-20 px-4 md:px-6 max-w-4xl mx-auto mb-16 space-y-5 animate-in fade-in slide-in-from-bottom duration-500">
+        <div className="max-w-4xl mx-auto space-y-5 animate-in fade-in slide-in-from-bottom duration-500">
 
-            {/* Lien retour */}
             <Link
-                href="/vendeur/vehicles"
+                href="/partenaire/mongarage"
                 className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-800 transition-colors"
             >
                 <ArrowLeft className="h-4 w-4" />
                 Retour à mes véhicules
             </Link>
 
-            {/* ── Titre + badges de statut ──────────────────────────────────── */}
             <div className="flex flex-col gap-2">
                 <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-900">
                     {vehiculeData.description?.marque} {vehiculeData.description?.modele}
@@ -210,7 +193,6 @@ const MonVehiculeDetailPage = () => {
                 </div>
             </div>
 
-            {/* ── Alerte rejet — affichée seulement si status_validation === 'rejetee' ── */}
             {isRejete && (
                 <div className="flex gap-3 p-4 rounded-xl bg-red-50 border border-red-200">
                     <div className="shrink-0 w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center">
@@ -231,7 +213,6 @@ const MonVehiculeDetailPage = () => {
                 </div>
             )}
 
-            {/* ── Galerie photos ─────────────────────────────────────────────── */}
             {photos.length > 0 ? (
                 <div>
                     <h2 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">
@@ -316,7 +297,7 @@ const MonVehiculeDetailPage = () => {
                             Corrigez les informations ou ajoutez des photos depuis la liste de vos véhicules.
                         </p>
                     </div>
-                    <Link href="/vendeur/vehicles">
+                    <Link href="/partenaire/mongarage">
                         <Button
                             variant="outline"
                             size="sm"

@@ -257,6 +257,8 @@ export interface vehicule {
   creator?: { id: string; fullname: string; email?: string; role?: string; adresse?: string }; // vendeur du véhicule
   description: VehiculeDescription;
   photos?: VehiculePhotos[]; // photos du véhicule (relation Eloquent chargée avec 'photos')
+  description_validation?: string | null
+
 }
 
 export interface VehiculeStats{
