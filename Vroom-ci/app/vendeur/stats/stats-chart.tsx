@@ -57,10 +57,10 @@ export function StatsChart({ data }: StatsChartProps) {
             <CardHeader className="pb-2">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <CardTitle className="text-lg font-semibold text-black">
+                        <CardTitle className="text-lg font-semibold">
                             Performances mensuelles
                         </CardTitle>
-                        <p className="text-xs text-black/60 mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                             Évolution sur les 12 derniers mois.
                         </p>
                     </div>
@@ -79,7 +79,7 @@ export function StatsChart({ data }: StatsChartProps) {
                                 className={`h-7 text-xs px-3 cursor-pointer rounded-md ${
                                     mode === item.value
                                         ? "bg-zinc-900 text-white shadow-sm hover:bg-zinc-800 hover:text-white"
-                                        : "text-black/60 hover:text-black"
+                                        : "text-muted-foreground hover:text-foreground"
                                 }`}
                             >
                                 {item.label}

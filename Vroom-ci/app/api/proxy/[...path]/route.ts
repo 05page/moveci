@@ -84,6 +84,12 @@ const ALLOWED_PATHS = [
   "/conversations",         // /conversations, /conversations/:id/messages
   "/crm",                   // /crm/clients, /crm/clients/:id, /crm/notes/:id
   "/users",                 // /users/:id/profil
+  "/support",               // /support/mes-tickets, /support/post-tickets
+  "/formations",            // /formations, /formations/:id
+  "/abonnements",           // /abonnements/plans, /abonnements/mon-abonnement
+  "/tendances",             // /tendances
+  "/geo",                   // /geo/proches, /geo/position
+  "/logout",                // /logout
 ]
 
 async function proxyToLaravel(request: NextRequest) {
