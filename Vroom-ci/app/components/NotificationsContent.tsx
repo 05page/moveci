@@ -20,7 +20,13 @@ import { cn } from "@/src/lib/utils"
  * Retourne la route vers laquelle naviguer quand l'utilisateur clique
  * sur une notification, selon son type et son rôle.
  * Retourne null si aucune redirection pertinente.
+ *
+ * Les vrais rôles partenaire dans le système sont "concessionnaire" et "auto_ecole"
+ * (pas "partenaire") — ce helper évite les faux négatifs.
  */
+const isPartenaire = (role?: string) =>
+    role === "concessionnaire" || role === "auto_ecole"
+
 function getNotificationLink(
     type: Notifications["type"],
     role?: string,
@@ -29,37 +35,48 @@ function getNotificationLink(
 ): string | null {
     switch (type) {
         case "transaction":
-            return role === "vendeur" ? "/vendeur/transactions" : role === "partenaire" ? null : "/client/transactions"
+            if (role === "vendeur") return "/vendeur/transactions"
+            if (isPartenaire(role)) return null  // pas de page partenaire/transactions
+            return "/client/transactions"
+
         case "rdv":
             if (role === "vendeur") return "/vendeur/rdv"
-            if (role === "partenaire") return "/partenaire/rdv"
+            if (isPartenaire(role)) return "/partenaire/rdv"
             return "/client/rdv"
+
         case "formation":
             if (role === "admin") return "/admin/formations"
-            if (partenaireType === "auto_ecole") return "/partenaire/formations"
-            if (data?.formation_id) return `/partenaire/formations/${data.formation_id}`
+            if (role === "auto_ecole" || partenaireType === "auto_ecole") return "/partenaire/formations"
+            if (isPartenaire(role) && data?.formation_id) return `/partenaire/formations/${data.formation_id}`
+            if (isPartenaire(role)) return "/partenaire/formations"
             return "/client/formations"
+
         case "tendance":
-            if (partenaireType === "auto_ecole") return "/partenaire/formations"
-            if (role === "partenaire") return "/partenaire/trend"
+            if (role === "auto_ecole" || partenaireType === "auto_ecole") return "/partenaire/formations"
+            if (isPartenaire(role)) return "/partenaire/trend"
             return "/vendeur/vehicles"
+
         case "moderation":
             if (role === "admin") {
                 if (data?.signalement_id) return `/admin/signalements?open=${data.signalement_id}`
                 if (data?.vehicule_id) return `/admin/vehicules?open=${data.vehicule_id}`
                 return "/admin/vehicules"
             }
-            if (role === "partenaire" && data?.vehicule_id) return `/partenaire/mongarage/${data.vehicule_id}`
+            if (isPartenaire(role) && data?.vehicule_id) return `/partenaire/mongarage/${data.vehicule_id}`
             if (data?.vehicule_id) return `/vendeur/vehicles/${data.vehicule_id}`
-            // Notification de modération liée au compte (suspension/bannissement/réactivation),
-            // sans vehicule_id — aucune page dédiée à rediriger, on n'affiche pas de lien.
+            // Modération liée au compte (suspension/bannissement) — pas de page dédiée
             return null
+
         case "support":
             return role === "admin" ? "/admin/support" : null
+
         case "alerte_vehicule":
             return "/client/favorites"
+
         case "reservation":
-            return role === "partenaire" ? "/partenaire/rdv" : "/client/reservations"
+            if (isPartenaire(role)) return "/partenaire/rdv"
+            return "/client/reservations"
+
         default:
             return null
     }
