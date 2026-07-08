@@ -1,10 +1,11 @@
 "use client"
 
-import { Fragment, useRef, useState } from "react"
+import { Fragment, useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { toast } from "sonner"
-import { cn } from "@/src/lib/utils"
-import { api, ApiError } from "@/src/lib/api"
+import { cn, getPhotoUrl } from "@/src/lib/utils"
+import { api } from "@/src/lib/api"
+import { vehicule } from "@/src/types"
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -28,13 +29,12 @@ import {
     ShoppingBag, Key, Check, ChevronLeft, ChevronRight,
     ImagePlus, X, Send, Camera, Eye,
 } from "lucide-react"
-import { Progress } from "@/components/ui/progress";
-import imageCompression from "browser-image-compression";
 
 interface EditVehiculeProps {
     isOpen: boolean
     onClose: () => void
     onSubmit?: () => void
+    vehicule: vehicule
 }
 
 interface FormData {
@@ -52,10 +52,7 @@ interface FormData {
     description: string
     equipements: string[]
     dateDisponibilite: Date | undefined
-    dateDebutLocation: string
-    dateFinLocation: string
     prix: string
-    prixParJour: string
     negociable: boolean
 }
 
@@ -84,6 +81,18 @@ const ANNEES = Array.from({ length: 16 }, (_, i) => String(2025 - i))
 const CARBURANTS = ["Essence", "Diesel", "Hybride", "Électrique", "GPL"]
 const TRANSMISSIONS = ["Manuelle", "Automatique"]
 
+const COULEURS = [
+    { name: "Noir", hex: "#1a1a1a" },
+    { name: "Blanc", hex: "#f5f5f5" },
+    { name: "Gris", hex: "#808080" },
+    { name: "Rouge", hex: "#dc2626" },
+    { name: "Bleu", hex: "#2563eb" },
+    { name: "Vert", hex: "#16a34a" },
+    { name: "Marron", hex: "#92400e" },
+    { name: "Beige", hex: "#d4a76a" },
+    { name: "Argent", hex: "#c0c0c0" },
+]
+
 const EQUIPEMENTS = [
     { id: "climatisation", label: "Climatisation" },
     { id: "gps", label: "GPS / Navigation" },
@@ -105,11 +114,10 @@ const EQUIPEMENTS = [
     { id: "carplay_android", label: "Apple CarPlay / Android Auto" },
 ]
 
-export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
+export function EditVehicle({ isOpen, onClose, onSubmit, vehicule }: EditVehiculeProps) {
     const [currentStep, setCurrentStep] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const [periodeChoisie, setPeriodeChoisie] = useState<"maintenant" | "1_semaine" | "2_semaines" | "1_mois" | "personnalisee" | null>(null)
 
     const [formData, setFormData] = useState<FormData>({
         typePublication: "",
@@ -126,10 +134,7 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
         description: "",
         equipements: [],
         dateDisponibilite: undefined,
-        dateDebutLocation: "",
-        dateFinLocation: "",
         prix: "",
-        prixParJour: "",
         negociable: false,
     })
 
@@ -146,6 +151,33 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
     ]
     const allowedPhotoExtensions = ["jpg", "jpeg", "png", "gif", "svg", "webp"]
 
+    useEffect(() => {
+        if (!isOpen) return
+        setCurrentStep(1)
+        setFormData({
+            typePublication: vehicule.post_type ?? "",
+            typeVehicule: (vehicule.type as "neuf" | "occasion" | "") ?? "",
+            marque: vehicule.description?.marque ?? "",
+            modele: vehicule.description?.modele ?? "",
+            annee: String(vehicule.description?.annee ?? ""),
+            kilometrage: String(vehicule.description?.kilometrage ?? ""),
+            carburant: vehicule.description?.carburant ?? "",
+            transmission: vehicule.description?.transmission ?? "",
+            couleur: vehicule.description?.couleur ?? "",
+            nombrePortes: String(vehicule.description?.nombre_portes ?? ""),
+            nombrePlaces: String(vehicule.description?.nombre_places ?? ""),
+            description: "",
+            equipements: vehicule.description?.equipements ?? [],
+            dateDisponibilite: vehicule.date_disponibilite ? new Date(vehicule.date_disponibilite) : undefined,
+            prix: String(vehicule.prix ?? ""),
+            negociable: vehicule.negociable ?? false,
+        })
+        setPhotoUrls(
+            vehicule.photos?.map(p => getPhotoUrl(p.path)) ?? []
+        )
+
+    }, [isOpen])
+
     const updateFormData = <K extends keyof FormData>(field: K, value: FormData[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }))
     }
@@ -153,60 +185,30 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
     const toggleEquipement = (id: string) => {
         setFormData(prev => ({
             ...prev,
-            equipements: prev.equipements.includes(id)
-                ? prev.equipements.filter(e => e !== id)
-                : [...prev.equipements, id],
+            equipements: prev.equipements.includes(id) ?
+                prev.equipements.filter(e => e !== id) :
+                [...prev.equipements, id]
         }))
     }
 
-    const handlePhotoAdd = async(e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAddPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || [])
-        if (photos.length + files.length > 10) {
+        //Vérifier le nombre d'image
+        if (photos.length > files.length) {
             toast.error("Maximum 10 photos autorisées")
             return
         }
-
         const validFiles = files.filter((file) => {
-            const ext = file.name.split(".").pop()?.toLowerCase() ?? ""
-            return allowedPhotoMimeTypes.includes(file.type) || allowedPhotoExtensions.includes(ext)
+            const extensions = file.name.split(".").pop()?.toLowerCase() ?? ""
+            return allowedPhotoMimeTypes.includes(file.type) || allowedPhotoExtensions.includes(extensions)
         })
 
         if (validFiles.length < files.length) {
             toast.error("Certaines photos ont ete ignorees (formats autorises: JPG, PNG, GIF, SVG, WEBP)")
         }
 
-        const compressionOptions = {
-            maxSizeMB: 0.8,
-            maxWidthOrHeight: 1920,
-            useWebWorker: true
-        }
-
-        const toastId = "compression-progress"
-        const showProgress = (done: number) => {
-            toast.custom(
-                () => (
-                    <div className="flex flex-col gap-2 bg-white border rounded-lg p-4 shadow-md w-72">
-                        <p className="text-sm font-medium">Compression des photos... ({done}/{validFiles.length})</p>
-                        <Progress value={Math.round((done / validFiles.length) * 100)} />
-                    </div>
-                ),
-                {id: toastId, duration: Infinity}
-            )
-        }
-
-        showProgress(0)
-        const compressedFiles: File[] = []
-        let i = 0
-        for(const file of validFiles){
-            const result = await imageCompression(file, compressionOptions)
-            compressedFiles.push(result)
-            i++
-            showProgress(i)
-        }
-
-        toast.dismiss(toastId)
-        setPhotos(prev => [...prev, ...compressedFiles])
-        setPhotoUrls(prev => [...prev, ...compressedFiles.map(f => URL.createObjectURL(f))])
+        setPhotos(prev => [...prev, ...validFiles])
+        setPhotoUrls(prev => [...prev, ...validFiles.map(f => URL.createObjectURL(f))])
     }
 
     const removePhoto = (index: number) => {
@@ -246,18 +248,11 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                     toast.error("Veuillez sélectionner une date de disponibilité")
                     return false
                 }
-                if (formData.typePublication === "location" && (!formData.dateDebutLocation || !formData.dateFinLocation)) {
-                    toast.error("Veuillez définir les dates de location")
-                    return false
-                }
+
                 return true
             case 5:
                 if (!formData.prix) {
                     toast.error("Veuillez indiquer le prix")
-                    return false
-                }
-                if (formData.typePublication === "location" && !formData.prixParJour) {
-                    toast.error("Veuillez indiquer le prix par jour")
                     return false
                 }
                 return true
@@ -270,53 +265,62 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
         if (validateStep(currentStep)) setCurrentStep(prev => Math.min(prev + 1, 5))
     }
 
-    const goToPrev = () => setCurrentStep(prev => Math.max(prev - 1, 1))
+    const goToPrev = () => {
+        setCurrentStep(prev => Math.max(prev - 1, 1))
+    }
 
     const handleSubmit = async () => {
         if (!validateStep(5)) return
         setIsSubmitting(true)
-
-        // Construire le FormData pour l'envoi multipart (champs + photos)
-        const fd = new FormData()
-        fd.append("post_type", formData.typePublication)
-        fd.append("type", formData.typeVehicule || "occasion")
-        fd.append("prix", formData.prix)
-        fd.append("marque", formData.marque)
-        fd.append("modele", formData.modele)
-        fd.append("annee", formData.annee)
-        if (formData.kilometrage)   fd.append("kilometrage", formData.kilometrage)
-        if (formData.carburant)     fd.append("carburant", formData.carburant)
-        if (formData.transmission)  fd.append("transmission", formData.transmission)
-        if (formData.couleur)       fd.append("couleur", formData.couleur)
-        if (formData.nombrePortes)  fd.append("nombre_portes", formData.nombrePortes)
-        if (formData.nombrePlaces)  fd.append("nombre_places", formData.nombrePlaces)
-
-        // Date de disponibilité selon le type de publication
-        if (formData.typePublication === "vente" && formData.dateDisponibilite) {
-            fd.append("date_disponibilite", formData.dateDisponibilite.toISOString().split("T")[0])
-        } else if (formData.typePublication === "location" && formData.dateDebutLocation) {
-            fd.append("date_disponibilite", formData.dateDebutLocation)
-        }
-
-        // Équipements : chaque valeur dans son propre slot d'array
-        formData.equipements.forEach(eq => fd.append("equipements[]", eq))
-
-        // Photos
-        photos.forEach(photo => fd.append("photos[]", photo))
-
-        const toastId = toast.loading("Publication de l'annonce en cours...")
+        const toastId = toast.loading("Modification de l'annonce en cours...")
         try {
-            await api.upload("/vehicules/post-vehicule", fd)
+            // FormData (classe du navigateur) permet d'envoyer du texte ET des fichiers
+            // api.put() n'envoie que du JSON → impossible d'y mettre des photos
+            // api.upload() envoie un FormData en POST → PHP peut lire les fichiers
+            const form = new FormData()
+
+            // _method: PUT dit à Laravel "traite cette requête POST comme un PUT"
+            // car PHP ne lit pas les fichiers sur les requêtes PUT
+            form.append('_method', 'PUT')
+
+            // Les champs texte — .append() n'accepte que des strings
+            // donc on convertit les nombres et booléens explicitement
+            form.append('post_type', formData.typePublication)
+            form.append('type', formData.typeVehicule)
+            form.append('prix', String(Number(formData.prix)))
+            form.append('negociable', formData.negociable ? '1' : '0')
+
+            if (formData.typePublication === "vente" && formData.dateDisponibilite) {
+                form.append('date_disponibilite', formData.dateDisponibilite.toISOString().split("T")[0])
+            }
+
+            form.append('marque', formData.marque)
+            form.append('modele', formData.modele)
+            if (formData.annee) form.append('annee', formData.annee)
+            if (formData.carburant) form.append('carburant', formData.carburant)
+            if (formData.transmission) form.append('transmission', formData.transmission)
+            if (formData.kilometrage) form.append('kilometrage', formData.kilometrage)
+            if (formData.couleur) form.append('couleur', formData.couleur)
+            if (formData.nombrePortes) form.append('nombre_portes', formData.nombrePortes)
+            if (formData.nombrePlaces) form.append('nombre_places', formData.nombrePlaces)
+
+            // Les tableaux s'envoient avec [] dans le nom du champ
+            formData.equipements.forEach(eq => form.append('equipements[]', eq))
+
+            // Les photos — chaque fichier est ajouté séparément avec photos[]
+            photos.forEach(photo => form.append('photos[]', photo))
+
+            await api.upload(`/vehicules/${vehicule.id}`, form)
             toast.dismiss(toastId)
-            toast.success("Annonce soumise avec succès !", {
-                description: `Votre ${formData.marque} ${formData.modele} est en attente de validation.`,
+            toast.success("Annonce modifiée avec succès !", {
+                description: `${formData.marque} ${formData.modele} a été mis à jour.`,
             })
             onSubmit?.()
             onClose()
-        } catch (err) {
+        } catch (err: unknown) {
             toast.dismiss(toastId)
-            // Le backend peut rejeter via Gemini (données incohérentes) ou validation classique
-            toast.error(err instanceof ApiError ? err.message : "Échec de la publication")
+            const message = err instanceof Error ? err.message : "Erreur lors de la modification"
+            toast.error(message)
         } finally {
             setIsSubmitting(false)
         }
@@ -327,11 +331,11 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
             <DialogContent className="max-w-7xl sm:max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden p-0 gap-0 rounded-2xl border-border/40">
                 <DialogHeader className="p-5 pb-0">
                     <DialogTitle className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#efbf04]/10 flex items-center justify-center">
-                            <Car className="h-5 w-5 text-[#efbf04]" />
+                        <div className="w-10 h-10 rounded-xl bg-zinc-900/10 flex items-center justify-center">
+                            <Car className="h-5 w-5 text-zinc-700" />
                         </div>
                         <div>
-                            <span className="text-lg font-bold">Ajouter un véhicule</span>
+                            <span className="text-lg font-bold">Modifier l&apos;annonce</span>
                             <p className="text-sm text-muted-foreground font-normal">Étape {currentStep} sur 5</p>
                         </div>
                     </DialogTitle>
@@ -348,18 +352,18 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                                     className={cn(
                                         "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                                         currentStep === step.id
-                                            ? "bg-[#efbf04]/10 text-[#efbf04]"
+                                            ? "bg-zinc-900/10 text-zinc-700"
                                             : currentStep > step.id
-                                                ? "text-[#efbf04] cursor-pointer hover:bg-[#efbf04]/5"
+                                                ? "text-zinc-700 cursor-pointer hover:bg-zinc-900/5"
                                                 : "text-muted-foreground",
                                     )}
                                 >
                                     <div className={cn(
                                         "w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold",
                                         currentStep > step.id
-                                            ? "bg-[#efbf04] text-white"
+                                            ? "bg-zinc-900 text-white"
                                             : currentStep === step.id
-                                                ? "bg-[#efbf04]/20 text-[#efbf04] ring-1 ring-[#efbf04]/30"
+                                                ? "bg-zinc-900/20 text-zinc-700 ring-1 ring-zinc-900/30"
                                                 : "bg-muted/50 text-muted-foreground",
                                     )}>
                                         {currentStep > step.id ? <Check className="h-3 w-3" /> : step.id}
@@ -369,7 +373,7 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                                 {index < STEPS.length - 1 && (
                                     <div className={cn(
                                         "flex-1 h-0.5 rounded-full",
-                                        currentStep > step.id ? "bg-[#efbf04]" : "bg-border/60",
+                                        currentStep > step.id ? "bg-zinc-900" : "bg-border/60",
                                     )} />
                                 )}
                             </Fragment>
@@ -383,84 +387,84 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
 
                         {/* ── Step 1: Type de publication ── */}
                         {currentStep === 1 && (
-                            <div className="space-y-3">
-                                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
-                                    Type de publication
-                                </h3>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => updateFormData("typePublication", "vente")}
-                                        className={cn(
-                                            "relative p-5 rounded-xl border-2 text-left transition-all",
-                                            formData.typePublication === "vente"
-                                                ? "border-[#efbf04] bg-[#efbf04]/5"
-                                                : "border-border/40 hover:border-[#efbf04]/30",
-                                        )}
-                                    >
-                                        {formData.typePublication === "vente" && (
-                                            <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#efbf04] flex items-center justify-center">
-                                                <Check className="h-3 w-3 text-white" />
-                                            </div>
-                                        )}
-                                        <div className="w-10 h-10 rounded-xl bg-[#efbf04]/10 flex items-center justify-center mb-3">
-                                            <ShoppingBag className="h-5 w-5 text-[#efbf04]" />
-                                        </div>
-                                        <h4 className="font-bold text-sm mb-1">Vente</h4>
-                                        <p className="text-xs text-muted-foreground">Mettre en vente</p>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => updateFormData("typePublication", "location")}
-                                        className={cn(
-                                            "relative p-5 rounded-xl border-2 text-left transition-all",
-                                            formData.typePublication === "location"
-                                                ? "border-[#efbf04] bg-[#efbf04]/5"
-                                                : "border-border/40 hover:border-[#efbf04]/30",
-                                        )}
-                                    >
-                                        {formData.typePublication === "location" && (
-                                            <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#efbf04] flex items-center justify-center">
-                                                <Check className="h-3 w-3 text-white" />
-                                            </div>
-                                        )}
-                                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center mb-3">
-                                            <Key className="h-5 w-5 text-blue-600" />
-                                        </div>
-                                        <h4 className="font-bold text-sm mb-1">Location</h4>
-                                        <p className="text-xs text-muted-foreground">Proposer en location</p>
-                                    </button>
-                                </div>
-
-                                {/* Type de véhicule */}
-                                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider pt-2">
-                                    État du véhicule
-                                </h3>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {(["neuf", "occasion"] as const).map(type => (
+                            <div className="space-y-5">
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                                        Type de publication
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-3">
                                         <button
-                                            key={type}
                                             type="button"
-                                            onClick={() => updateFormData("typeVehicule", type)}
+                                            onClick={() => updateFormData("typePublication", "vente")}
                                             className={cn(
-                                                "relative p-4 rounded-xl border-2 text-left transition-all",
-                                                formData.typeVehicule === type
-                                                    ? "border-[#efbf04] bg-[#efbf04]/5"
-                                                    : "border-border/40 hover:border-[#efbf04]/30",
+                                                "relative p-5 rounded-xl border-2 text-left transition-all",
+                                                formData.typePublication === "vente"
+                                                    ? "border-zinc-900 bg-zinc-900/5"
+                                                    : "border-border/40 hover:border-zinc-900/30",
                                             )}
                                         >
-                                            {formData.typeVehicule === type && (
-                                                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#efbf04] flex items-center justify-center">
+                                            {formData.typePublication === "vente" && (
+                                                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-zinc-900 flex items-center justify-center">
                                                     <Check className="h-3 w-3 text-white" />
                                                 </div>
                                             )}
-                                            <h4 className="font-bold text-sm capitalize">{type}</h4>
-                                            <p className="text-xs text-muted-foreground mt-0.5">
-                                                {type === "neuf" ? "0 km, jamais immatriculé" : "Déjà utilisé"}
-                                            </p>
+                                            <div className="w-10 h-10 rounded-xl bg-zinc-900/10 flex items-center justify-center mb-3">
+                                                <ShoppingBag className="h-5 w-5 text-zinc-700" />
+                                            </div>
+                                            <h4 className="font-bold text-sm mb-1">Vente</h4>
+                                            <p className="text-xs text-muted-foreground">Mettre en vente</p>
                                         </button>
-                                    ))}
+
+                                        <button
+                                            type="button"
+                                            onClick={() => updateFormData("typePublication", "location")}
+                                            className={cn(
+                                                "relative p-5 rounded-xl border-2 text-left transition-all",
+                                                formData.typePublication === "location"
+                                                    ? "border-zinc-900 bg-zinc-900/5"
+                                                    : "border-border/40 hover:border-zinc-900/30",
+                                            )}
+                                        >
+                                            {formData.typePublication === "location" && (
+                                                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-zinc-900 flex items-center justify-center">
+                                                    <Check className="h-3 w-3 text-white" />
+                                                </div>
+                                            )}
+                                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center mb-3">
+                                                <Key className="h-5 w-5 text-blue-600" />
+                                            </div>
+                                            <h4 className="font-bold text-sm mb-1">Location</h4>
+                                            <p className="text-xs text-muted-foreground">Proposer en location</p>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                                        État du véhicule
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {(["neuf", "occasion"] as const).map((t) => (
+                                            <button
+                                                key={t}
+                                                type="button"
+                                                onClick={() => updateFormData("typeVehicule", t)}
+                                                className={cn(
+                                                    "relative p-4 rounded-xl border-2 text-left transition-all",
+                                                    formData.typeVehicule === t
+                                                        ? "border-zinc-900 bg-zinc-900/5"
+                                                        : "border-border/40 hover:border-zinc-900/30",
+                                                )}
+                                            >
+                                                {formData.typeVehicule === t && (
+                                                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-zinc-900 flex items-center justify-center">
+                                                        <Check className="h-3 w-3 text-white" />
+                                                    </div>
+                                                )}
+                                                <h4 className="font-bold text-sm capitalize">{t}</h4>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -547,13 +551,24 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
 
                                 {/* Couleur */}
                                 <div className="space-y-1.5">
+                                    <Label className="text-xs">Couleur</Label>
                                     <div className="flex flex-wrap gap-2">
-                                    <Label className="text-xs">Couleur <span className="text-red-500">*</span></Label>
-                                        <Input
-                                            placeholder="Ex: Rouge, Vert..."
-                                            value={formData.couleur}
-                                            onChange={e => updateFormData("couleur", e.target.value)}
-                                        />
+                                        {COULEURS.map(c => (
+                                            <button
+                                                key={c.name}
+                                                type="button"
+                                                onClick={() => updateFormData("couleur", c.name)}
+                                                className={cn(
+                                                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all",
+                                                    formData.couleur === c.name
+                                                        ? "border-zinc-900 bg-zinc-900/5 ring-1 ring-zinc-900/30"
+                                                        : "border-border/40 hover:border-zinc-900/30",
+                                                )}
+                                            >
+                                                <span className="w-3.5 h-3.5 rounded-full border border-border/60 shrink-0" style={{ backgroundColor: c.hex }} />
+                                                {c.name}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 
@@ -607,7 +622,7 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                                         onKeyDown={e => { if (e.key === "Enter") fileInputRef.current?.click() }}
                                         role="button"
                                         tabIndex={0}
-                                        className="border-2 border-dashed border-border/60 rounded-xl p-5 text-center hover:border-[#efbf04]/50 hover:bg-[#efbf04]/5 transition-all cursor-pointer"
+                                        className="border-2 border-dashed border-border/60 rounded-xl p-5 text-center hover:border-zinc-900/50 hover:bg-zinc-900/5 transition-all cursor-pointer"
                                     >
                                         <ImagePlus className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                                         <p className="text-xs font-medium">Cliquez pour ajouter des photos</p>
@@ -618,7 +633,7 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                                             accept=".jpg,.jpeg,.png,.gif,.svg,.webp,image/*"
                                             multiple
                                             className="hidden"
-                                            onChange={handlePhotoAdd}
+                                            onChange={handleAddPhoto}
                                         />
                                     </div>
 
@@ -635,7 +650,7 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                                                         <X className="h-3 w-3 md:h-2.5 md:w-2.5 text-white" />
                                                     </button>
                                                     {i === 0 && (
-                                                        <Badge className="absolute bottom-1 left-1 bg-[#efbf04] text-white text-[8px] rounded-full px-1.5 py-0">
+                                                        <Badge className="absolute bottom-1 left-1 bg-zinc-900 text-white text-[8px] rounded-full px-1.5 py-0">
                                                             Principale
                                                         </Badge>
                                                     )}
@@ -655,7 +670,7 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                                         Équipements & Options
                                     </h3>
                                     {formData.equipements.length > 0 && (
-                                        <Badge className="bg-[#efbf04]/10 text-[#efbf04] border-[#efbf04]/20 rounded-full text-xs">
+                                        <Badge className="bg-zinc-900/10 text-zinc-700 border-zinc-900/20 rounded-full text-xs">
                                             {formData.equipements.length} sélectionnés
                                         </Badge>
                                     )}
@@ -671,13 +686,13 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                                                 className={cn(
                                                     "flex items-center gap-2.5 p-2.5 rounded-lg border text-left text-xs transition-all",
                                                     selected
-                                                        ? "border-[#efbf04]/40 bg-[#efbf04]/10 text-[#efbf04] dark:text-[#efbf04]"
-                                                        : "border-border/40 hover:border-[#efbf04]/20 hover:bg-muted/30",
+                                                        ? "border-zinc-900/40 bg-zinc-900/10 text-zinc-700 dark:text-zinc-400"
+                                                        : "border-border/40 hover:border-zinc-900/20 hover:bg-muted/30",
                                                 )}
                                             >
                                                 <div className={cn(
                                                     "w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all",
-                                                    selected ? "bg-[#efbf04] border-[#efbf04] text-white" : "border-border/60",
+                                                    selected ? "bg-zinc-900 border-zinc-900 text-white" : "border-border/60",
                                                 )}>
                                                     {selected && <Check className="h-2.5 w-2.5" />}
                                                 </div>
@@ -695,106 +710,24 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                                 <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
                                     {formData.typePublication === "vente" ? "Disponibilité" : "Période de location"}
                                 </h3>
-
-                                {formData.typePublication === "vente" ? (
-                                    <div className="space-y-3">
-                                        {/* Sélection rapide de période */}
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                            {([
-                                                { id: "maintenant", label: "Maintenant", days: 0 },
-                                                { id: "1_semaine", label: "1 semaine", days: 7 },
-                                                { id: "2_semaines", label: "2 semaines", days: 14 },
-                                                { id: "1_mois", label: "1 mois", days: 30 },
-                                            ] as const).map(({ id, label, days }) => (
-                                                <button
-                                                    key={id}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setPeriodeChoisie(id)
-                                                        const date = new Date()
-                                                        date.setDate(date.getDate() + days)
-                                                        updateFormData("dateDisponibilite", date)
-                                                    }}
-                                                    className={cn(
-                                                        "rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
-                                                        periodeChoisie === id
-                                                            ? "bg-[#efbf04] text-black border-[#efbf04]"
-                                                            : "border-border/40 hover:bg-muted"
-                                                    )}
-                                                >
-                                                    {label}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {/* Option date personnalisée */}
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setPeriodeChoisie("personnalisee")
-                                                updateFormData("dateDisponibilite", undefined)
-                                            }}
-                                            className={cn(
-                                                "w-full rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
-                                                periodeChoisie === "personnalisee"
-                                                    ? "bg-[#efbf04] text-black border-[#efbf04]"
-                                                    : "border-border/40 hover:bg-muted"
-                                            )}
-                                        >
-                                            Date personnalisée
-                                        </button>
-
-                                        {/* Calendar — uniquement si "personnalisée" sélectionné */}
-                                        {periodeChoisie === "personnalisee" && (
-                                            <div className="flex justify-center">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={formData.dateDisponibilite}
-                                                    onSelect={(date: Date | undefined) => updateFormData("dateDisponibilite", date)}
-                                                    disabled={(date: Date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                                    className="rounded-xl border border-border/40"
-                                                />
-                                            </div>
-                                        )}
-
-                                        {/* Badge récapitulatif */}
-                                        {formData.dateDisponibilite && (
-                                            <div className="text-center">
-                                                <Badge variant="outline" className="bg-[#efbf04]/10 text-[#efbf04] border-[#efbf04]/20 rounded-full px-3 py-1">
-                                                    Disponible à partir du {formatDate(formData.dateDisponibilite)}
-                                                </Badge>
-                                            </div>
-                                        )}
+                                <div className="space-y-3">
+                                    <div className="flex justify-center">
+                                        <Calendar
+                                            mode="single"
+                                            selected={formData.dateDisponibilite}
+                                            onSelect={(date: Date | undefined) => updateFormData("dateDisponibilite", date)}
+                                            disabled={(date: Date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                            className="rounded-xl border border-border/40"
+                                        />
                                     </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs">Date de début <span className="text-red-500">*</span></Label>
-                                                <Input
-                                                    type="date"
-                                                    value={formData.dateDebutLocation}
-                                                    onChange={e => updateFormData("dateDebutLocation", e.target.value)}
-                                                />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs">Date de fin <span className="text-red-500">*</span></Label>
-                                                <Input
-                                                    type="date"
-                                                    value={formData.dateFinLocation}
-                                                    onChange={e => updateFormData("dateFinLocation", e.target.value)}
-                                                />
-                                            </div>
+                                    {formData.dateDisponibilite && (
+                                        <div className="text-center">
+                                            <Badge variant="outline" className="bg-zinc-900/10 text-zinc-700 border-zinc-900/20 rounded-full px-3 py-1">
+                                                Disponible à partir du {formatDate(formData.dateDisponibilite)}
+                                            </Badge>
                                         </div>
-                                        {formData.dateDebutLocation && formData.dateFinLocation && (
-                                            <div className="text-center">
-                                                <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 rounded-full px-3 py-1">
-                                                    Du {new Date(formData.dateDebutLocation).toLocaleDateString("fr-FR")} au {new Date(formData.dateFinLocation).toLocaleDateString("fr-FR")}
-                                                </Badge>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
                         )}
 
@@ -822,20 +755,6 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                                                 <p className="text-[10px] text-muted-foreground">{formatMontant(formData.prix)} FCFA</p>
                                             )}
                                         </div>
-                                        {formData.typePublication === "location" && (
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs">Prix par jour (FCFA) <span className="text-red-500">*</span></Label>
-                                                <Input
-                                                    type="number"
-                                                    placeholder="Ex: 25000"
-                                                    value={formData.prixParJour}
-                                                    onChange={e => updateFormData("prixParJour", e.target.value)}
-                                                />
-                                                {formData.prixParJour && (
-                                                    <p className="text-[10px] text-muted-foreground">{formatMontant(formData.prixParJour)} FCFA / jour</p>
-                                                )}
-                                            </div>
-                                        )}
                                     </div>
 
                                     <div className="flex items-center gap-2.5 p-3 rounded-xl border border-border/40 bg-muted/20">
@@ -901,16 +820,9 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                                         </span>
 
                                         <span className="text-muted-foreground">Disponibilité</span>
-                                        <span className="font-medium">
-                                            {formData.typePublication === "vente"
-                                                ? formatDate(formData.dateDisponibilite)
-                                                : formData.dateDebutLocation && formData.dateFinLocation
-                                                    ? `${new Date(formData.dateDebutLocation).toLocaleDateString("fr-FR")} — ${new Date(formData.dateFinLocation).toLocaleDateString("fr-FR")}`
-                                                    : "—"}
-                                        </span>
 
                                         <span className="text-muted-foreground">Prix</span>
-                                        <span className="font-bold text-[#efbf04]">{formatMontant(formData.prix)} FCFA</span>
+                                        <span className="font-bold text-zinc-700">{formatMontant(formData.prix)} FCFA</span>
 
                                         <span className="text-muted-foreground">Photos</span>
                                         <span className="font-medium">{photos.length} photo(s)</span>
@@ -941,7 +853,7 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                         <Button
                             size="sm"
                             onClick={goToNext}
-                            className="gap-1.5 bg-[#efbf04] hover:bg-[#d4aa03] text-white font-bold cursor-pointer rounded-lg"
+                            className="gap-1.5 bg-zinc-900 hover:bg-zinc-700 text-white font-bold cursor-pointer rounded-lg"
                         >
                             Suivant
                             <ChevronRight className="h-3.5 w-3.5" />
@@ -951,7 +863,7 @@ export function AddVehicule({ isOpen, onClose, onSubmit }: EditVehiculeProps) {
                             size="sm"
                             onClick={handleSubmit}
                             disabled={isSubmitting}
-                            className="gap-1.5 bg-[#efbf04] hover:bg-[#d4aa03] text-white font-bold cursor-pointer rounded-lg px-6"
+                            className="gap-1.5 bg-zinc-900 hover:bg-zinc-700 text-white font-bold cursor-pointer rounded-lg px-6"
                         >
                             <Send className="h-3.5 w-3.5" />
                             Enregistrer

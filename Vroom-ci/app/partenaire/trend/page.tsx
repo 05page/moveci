@@ -130,10 +130,6 @@ export default function TrendPage() {
                             : "Évolution du marché automobile ivoirien — données indicatives."}
                     </p>
                 </div>
-                <Badge variant="outline" className="text-xs text-amber-600 border-amber-200 bg-amber-50 shrink-0">
-                    <ArrowUpRight className="h-3 w-3 mr-1" />
-                    Données indicatives
-                </Badge>
             </div>
 
             {/* ── Signaux clés (restent statiques) ── */}
@@ -160,7 +156,7 @@ export default function TrendPage() {
                         </CardHeader>
                         <CardContent>
                             {loading ? (
-                                <Skeleton className="h-[220px] w-full rounded-xl" />
+                                <Skeleton className="h-55 w-full rounded-xl" />
                             ) : (
                                 <ChartContainer config={barConfigAutoEcole} className="min-h-[220px] w-full">
                                     {/* dataKey="type_permis" car le backend retourne ce champ (pas "permis") */}

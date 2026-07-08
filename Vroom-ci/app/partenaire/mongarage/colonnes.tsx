@@ -21,6 +21,7 @@ import { toast } from "sonner"
 import { api } from "@/src/lib/api"
 import { vehicule } from "@/src/types"
 import Link from "next/link"
+import { EditVehicle } from "./editVehicle"
 
 // On réexporte le type réel du backend pour que page.tsx puisse l'importer depuis ici
 export type { vehicule as Vehicules }
@@ -168,6 +169,7 @@ export function makeColonnes(onRefresh: () => void): ColumnDef<vehicule>[] {
 function ActionsCell({ vehicule: v, onRefresh }: { vehicule: vehicule; onRefresh: () => void }) {
     const [deleteOpen, setDeleteOpen] = useState(false)
     const [deleting, setDeleting] = useState(false)
+    const [editingVehicle, setEditingVehicle] = useState<vehicule | null>(null)
 
     const handleDelete = async () => {
         setDeleting(true)
@@ -194,7 +196,7 @@ function ActionsCell({ vehicule: v, onRefresh }: { vehicule: vehicule; onRefresh
                     </Link>
                 </Button>
 
-                <Button variant="ghost" size="icon-xs" className="cursor-pointer">
+                <Button variant="ghost" size="icon-xs" className="cursor-pointer" onClick={() => setEditingVehicle(v)}>
                     <Pencil className="h-3.5 w-3.5" />
                 </Button>
                 <Button
@@ -206,6 +208,15 @@ function ActionsCell({ vehicule: v, onRefresh }: { vehicule: vehicule; onRefresh
                     <Trash2 className="h-3.5 w-3.5" />
                 </Button>
             </div>
+
+            {editingVehicle &&(
+                <EditVehicle 
+                    isOpen={!!editingVehicle}
+                    vehicule={editingVehicle}
+                    onClose={() => setEditingVehicle(null)}
+                    onSubmit={() => { setEditingVehicle(null); onRefresh() }}
+                />
+            )}
 
             <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <AlertDialogContent size="sm">

@@ -31,6 +31,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarMenuSkeleton,
     SidebarProvider,
     SidebarRail,
     SidebarTrigger,
@@ -60,17 +61,21 @@ export default function PartenaireLayout({
     children: React.ReactNode
 }) {
     const pathname = usePathname()
-    const { user } = useUser()
+    const { user, loading } = useUser()
     const isMessagesPage = pathname === "/partenaire/messages"
     const [unreadMessages, setUnreadMessages] = useState(0)
     // Remet le compteur messages à 0 quand l'utilisateur ouvre la page messages
     const displayedUnreadMessages = isMessagesPage ? 0 : unreadMessages
-
+    const router = useRouter()
+    const handleLogout = async () => {
+        await api.logout()
+        router.push("/auth")
+    }
     // Filtre les items selon le rôle : null = visible par tous
+
     const navItems = ALL_NAV_ITEMS.filter(item =>
         item.roles === null || item.roles.includes(user?.role ?? "")
     )
-
     const { unreadCount } = useNotification()
 
     // Charge les conversations, calcule le total non lu, puis s'abonne en temps réel
@@ -109,11 +114,7 @@ export default function PartenaireLayout({
 
     const isAutoEcole = user?.role === "auto_ecole"
     const roleLabel = isAutoEcole ? "Auto-école" : "Concessionnaire"
-    const router = useRouter()
-    const handleLogout = async () => {
-        await api.logout()
-        router.push("/auth")
-    }
+
     return (
         <>
             <SidebarProvider>
@@ -135,20 +136,27 @@ export default function PartenaireLayout({
                             <SidebarGroupLabel>Navigation</SidebarGroupLabel>
                             <SidebarGroupContent>
                                 <SidebarMenu>
-                                    {navItems.map((item) => (
-                                        <SidebarMenuItem key={item.href}>
-                                            <SidebarMenuButton
-                                                asChild
-                                                isActive={pathname === item.href}
-                                                tooltip={item.label}
-                                            >
-                                                <Link href={item.href}>
-                                                    <item.icon />
-                                                    <span>{item.label}</span>
-                                                </Link>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    ))}
+                                    {loading
+                                        ? Array.from({ length: 5 }).map((_, i) => (
+                                            <SidebarMenuItem key={i}>
+                                                <SidebarMenuSkeleton showIcon />
+                                            </SidebarMenuItem>
+                                        ))
+                                        : navItems.map((item) => (
+                                            <SidebarMenuItem key={item.href}>
+                                                <SidebarMenuButton
+                                                    asChild
+                                                    isActive={pathname === item.href}
+                                                    tooltip={item.label}
+                                                >
+                                                    <Link href={item.href}>
+                                                        <item.icon />
+                                                        <span>{item.label}</span>
+                                                    </Link>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        ))
+                                    }
                                 </SidebarMenu>
                             </SidebarGroupContent>
                         </SidebarGroup>
@@ -208,7 +216,7 @@ export default function PartenaireLayout({
                                 <MessageSquare className="h-5 w-5" />
                                 {displayedUnreadMessages > 0 && (
                                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                                        {displayedUnreadMessages  > 9 ? "9+" : displayedUnreadMessages }
+                                        {displayedUnreadMessages > 9 ? "9+" : displayedUnreadMessages}
                                     </span>
                                 )}
                             </Link>
