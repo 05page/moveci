@@ -76,10 +76,12 @@ export function makeColonnes(onRefresh: () => void): ColumnDef<vehicule>[] {
                 const imageUrl = primaryPhoto ? getPhotoUrl(primaryPhoto.path) : null
                 return (
                     <div className="flex items-center gap-3">
-                        {imageUrl
-                            ? <Image src={imageUrl} alt={`${v.description?.marque} ${v.description?.modele}`} fill className="object-cover" unoptimized />
-                        : <div className="w-full h-full flex items-center justify-center"><Car className="h-12 w-12 text-zinc-300" /></div>
-                        }
+                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 overflow-hidden">
+                            {imageUrl
+                                ? <Image src={imageUrl} alt={`${v.description?.marque} ${v.description?.modele}`} fill className="object-cover" unoptimized />
+                                : <Car className="h-5 w-5 text-zinc-500" />
+                            }
+                        </div>
 
                         <div className="min-w-0">
                             <p className="truncate font-semibold text-sm">
