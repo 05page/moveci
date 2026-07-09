@@ -74,6 +74,7 @@ export interface TopVehicle {
   prix: string | number;
   views_count: number;
   description: VehiculeDescription;
+  photos: VehiculePhotos[]
 }
 
 export interface MesVehicules {

@@ -63,7 +63,7 @@ class VendeurStatsController extends Controller
             }
             $mostVuesVehicle = [
                 //liste des 5 véhicules les plus vus
-                'my_top_vehicle_most_vues' => Vehicules::with('description')->where('created_by', $user->id)
+                'my_top_vehicle_most_vues' => Vehicules::with(['description', 'photos'])->where('created_by', $user->id)
                     ->orderByDesc('views_count')
                     ->limit(5)
                     ->get(['id', 'post_type', 'prix', 'statut', 'views_count']),

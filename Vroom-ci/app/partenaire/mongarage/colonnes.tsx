@@ -22,6 +22,8 @@ import { api } from "@/src/lib/api"
 import { vehicule } from "@/src/types"
 import Link from "next/link"
 import { EditVehicle } from "./editVehicle"
+import Image from "next/image";
+import { getPhotoUrl } from "@/src/lib/utils"
 
 // On réexporte le type réel du backend pour que page.tsx puisse l'importer depuis ici
 export type { vehicule as Vehicules }
@@ -43,6 +45,7 @@ const getStatutConfig = (statut: string) => {
  * le callback de rechargement à chaque cellule d'action.
  */
 export function makeColonnes(onRefresh: () => void): ColumnDef<vehicule>[] {
+
     return [
         {
             id: "select",
@@ -69,11 +72,15 @@ export function makeColonnes(onRefresh: () => void): ColumnDef<vehicule>[] {
             header: "Véhicule",
             cell: ({ row }) => {
                 const v = row.original
+                const primaryPhoto = v.photos?.find(p => p.is_primary) ?? v.photos?.[0]
+                const imageUrl = primaryPhoto ? getPhotoUrl(primaryPhoto.path) : null
                 return (
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100">
-                            <Car className="h-5 w-5 text-zinc-500" />
-                        </div>
+                        {imageUrl
+                            ? <Image src={imageUrl} alt={`${v.description?.marque} ${v.description?.modele}`} fill className="object-cover" unoptimized />
+                        : <div className="w-full h-full flex items-center justify-center"><Car className="h-12 w-12 text-zinc-300" /></div>
+                        }
+
                         <div className="min-w-0">
                             <p className="truncate font-semibold text-sm">
                                 {v.description?.marque} {v.description?.modele}
@@ -209,8 +216,8 @@ function ActionsCell({ vehicule: v, onRefresh }: { vehicule: vehicule; onRefresh
                 </Button>
             </div>
 
-            {editingVehicle &&(
-                <EditVehicle 
+            {editingVehicle && (
+                <EditVehicle
                     isOpen={!!editingVehicle}
                     vehicule={editingVehicle}
                     onClose={() => setEditingVehicle(null)}
