@@ -190,6 +190,8 @@ export default function StatsPage() {
         { label: "Rendez-vous", value: loading ? "—" : (data?.rdv?.total_rdv ?? 0).toLocaleString("fr-FR"), icon: CalendarCheck, iconColor: "text-emerald-500", bgColor: "bg-emerald-50" },
         { label: "Véhicules vendus", value: loading ? "—" : (data?.stats?.total_vehicule_vendu ?? 0).toLocaleString("fr-FR"), icon: TrendingUp, iconColor: "text-violet-500", bgColor: "bg-violet-50" },
         { label: "Vues ce mois", value: loading ? "—" : (data?.stats?.total_vues_mois ?? 0).toLocaleString("fr-FR"), icon: Eye, iconColor: "text-teal-500", bgColor: "bg-teal-50" },
+        { label: "Vues aujourd'hui", value: loading ? "—" : (data?.stats?.total_vues_jour ?? 0).toLocaleString("fr-FR"), icon: Eye, iconColor: "text-orange-500", bgColor: "bg-orange-50" },
+        { label: "Vues cette semaine", value: loading ? "—" : (data?.stats?.total_vues_semaine ?? 0).toLocaleString("fr-FR"), icon: Eye, iconColor: "text-pink-500", bgColor: "bg-pink-50" },
     ]
     return (
         <FadeIn>
@@ -218,7 +220,7 @@ export default function StatsPage() {
                 </SlideIn>
 
                 {/* KPIs */}
-                <StaggerList className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                <StaggerList className={cn("grid gap-3 md:gap-4", isAutoEcole ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-2 lg:grid-cols-3")}>
                     {statsCards.map((stat) => (
                         <StaggerItem key={stat.label}>
                             <Card className="rounded-2xl shadow-sm border border-border/40">

@@ -39,6 +39,16 @@ const getStatutConfig = (statut: string) => {
     }
 }
 
+const getValidationConfig = (status_validation?: string) => {
+    switch (status_validation) {
+        case "validee":
+        case "restauree": return { label: "Validé", className: "bg-emerald-50 text-emerald-700 border-emerald-200" }
+        case "rejetee": return { label: "Rejeté", className: "bg-red-50 text-red-700 border-red-200" }
+        case "en_attente": return { label: "En attente", className: "bg-amber-50 text-amber-700 border-amber-200" }
+        default: return { label: status_validation ?? "—", className: "bg-muted text-muted-foreground" }
+    }
+}
+
 /**
  * Génère les colonnes de la table en injectant le callback onRefresh.
  * On utilise une factory plutôt qu'une constante pour pouvoir passer
@@ -142,14 +152,22 @@ export function makeColonnes(onRefresh: () => void): ColumnDef<vehicule>[] {
             accessorKey: "statut",
             header: "Statut",
             cell: ({ row }) => {
-                const statut = row.getValue("statut") as string
-                const config = getStatutConfig(statut)
+                const v = row.original
+                const nonValide = v.status_validation !== "validee" && v.status_validation !== "restauree"
+                const config = nonValide ? getValidationConfig(v.status_validation) : getStatutConfig(v.statut)
                 return (
                     <Badge variant="outline" className={`text-xs font-medium ${config.className}`}>
                         {config.label}
                     </Badge>
                 )
             },
+            filterFn: (row, id, value) => value.includes(row.getValue(id)),
+        },
+        {
+            accessorKey: "status_validation",
+            header: () => null,
+            cell: () => null,
+            enableHiding: true,
             filterFn: (row, id, value) => value.includes(row.getValue(id)),
         },
         {

@@ -30,6 +30,13 @@ class VendeurStatsController extends Controller
                 'total_vehicule_location' => Vehicules::location()->where('created_by', $user->id)->count(),
                 'total_vues' => Vehicules::where('created_by', $user->id)->sum('views_count'),
                 'total_vues_mois' => Vehicules::where('created_by', $user->id)->whereMonth('created_at', Carbon::now()->month)->sum('views_count'),
+                'total_vues_jour' => VehiculeVue::whereHas('vehicule', function ($q) use ($user) {
+                    $q->where('created_by', $user->id);
+                })->whereDate('created_at', Carbon::today())->count(),
+
+                'total_vues_semaine' => VehiculeVue::whereHas('vehicule', function ($q) use ($user) {
+                    $q->where('created_by', $user->id);
+                })->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count(),
                 // updated_at = date à laquelle le statut est passé à "vendu"
                 'total_revenus' => Vehicules::vendu()->where('created_by', $user->id)->whereMonth('updated_at', Carbon::now()->month)->whereYear('updated_at', Carbon::now()->year)->sum('prix'),
             ];
@@ -70,7 +77,7 @@ class VendeurStatsController extends Controller
 
                 'my_recent_vehicle' => Vehicules::with('description')->where('created_by', $user->id)
                     ->limit(5)
-                    ->get()    
+                    ->get()
             ];
 
             $mesRdv = [
@@ -102,15 +109,15 @@ class VendeurStatsController extends Controller
                     'stats' => $stats,
                     'stats_mensuel' => $statsMensuel,
                     'top_vehicule_vues' => $mostVuesVehicle,
-                    'rdv'=> $mesRdv,
+                    'rdv' => $mesRdv,
                 ]
             ], 200);
         } catch (\Exception $e) {
-            }
-            return response()->json([
-                'success'=> false,
-                'message'=> "Erreur survenue",
-            ]);
+        }
+        return response()->json([
+            'success' => false,
+            'message' => "Erreur survenue",
+        ]);
     }
 
     /**

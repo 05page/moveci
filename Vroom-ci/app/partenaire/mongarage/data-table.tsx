@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import {ColumnDef,ColumnFiltersState,
-    flexRender,getCoreRowModel,
+import {
+    ColumnDef, ColumnFiltersState,
+    flexRender, getCoreRowModel,
     getFilteredRowModel,
     getPaginationRowModel,
     useReactTable,
+    VisibilityState
 } from "@tanstack/react-table"
 import {
     Table,
@@ -25,7 +27,6 @@ import {
     Car,
     KeyRound,
     CircleCheck,
-    Trophy,
     Clock,
 } from "lucide-react"
 
@@ -50,7 +51,7 @@ export function DataTable<TData, TValue>({
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [globalFilter, setGlobalFilter] = useState("")
     const [activeStatut, setActiveStatut] = useState("all")
-    const [dialogDeleteOpen, setDialogDeleteOpen] = useState(false)
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({ status_validation: false })
 
     const table = useReactTable({
         data,
@@ -66,10 +67,12 @@ export function DataTable<TData, TValue>({
             rowSelection,
             columnFilters,
             globalFilter,
+            columnVisibility, // ← ajouté
         },
         initialState: {
             pagination: { pageSize: 8 },
         },
+        onColumnVisibilityChange: setColumnVisibility,
     })
 
     const handleStatutFilter = (value: string) => {
@@ -80,6 +83,25 @@ export function DataTable<TData, TValue>({
             table.getColumn("statut")?.setFilterValue([value])
         }
     }
+
+    const validationFilters = [
+        { value: "all", label: "Tous" },
+        { value: "validee", label: "Validé" },
+        { value: "en_attente", label: "En attente" },
+        { value: "rejetee", label: "Rejeté" },
+    ]
+
+    const [activeValidation, setActiveValidation] = useState("all")
+
+    const handleValidationFilter = (value: string) => {
+        setActiveValidation(value)
+        if (value === "all") {
+            table.getColumn("status_validation")?.setFilterValue(undefined)
+        } else {
+            table.getColumn("status_validation")?.setFilterValue([value])
+        }
+    }
+
 
     return (
         <div className="space-y-4">
@@ -103,9 +125,8 @@ export function DataTable<TData, TValue>({
                                 variant={isActive ? "default" : "outline"}
                                 size="sm"
                                 onClick={() => handleStatutFilter(filter.value)}
-                                className={`cursor-pointer rounded-lg gap-1.5 text-xs shrink-0 ${
-                                    isActive ? "bg-zinc-900 text-white shadow-sm hover:bg-zinc-800" : "bg-card hover:bg-secondary/70"
-                                }`}
+                                className={`cursor-pointer rounded-lg gap-1.5 text-xs shrink-0 ${isActive ? "bg-zinc-900 text-white shadow-sm hover:bg-zinc-800" : "bg-card hover:bg-secondary/70"
+                                    }`}
                             >
                                 <filter.icon className="h-3.5 w-3.5" />
                                 {filter.label}
@@ -113,6 +134,25 @@ export function DataTable<TData, TValue>({
                         )
                     })}
                 </div>
+            </div>
+
+            {/* Filtres validation */}
+            <div className="flex items-center gap-1.5 overflow-x-auto">
+                {validationFilters.map((filter) => {
+                    const isActive = activeValidation === filter.value
+                    return (
+                        <Button
+                            key={filter.value}
+                            variant={isActive ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleValidationFilter(filter.value)}
+                            className={`cursor-pointer rounded-lg gap-1.5 text-xs shrink-0 ${isActive ? "bg-zinc-900 text-white shadow-sm hover:bg-zinc-800" : "bg-card hover:bg-secondary/70"
+                                }`}
+                        >
+                            {filter.label}
+                        </Button>
+                    )
+                })}
             </div>
 
             {/* Table */}

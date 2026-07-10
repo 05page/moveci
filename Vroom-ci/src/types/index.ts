@@ -64,6 +64,8 @@ export interface VendeurStatsGlobal {
   total_vehicule_location: number;
   total_vues: number;
   total_vues_mois: number;
+  total_vues_jour: number;
+  total_vues_semaine: number;
   total_revenus: string;
 }
 
