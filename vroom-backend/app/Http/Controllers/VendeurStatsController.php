@@ -33,10 +33,6 @@ class VendeurStatsController extends Controller
                 'total_vues_jour' => VehiculeVue::whereHas('vehicule', function ($q) use ($user) {
                     $q->where('created_by', $user->id);
                 })->whereDate('created_at', Carbon::today())->count(),
-
-                'total_vues_semaine' => VehiculeVue::whereHas('vehicule', function ($q) use ($user) {
-                    $q->where('created_by', $user->id);
-                })->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count(),
                 // updated_at = date à laquelle le statut est passé à "vendu"
                 'total_revenus' => Vehicules::vendu()->where('created_by', $user->id)->whereMonth('updated_at', Carbon::now()->month)->whereYear('updated_at', Carbon::now()->year)->sum('prix'),
             ];
@@ -60,6 +56,29 @@ class VendeurStatsController extends Controller
                         ->whereMonth('created_at', $mois)
                         ->whereYear('created_at', Carbon::now()->year)
                         ->count()
+                ];
+            }
+
+            $statsSemaine = [];
+            $debutSemaine = Carbon::now()->startOfWeek();
+            for ($i = 0; $i < 7; $i++) {
+                $jour = $debutSemaine->copy()->addDays($i);
+                $statsSemaine[] = [
+                    'jour' => $jour->format('Y-m-d'),
+                    'nom_jour' => $jour->locale('fr')->translatedFormat('D'),
+                    'ventes' => Vehicules::vendu()
+                        ->where('created_by', $user->id)
+                        ->whereDate('created_at', $jour)
+                        ->count(),
+                    'vues' => VehiculeVue::whereHas('vehicule', function ($q) use ($user) {
+                        $q->where('created_by', $user->id);
+                    })
+                        ->whereDate('created_at', $jour)
+                        ->count(),
+                    'locations' => Vehicules::loue()
+                        ->where('created_by', $user->id)
+                        ->whereDate('created_at', $jour)
+                        ->count(),
                 ];
             }
             if ($stats == [] && $statsMensuel == []) {
@@ -108,6 +127,7 @@ class VendeurStatsController extends Controller
                 'data' => [
                     'stats' => $stats,
                     'stats_mensuel' => $statsMensuel,
+                    'stats_semaine' => $statsSemaine,
                     'top_vehicule_vues' => $mostVuesVehicle,
                     'rdv' => $mesRdv,
                 ]

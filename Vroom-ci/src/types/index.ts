@@ -48,9 +48,18 @@ export interface StatsMensuel {
   locations: number
 }
 
+export interface StatsSemaine {
+  jour: string
+  nom_jour: string
+  vues: number
+  ventes: number
+  locations: number
+}
+
 export interface VendeurStats {
   stats: VendeurStatsGlobal;
   stats_mensuel: StatsMensuel[];
+  stats_semaine: StatsSemaine[];
   top_vehicule_vues: TopVehiculesVues;
   vehicule: vehicule
   rdv: VendeurRdv;
@@ -65,7 +74,6 @@ export interface VendeurStatsGlobal {
   total_vues: number;
   total_vues_mois: number;
   total_vues_jour: number;
-  total_vues_semaine: number;
   total_revenus: string;
 }
 

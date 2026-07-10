@@ -12,7 +12,7 @@ import {
     type ChartConfig,
 } from "@/components/ui/chart"
 import { Button } from "@/components/ui/button"
-import { StatsMensuel } from "@/src/types"
+import { StatsMensuel, StatsSemaine } from "@/src/types"
 
 const chartConfig = {
     vues: {
@@ -30,13 +30,16 @@ const chartConfig = {
 } satisfies ChartConfig
 
 type ChartMode = "vues" | "ventes" | "locations" | "tous"
+type ChartPeriod = "mois" | "semaine"
 
 interface StatsChartProps {
     data: StatsMensuel[]
+    dataSemaine: StatsSemaine[]
 }
 
-export function StatsChart({ data }: StatsChartProps) {
+export function StatsChart({ data, dataSemaine }: StatsChartProps) {
     const [mode, setMode] = useState<ChartMode>("tous")
+    const [period, setPeriod] = useState<ChartPeriod>("mois")
 
     // Abréviations officielles françaises — juin et juillet doivent être distincts
     const MOIS_ABBR: Record<string, string> = {
@@ -45,12 +48,22 @@ export function StatsChart({ data }: StatsChartProps) {
         septembre: "Sep", octobre: "Oct", novembre: "Nov", décembre: "Déc",
     }
 
-    const chartData = data.map(d => ({
-        mois:      MOIS_ABBR[d.nom_mois.toLowerCase()] ?? d.nom_mois.slice(0, 3),
-        vues:      d.vues,
-        ventes:    d.ventes,
-        locations: d.locations,
-    }))
+    // Les deux périodes ont des clés de date différentes (mois vs jour) —
+    // on les normalise sous une clé commune "label" pour que le graphique
+    // n'ait besoin que d'une seule définition d'axe X.
+    const chartData = period === "semaine"
+        ? dataSemaine.map(d => ({
+            label:     d.nom_jour,
+            vues:      d.vues,
+            ventes:    d.ventes,
+            locations: d.locations,
+        }))
+        : data.map(d => ({
+            label:     MOIS_ABBR[d.nom_mois.toLowerCase()] ?? d.nom_mois.slice(0, 3),
+            vues:      d.vues,
+            ventes:    d.ventes,
+            locations: d.locations,
+        }))
 
     return (
         <Card className="rounded-2xl shadow-sm border border-border/40">
@@ -58,33 +71,55 @@ export function StatsChart({ data }: StatsChartProps) {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <CardTitle className="text-lg font-semibold text-black">
-                            Performances mensuelles
+                            {period === "semaine" ? "Performances de la semaine" : "Performances mensuelles"}
                         </CardTitle>
                         <p className="text-xs text-black/60 mt-0.5">
-                            Évolution sur les 12 derniers mois.
+                            {period === "semaine" ? "Évolution jour par jour, cette semaine." : "Évolution sur les 12 derniers mois."}
                         </p>
                     </div>
-                    <div className="flex items-center gap-1 rounded-lg border border-border p-0.5">
-                        {([
-                            { value: "vues",      label: "Vues" },
-                            { value: "ventes",    label: "Ventes" },
-                            { value: "locations", label: "Locations" },
-                            { value: "tous",      label: "Tout" },
-                        ] as const).map((item) => (
-                            <Button
-                                key={item.value}
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setMode(item.value)}
-                                className={`h-7 text-xs px-3 cursor-pointer rounded-md ${
-                                    mode === item.value
-                                        ? "bg-zinc-900 text-white shadow-sm hover:bg-zinc-800 hover:text-white"
-                                        : "text-black/60 hover:text-black"
-                                }`}
-                            >
-                                {item.label}
-                            </Button>
-                        ))}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-1 rounded-lg border border-border p-0.5">
+                            {([
+                                { value: "mois",    label: "Mois" },
+                                { value: "semaine", label: "Semaine" },
+                            ] as const).map((item) => (
+                                <Button
+                                    key={item.value}
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setPeriod(item.value)}
+                                    className={`h-7 text-xs px-3 cursor-pointer rounded-md ${
+                                        period === item.value
+                                            ? "bg-zinc-900 text-white shadow-sm hover:bg-zinc-800 hover:text-white"
+                                            : "text-black/60 hover:text-black"
+                                    }`}
+                                >
+                                    {item.label}
+                                </Button>
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-1 rounded-lg border border-border p-0.5">
+                            {([
+                                { value: "vues",      label: "Vues" },
+                                { value: "ventes",    label: "Ventes" },
+                                { value: "locations", label: "Locations" },
+                                { value: "tous",      label: "Tout" },
+                            ] as const).map((item) => (
+                                <Button
+                                    key={item.value}
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setMode(item.value)}
+                                    className={`h-7 text-xs px-3 cursor-pointer rounded-md ${
+                                        mode === item.value
+                                            ? "bg-zinc-900 text-white shadow-sm hover:bg-zinc-800 hover:text-white"
+                                            : "text-black/60 hover:text-black"
+                                    }`}
+                                >
+                                    {item.label}
+                                </Button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </CardHeader>
@@ -97,7 +132,7 @@ export function StatsChart({ data }: StatsChartProps) {
                     >
                         <CartesianGrid vertical={false} strokeDasharray="3 3" />
                         <XAxis
-                            dataKey="mois"
+                            dataKey="label"
                             tickLine={false}
                             axisLine={false}
                             tickMargin={8}
