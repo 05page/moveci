@@ -14,7 +14,9 @@ return new class extends Migration
             $table->foreignUuid('catalogue_id')->nullable()->constrained('catalogues')->onDelete('set null');
             $table->enum('post_type', ['vente', 'location']);
             $table->enum('type', ['neuf', 'occasion']);
-            $table->enum('statut', ['disponible', 'vendu', 'loué', 'a_venir']);
+            // Liste alignée sur l'état final du CHECK (cf. migrations ultérieures) :
+            // indispensable pour SQLite (tests) qui ne peut pas modifier un CHECK après coup
+            $table->enum('statut', ['disponible', 'vendu', 'loué', 'a_venir', 'réservé', 'suspendu', 'banni', 'en_transaction']);
             $table->decimal('prix', 10, 2);
             $table->decimal('prix_suggere', 10, 2)->nullable();
             $table->boolean('negociable')->default(false);

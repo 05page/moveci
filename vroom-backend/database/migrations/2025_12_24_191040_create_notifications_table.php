@@ -11,7 +11,9 @@ return new class extends Migration
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
-            $table->enum('type', ['rdv', 'formation', 'alerte_vehicule', 'abonnement', 'moderation', 'transaction']);
+            // Liste alignée sur l'état final du CHECK (cf. migrations ultérieures) :
+            // indispensable pour SQLite (tests) qui ne peut pas modifier un CHECK après coup
+            $table->enum('type', ['rdv', 'formation', 'alerte_vehicule', 'abonnement', 'moderation', 'transaction', 'support', 'tendance', 'reservation']);
             $table->string('title');
             $table->text('message');
             $table->json('data')->nullable();

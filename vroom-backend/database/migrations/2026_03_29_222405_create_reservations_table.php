@@ -41,9 +41,12 @@ return new class extends Migration
         });
 
         // Ajout du statut "réservé" sur la table véhicules
-        DB::statement("ALTER TABLE vehicules DROP CONSTRAINT IF EXISTS vehicules_statut_check");
-        DB::statement("ALTER TABLE vehicules ADD CONSTRAINT vehicules_statut_check
-            CHECK (statut IN ('disponible', 'vendu', 'loué', 'suspendu', 'banni', 'en_transaction', 'réservé'))");
+        // (SQLite/tests : liste déjà présente dans la migration de création — on ignore)
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE vehicules DROP CONSTRAINT IF EXISTS vehicules_statut_check");
+            DB::statement("ALTER TABLE vehicules ADD CONSTRAINT vehicules_statut_check
+                CHECK (statut IN ('disponible', 'vendu', 'loué', 'suspendu', 'banni', 'en_transaction', 'réservé'))");
+        }
     }
 
     public function down(): void
@@ -51,8 +54,10 @@ return new class extends Migration
         Schema::dropIfExists('reservations');
 
         // Restaure le statut sans "réservé"
-        DB::statement("ALTER TABLE vehicules DROP CONSTRAINT IF EXISTS vehicules_statut_check");
-        DB::statement("ALTER TABLE vehicules ADD CONSTRAINT vehicules_statut_check
-            CHECK (statut IN ('disponible', 'vendu', 'loué', 'suspendu', 'banni', 'en_transaction'))");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE vehicules DROP CONSTRAINT IF EXISTS vehicules_statut_check");
+            DB::statement("ALTER TABLE vehicules ADD CONSTRAINT vehicules_statut_check
+                CHECK (statut IN ('disponible', 'vendu', 'loué', 'suspendu', 'banni', 'en_transaction'))");
+        }
     }
 };

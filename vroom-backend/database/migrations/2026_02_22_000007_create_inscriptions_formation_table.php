@@ -13,7 +13,9 @@ return new class extends Migration
             $table->foreignUuid('client_id')->constrained('users')->onDelete('cascade');
             $table->foreignUuid('formation_id')->constrained('formations')->onDelete('cascade');
             $table->timestamp('date_inscription')->useCurrent();
-            $table->enum('statut_eleve', ['inscrit', 'en_cours', 'examen_passe', 'terminé', 'abandonné'])->default('inscrit');
+            // Liste alignée sur l'état final (cf. migration update_statut_eleve_enum) :
+            // indispensable pour SQLite (tests) qui ne peut pas modifier un CHECK après coup
+            $table->enum('statut_eleve', ['préinscrit', 'paiement_en_cours', 'inscrit', 'en_cours', 'examen_passe', 'terminé', 'abandonné'])->default('préinscrit');
             $table->date('date_examen')->nullable();
             $table->boolean('reussite')->nullable();
             $table->timestamps();

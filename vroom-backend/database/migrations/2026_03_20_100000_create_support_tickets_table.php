@@ -14,7 +14,9 @@ return new class extends Migration
             $table->string('sujet');
             $table->text('message');
             $table->enum('statut', ['ouvert', 'en_cours', 'résolu', 'fermé'])->default('ouvert');
-            $table->enum('priorite', ['normale', 'haute', 'urgente'])->default('normale');
+            // Liste alignée sur l'état final du CHECK (cf. migration add_basse) :
+            // indispensable pour SQLite (tests) qui ne peut pas modifier un CHECK après coup
+            $table->enum('priorite', ['basse', 'normale', 'haute', 'urgente'])->default('normale');
             $table->text('reponse_admin')->nullable();
             $table->foreignUuid('admin_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('repondu_at')->nullable();

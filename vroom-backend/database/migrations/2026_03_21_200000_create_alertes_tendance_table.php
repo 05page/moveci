@@ -21,9 +21,12 @@ return new class extends Migration
             $table->foreign('formation_id')->references('id')->on('formations')->cascadeOnDelete();
         });
 
-        // Contrainte CHECK PostgreSQL
-        DB::statement("ALTER TABLE alertes_tendance ADD CONSTRAINT alertes_tendance_type_check CHECK (type IN ('vehicule', 'formation'))");
-        DB::statement("ALTER TABLE alertes_tendance ADD CONSTRAINT alertes_tendance_periode_check CHECK (periode IN ('quotidien', 'hebdomadaire'))");
+        // Contrainte CHECK PostgreSQL — SQLite (tests) ne supporte pas ALTER ... ADD CONSTRAINT ;
+        // les colonnes restent des strings libres, la validation vit dans l'application.
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE alertes_tendance ADD CONSTRAINT alertes_tendance_type_check CHECK (type IN ('vehicule', 'formation'))");
+            DB::statement("ALTER TABLE alertes_tendance ADD CONSTRAINT alertes_tendance_periode_check CHECK (periode IN ('quotidien', 'hebdomadaire'))");
+        }
     }
 
     public function down(): void
