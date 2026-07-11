@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -18,7 +18,6 @@ import {
     Car,
     GraduationCap,
     Users,
-    ArrowUpRight,
 } from "lucide-react"
 import { useUser } from "@/src/context/UserContext"
 import { api } from "@/src/lib/api"
@@ -27,37 +26,23 @@ import { api } from "@/src/lib/api"
 // On n'utilise plus les couleurs venant de la donnée — on applique cet index cyclique.
 const PIE_COLORS = ["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444", "#06b6d4"]
 
-// ─── Signaux clés — restent indicatifs (non issus de l'API) ──────────────────
-
-const tendancesConcess: { label: string; delta: string; trend: "up" | "down" | "neutral"; desc: string }[] = [
-    { label: "Demande SUV",          delta: "+14%",       trend: "up",      desc: "Les SUV représentent 44% des recherches ce mois" },
-    { label: "Prix moyen demandé",   delta: "18.5M FCFA", trend: "neutral", desc: "Stable par rapport au mois précédent" },
-    { label: "Délai de vente moyen", delta: "-3j",        trend: "up",      desc: "Les véhicules se vendent plus vite qu'en janvier" },
-    { label: "Véhicules diesel",     delta: "-8%",        trend: "down",    desc: "La demande diesel recule face à l'essence" },
-]
-
-const tendancesAutoEcole: { label: string; delta: string; trend: "up" | "down" | "neutral"; desc: string }[] = [
-    { label: "Permis B en hausse",      delta: "+22%",   trend: "up",      desc: "Le permis B reste le plus demandé en Côte d'Ivoire" },
-    { label: "Taux de réussite moyen",  delta: "67%",    trend: "neutral", desc: "Référence nationale : 63%" },
-    { label: "Durée formation moyenne", delta: "3 mois", trend: "neutral", desc: "Standard du marché ivoirien" },
-    { label: "Abandon en cours",        delta: "-5%",    trend: "up",      desc: "Moins d'abandons grâce au suivi en ligne" },
-]
-
 // ─── Configs chart ────────────────────────────────────────────────────────────
 
 const barConfigConcess: ChartConfig = {
     annonces: { label: "Annonces",  color: "#f59e0b" },
-    demande:  { label: "Demande %", color: "#3b82f6" },
+    demande:  { label: "Annonces",  color: "#3b82f6" },
 }
 
 const barConfigAutoEcole: ChartConfig = {
-    demandes: { label: "Demandes", color: "#8b5cf6" },
-    inscrits: { label: "Inscrits", color: "#10b981" },
+    demandes: { label: "Formations", color: "#8b5cf6" },
+    inscrits: { label: "Inscrits",   color: "#10b981" },
 }
 
 // ─── Composant indicateur de tendance ─────────────────────────────────────────
 
-function TrendCard({ label, delta, trend, desc }: { label: string; delta: string; trend: "up" | "down" | "neutral"; desc: string }) {
+type Signal = { label: string; delta: string; trend: "up" | "down" | "neutral"; desc: string }
+
+function TrendCard({ label, delta, trend, desc }: Signal) {
     const Icon  = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus
     const color = trend === "up" ? "text-emerald-600" : trend === "down" ? "text-red-500" : "text-zinc-500"
     const bg    = trend === "up" ? "bg-emerald-50" : trend === "down" ? "bg-red-50" : "bg-zinc-50"
@@ -119,40 +104,115 @@ export default function TrendPage() {
     const concess = tendances as TendancesConcess | null
     const autoEcole = tendances as TendancesAutoEcoleData | null
 
+    // Total d'annonces carburant — sert à convertir les comptages en parts (%)
+    const totalCarburant = useMemo(
+        () => (concess?.carburant ?? []).reduce((sum, c) => sum + c.value, 0),
+        [concess?.carburant],
+    )
+
+    // ── Signaux clés dérivés des données réelles de la plateforme ────────────
+    const signaux = useMemo<Signal[]>(() => {
+        if (!tendances) return []
+
+        if (isAutoEcole) {
+            const permis = autoEcole?.permis ?? []
+            const mois   = autoEcole?.inscriptions_mois ?? []
+            const topPermis      = [...permis].sort((a, b) => b.demandes - a.demandes)[0]
+            const totalInscrits  = mois.reduce((sum, m) => sum + m.inscrits, 0)
+            const meilleurMois   = [...mois].sort((a, b) => b.inscrits - a.inscrits)[0]
+
+            const s: Signal[] = []
+            if (topPermis) s.push({
+                label: "Permis le plus proposé", delta: `Permis ${topPermis.type_permis}`, trend: "up",
+                desc: `${topPermis.demandes} de vos formations portent sur ce permis`,
+            })
+            s.push({
+                label: "Inscriptions cette année", delta: totalInscrits.toString(), trend: totalInscrits > 0 ? "up" : "neutral",
+                desc: "Total des inscriptions à vos formations depuis janvier",
+            })
+            if (meilleurMois && meilleurMois.inscrits > 0) s.push({
+                label: "Meilleur mois", delta: meilleurMois.mois, trend: "up",
+                desc: `${meilleurMois.inscrits} inscription(s) enregistrée(s) ce mois-là`,
+            })
+            s.push({
+                label: "Types de permis", delta: permis.length.toString(), trend: "neutral",
+                desc: "Nombre de types de permis couverts par vos formations",
+            })
+            return s
+        }
+
+        const marques  = concess?.marques ?? []
+        const carburant = concess?.carburant ?? []
+        const prix     = concess?.prix ?? []
+        const topMarque    = marques[0]
+        const topCarburant = carburant[0]
+        const topTranche   = [...prix].sort((a, b) => b.demande - a.demande)[0]
+        const totalAnnonces = prix.reduce((sum, p) => sum + p.demande, 0)
+
+        const s: Signal[] = []
+        s.push({
+            label: "Annonces actives", delta: totalAnnonces.toLocaleString("fr-FR"), trend: totalAnnonces > 0 ? "up" : "neutral",
+            desc: "Véhicules validés actuellement publiés sur la plateforme",
+        })
+        if (topMarque) s.push({
+            label: "Marque en tête", delta: topMarque.marque, trend: "up",
+            desc: `${topMarque.annonces} annonce(s) publiée(s) sur la plateforme`,
+        })
+        if (topCarburant && totalCarburant > 0) s.push({
+            label: "Carburant dominant", delta: `${Math.round((topCarburant.value / totalCarburant) * 100)}%`, trend: "neutral",
+            desc: `${topCarburant.name} — part des annonces publiées`,
+        })
+        if (topTranche && topTranche.demande > 0) s.push({
+            label: "Tranche la plus fournie", delta: `${topTranche.tranche} FCFA`, trend: "neutral",
+            desc: `${topTranche.demande} annonce(s) dans cette fourchette de prix`,
+        })
+        return s
+    }, [tendances, isAutoEcole, autoEcole, concess, totalCarburant])
+
     return (
         <div className="space-y-6">
             <div className="flex items-start justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-black">Tendances du marché</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-black">Tendances de la plateforme</h1>
                     <p className="text-sm text-black/60 mt-0.5">
                         {isAutoEcole
-                            ? "Évolution de la demande de formations et permis en Côte d'Ivoire."
-                            : "Évolution du marché automobile ivoirien — données indicatives."}
+                            ? "Chiffres calculés à partir de vos formations et inscriptions."
+                            : "Chiffres calculés à partir des annonces publiées sur la plateforme."}
                     </p>
                 </div>
             </div>
 
-            {/* ── Signaux clés (restent statiques) ── */}
+            {/* ── Signaux clés — dérivés des données réelles ── */}
             <div>
                 <h2 className="text-sm font-semibold text-black/60 uppercase tracking-wider mb-3">Signaux clés</h2>
-                <div className="grid gap-3 sm:grid-cols-2">
-                    {(isAutoEcole ? tendancesAutoEcole : tendancesConcess).map((t) => (
-                        <TrendCard key={t.label} {...t} />
-                    ))}
-                </div>
+                {loading ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                        ))}
+                    </div>
+                ) : signaux.length > 0 ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {signaux.map((t) => (
+                            <TrendCard key={t.label} {...t} />
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-black/50">Pas encore assez de données pour dégager des signaux.</p>
+                )}
             </div>
 
             {/* ── Graphiques ── */}
             {isAutoEcole ? (
                 <div className="grid gap-6 md:grid-cols-2">
-                    {/* Demandes par permis */}
+                    {/* Formations par permis */}
                     <Card className="rounded-2xl border border-border/40">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base font-semibold flex items-center gap-2">
                                 <GraduationCap className="h-4 w-4 text-violet-500" />
-                                Demandes par type de permis
+                                Vos formations par permis
                             </CardTitle>
-                            <CardDescription>Côte d'Ivoire — mois en cours</CardDescription>
+                            <CardDescription>Répartition de vos formations publiées</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {loading ? (
@@ -177,9 +237,9 @@ export default function TrendPage() {
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base font-semibold flex items-center gap-2">
                                 <Users className="h-4 w-4 text-emerald-500" />
-                                Évolution des inscriptions
+                                Évolution de vos inscriptions
                             </CardTitle>
-                            <CardDescription>12 derniers mois (marché global)</CardDescription>
+                            <CardDescription>Année en cours — toutes vos formations</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {loading ? (
@@ -205,9 +265,9 @@ export default function TrendPage() {
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base font-semibold flex items-center gap-2">
                                 <Car className="h-4 w-4 text-amber-500" />
-                                Marques les plus recherchées
+                                Marques les plus annoncées
                             </CardTitle>
-                            <CardDescription>Marché ivoirien — mois en cours</CardDescription>
+                            <CardDescription>Annonces validées sur la plateforme</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {loading ? (
@@ -230,7 +290,7 @@ export default function TrendPage() {
                     <Card className="rounded-2xl border border-border/40">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base font-semibold">Répartition par carburant</CardTitle>
-                            <CardDescription>Part des recherches par type de motorisation</CardDescription>
+                            <CardDescription>Part des annonces publiées par type de motorisation</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {loading ? (
@@ -253,10 +313,11 @@ export default function TrendPage() {
                                                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                                                 ))}
                                             </Pie>
-                                            <Tooltip formatter={(v: number) => `${v}%`} />
+                                            {/* Le backend renvoie des comptages — on affiche le nombre d'annonces */}
+                                            <Tooltip formatter={(v: number) => `${v} annonce(s)`} />
                                         </PieChart>
                                     </ResponsiveContainer>
-                                    {/* Légende dynamique basée sur les données API */}
+                                    {/* Légende dynamique — part calculée à partir des comptages réels */}
                                     <div className="space-y-2 flex-1">
                                         {(concess?.carburant ?? []).map((item, i) => (
                                             <div key={item.name} className="flex items-center justify-between text-sm">
@@ -267,7 +328,9 @@ export default function TrendPage() {
                                                     />
                                                     <span className="text-black/70">{item.name}</span>
                                                 </div>
-                                                <span className="font-semibold text-black">{item.value}%</span>
+                                                <span className="font-semibold text-black">
+                                                    {totalCarburant > 0 ? Math.round((item.value / totalCarburant) * 100) : 0}%
+                                                </span>
                                             </div>
                                         ))}
                                     </div>
@@ -279,8 +342,8 @@ export default function TrendPage() {
                     {/* Tranches de prix */}
                     <Card className="rounded-2xl border border-border/40 md:col-span-2">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-semibold">Demande par tranche de prix</CardTitle>
-                            <CardDescription>Nombre de recherches par fourchette de prix (marché Abidjan)</CardDescription>
+                            <CardTitle className="text-base font-semibold">Annonces par tranche de prix</CardTitle>
+                            <CardDescription>Nombre de véhicules validés par fourchette de prix</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {loading ? (
