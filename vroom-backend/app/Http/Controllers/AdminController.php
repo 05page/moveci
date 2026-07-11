@@ -67,10 +67,15 @@ class AdminController extends Controller
 
     public function users(Request $request): JsonResponse
     {
+        $filtres = $request->validate([
+            'role'   => 'sometimes|string|in:client,vendeur,concessionnaire,auto_ecole,admin',
+            'statut' => 'sometimes|string|in:actif,suspendu,banni,en_attente',
+        ]);
+
         $query = User::query();
 
-        if ($request->filled('role'))   $query->where('role', $request->role);
-        if ($request->filled('statut')) $query->where('statut', $request->statut);
+        if (isset($filtres['role']))   $query->where('role', $filtres['role']);
+        if (isset($filtres['statut'])) $query->where('statut', $filtres['statut']);
 
         $users = $query
             ->select(
@@ -93,17 +98,17 @@ class AdminController extends Controller
 
     public function suspendre(Request $request, $id): JsonResponse
     {
-        return $this->changerStatut($id, User::SUSPENDU, 'SUSPEND_USER', 'utilisateur', $request->input('details'));
+        return $this->changerStatut($id, User::SUSPENDU, 'SUSPEND_USER', 'utilisateur', $this->detailsValides($request));
     }
 
     public function bannir(Request $request, $id): JsonResponse
     {
-        return $this->changerStatut($id, User::BANNI, 'BAN_USER', 'utilisateur', $request->input('details'));
+        return $this->changerStatut($id, User::BANNI, 'BAN_USER', 'utilisateur', $this->detailsValides($request));
     }
 
     public function restaurer(Request $request, $id): JsonResponse
     {
-        return $this->changerStatut($id, User::ACTIF, 'RESTORE_USER', 'utilisateur', $request->input('details'));
+        return $this->changerStatut($id, User::ACTIF, 'RESTORE_USER', 'utilisateur', $this->detailsValides($request));
     }
 
     // Valider un compte concessionnaire / auto_ecole en attente
@@ -117,7 +122,7 @@ class AdminController extends Controller
 
         $user->restaurer(); // → statut = actif
 
-        $this->logAction('VALIDATE_ACCOUNT', 'utilisateur', $id, $request->input('details'));
+        $this->logAction('VALIDATE_ACCOUNT', 'utilisateur', $id, $this->detailsValides($request));
 
         return response()->json(['success' => true, 'message' => 'Compte validé'], 200);
     }
@@ -152,7 +157,7 @@ class AdminController extends Controller
         $vehicule = Vehicules::findOrFail($id);
         $vehicule->update(['status_validation' => Vehicules::STATUS_VALIDATED]);
 
-        $this->logAction('VALIDATE_VEHICLE', 'vehicule', $id, $request->input('details'));
+        $this->logAction('VALIDATE_VEHICLE', 'vehicule', $id, $this->detailsValides($request));
 
         // Temps réel — le vendeur voit la validation sans F5
         event(new DataRefresh($vehicule->created_by, 'vehicule'));
@@ -207,8 +212,12 @@ class AdminController extends Controller
             ->withCount('inscriptions')
             ->orderBy('created_at', 'desc');
 
-        if ($request->filled('statut_validation')) {
-            $query->where('statut_validation', $request->statut_validation);
+        $filtres = $request->validate([
+            'statut_validation' => 'sometimes|string|in:en_attente,validé,rejeté',
+        ]);
+
+        if (isset($filtres['statut_validation'])) {
+            $query->where('statut_validation', $filtres['statut_validation']);
         }
 
         $formations = $query->paginate(20);
@@ -225,7 +234,7 @@ class AdminController extends Controller
         $formation = Formation::findOrFail($id);
         $formation->update(['statut_validation' => 'validé']);
 
-        $this->logAction('VALIDATE_FORMATION', 'formation', $id, $request->input('details'));
+        $this->logAction('VALIDATE_FORMATION', 'formation', $id, $this->detailsValides($request));
 
         // Temps réel — l'auto-école voit la validation sans F5
         event(new DataRefresh($formation->auto_ecole_id, 'formation'));
@@ -256,10 +265,13 @@ class AdminController extends Controller
 
     public function signalements(Request $request): JsonResponse
     {
+        $filtres = $request->validate([
+            'statut' => 'sometimes|string|in:en_attente,traité,rejeté',
+        ]);
+
         $query = Signalement::with(['client:id,fullname', 'cibleUser:id,fullname', 'cibleVehicule.description', 'cibleVehicule.creator:id,fullname', 'cibleVehicule.photos']);
 
-        if ($request->filled('statut')) $query->where('statut', $request->statut);
-        // y
+        if (isset($filtres['statut'])) $query->where('statut', $filtres['statut']);
 
         $signalements = $query->orderBy('date_signalement', 'asc')->paginate(20);
 
@@ -424,8 +436,13 @@ class AdminController extends Controller
             'vehicule.description',
         ]);
 
-        if ($request->filled('statut')) $query->where('statut', $request->statut);
-        if ($request->filled('type'))   $query->where('type', $request->type);
+        $filtres = $request->validate([
+            'statut' => 'sometimes|string|in:en_attente,confirmé,expiré,refusé',
+            'type'   => 'sometimes|string|in:vente,location',
+        ]);
+
+        if (isset($filtres['statut'])) $query->where('statut', $filtres['statut']);
+        if (isset($filtres['type']))   $query->where('type', $filtres['type']);
 
         $transactions = $query->orderBy('created_at', 'desc')->paginate(30);
 
@@ -746,9 +763,13 @@ class AdminController extends Controller
 
     public function logs(Request $request): JsonResponse
     {
+        $filtres = $request->validate([
+            'cible_type' => 'sometimes|string|in:utilisateur,vehicule,formation,signalement',
+        ]);
+
         $query = LogModeration::with(['admin:id,fullname']);
 
-        if ($request->filled('cible_type')) $query->where('cible_type', $request->cible_type);
+        if (isset($filtres['cible_type'])) $query->where('cible_type', $filtres['cible_type']);
         $logs = $query->orderBy('date_action', 'desc')->paginate(50);
 
         return response()->json(['success' => true, 'data' => $logs], 200);
@@ -794,6 +815,19 @@ class AdminController extends Controller
         ]);
 
         return response()->json(['success' => true, 'message' => 'Statut mis à jour : ' . $statut], 200);
+    }
+
+    /**
+     * Valide et retourne le champ optionnel "details" des actions de modération.
+     * Garantit une string ≤ 500 caractères ou null — jamais un tableau ni un texte illimité.
+     */
+    private function detailsValides(Request $request): ?string
+    {
+        $validated = $request->validate([
+            'details' => 'nullable|string|max:500',
+        ]);
+
+        return $validated['details'] ?? null;
     }
 
     private function logAction(string $action, string $cibleType, string $idCible, ?string $details): void

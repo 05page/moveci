@@ -7,7 +7,6 @@ use App\Models\Formation;
 use App\Models\InscriptionFormation;
 use App\Models\Notifications;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class InscriptionFormationController extends Controller
@@ -16,7 +15,7 @@ class InscriptionFormationController extends Controller
      * Client s'inscrit à une formation.
      * POST /formations/{id}/inscrire
      */
-    public function store(Request $request, string $id): JsonResponse
+    public function store(string $id): JsonResponse
     {
         $user = Auth::user();
 
