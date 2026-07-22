@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             success: true,
             message: data.message,
+            user: data.user,
             role: data.role
         })
     } catch (error) {

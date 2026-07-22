@@ -28,6 +28,7 @@ import {
 import Link from "next/link"
 import { toast } from "sonner"
 import { getDashBoard } from "@/src/core/auth/permission"
+import { useUser } from "@/src/context/UserContext"
 import { UserRole } from "@/src/types"
 import { forgotPassword } from "@/src/actions/auth.actions"
 import {
@@ -60,6 +61,7 @@ interface FormLogin {
 const AuthContent = () => {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const { setUser } = useUser()
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [registerStep, setRegisterStep] = useState(1)
@@ -147,6 +149,7 @@ const AuthContent = () => {
                 return
             }
             setLoginErrors({})
+            setUser(data.user)
             toast.success("Connexion réussie !")
             router.push(getDashBoard(data.role as UserRole))
         } catch (error) {
@@ -199,6 +202,7 @@ const AuthContent = () => {
                 return
             }
             setRegisterErrors({})
+            setUser(data.user)
 
             if (formDataRegister.role === "concessionnaire" || formDataRegister.role === "auto_ecole") {
                 toast.success("Demande envoyée ! Votre compte est en attente de validation par notre équipe.")
