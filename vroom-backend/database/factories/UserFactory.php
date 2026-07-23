@@ -85,7 +85,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn () => [
             'role'         => User::ADMIN,
-            'niveau_acces' => 1,
+            'niveau_acces' => 'standard',
         ]);
     }
 
