@@ -29,7 +29,6 @@ class Abonnement extends Model
     public function plan()     { return $this->belongsTo(PlanAbonnement::class, 'plan_id'); }
     public function user()     { return $this->belongsTo(User::class, 'user_id'); }
     public function paiements() { return $this->hasMany(PaiementAbonnement::class, 'abonnement_id'); }
-    public function postes()   { return $this->hasMany(PosteVendeur::class, 'abonnement_id'); }
 
     public function scopeActif($query)   { return $query->where('statut', self::STATUT_ACTIF); }
     public function isActif(): bool      { return $this->statut === self::STATUT_ACTIF; }

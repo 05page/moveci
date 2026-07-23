@@ -83,11 +83,6 @@ class User extends Authenticatable
         return $this->hasMany(Vehicules::class, 'created_by');
     }
 
-    public function catalogues()
-    {
-        return $this->hasMany(Catalogue::class, 'user_id');
-    }
-
     public function favoris()
     {
         return $this->hasMany(Favori::class, 'user_id');
@@ -131,16 +126,6 @@ class User extends Authenticatable
     public function abonnements()
     {
         return $this->hasMany(Abonnement::class, 'user_id');
-    }
-
-    public function postesVendeur()
-    {
-        return $this->hasMany(PosteVendeur::class, 'vendeur_id');
-    }
-
-    public function statistiques()
-    {
-        return $this->hasMany(StatistiqueVendeur::class, 'user_id');
     }
 
     public function notifications()

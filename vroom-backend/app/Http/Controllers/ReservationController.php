@@ -82,6 +82,7 @@ class ReservationController extends Controller
                 return Reservation::create([
                     'vehicule_id' => $vehiculeId,
                     'client_id'   => $user->id,
+                    'active_key'  => $user->id,
                     'statut'      => Reservation::EN_ATTENTE,
                     'expires_at'  => $expiresAt,
                 ]);
@@ -106,8 +107,8 @@ class ReservationController extends Controller
             $reservation = Reservation::where('id', $id)
                 ->where('client_id', Auth::id())
                 ->with([
-                    'vehicule:id,catalogue_id,post_type,statut,prix,date_disponibilite',
-                    'vehicule.catalogue:id,marque,modele,annee',
+                    'vehicule:id,post_type,statut,prix,date_disponibilite',
+                    'vehicule.description:vehicule_id,marque,modele,annee',
                     'client:id,fullname,email,telephone',
                 ])
                 ->firstOrFail();
@@ -135,8 +136,8 @@ class ReservationController extends Controller
         try {
             $reservations = Reservation::where('client_id', Auth::id())
                 ->with([
-                    'vehicule:id,catalogue_id,post_type,statut,prix,date_disponibilite',
-                    'vehicule.catalogue:id,marque,modele,annee',
+                    'vehicule:id,post_type,statut,prix,date_disponibilite',
+                    'vehicule.description:vehicule_id,marque,modele,annee',
                     'client:id,fullname,email,telephone',
                 ])
                 ->orderByDesc('created_at')
@@ -185,16 +186,22 @@ class ReservationController extends Controller
 
                 $reservation->update([
                     'statut'            => Reservation::ANNULEE,
+                    'active_key'        => null,
                     'cancelled_at'      => now(),
                     'annulations_count' => $nouvellesAnnulations,
                 ]);
 
-                // Remet le véhicule disponible seulement si pas bloqué définitivement
-                $reservation->vehicule->update(['statut' => Vehicules::STATUS_DISPONIBLE]);
+                // Si la date de disponibilité n'est pas encore passée, le véhicule
+                // retourne "à venir" (pas "disponible" — il ne l'est pas encore réellement)
+                $nouveauStatut = $reservation->vehicule->date_disponibilite?->isFuture()
+                    ? Vehicules::STATUS_A_VENIR
+                    : Vehicules::STATUS_DISPONIBLE;
+
+                $reservation->vehicule->update(['statut' => $nouveauStatut]);
             });
 
             // Email de confirmation d'annulation
-            $reservation->load(['client', 'vehicule.catalogue', 'vehicule.photos']);
+            $reservation->load(['client', 'vehicule.description', 'vehicule.photos']);
             if ($reservation->client?->email) {
                 Mail::to($reservation->client->email)
                     ->send(new ReservationAnnuleeMail($reservation));

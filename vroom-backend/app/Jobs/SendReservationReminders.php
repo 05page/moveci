@@ -17,7 +17,7 @@ class SendReservationReminders implements ShouldQueue
     {
         $reservations = Reservation::where('statut', Reservation::EN_ATTENTE)
             ->where('expires_at', '>', now())
-            ->with(['client', 'vehicule.catalogue', 'vehicule.photos'])
+            ->with(['client', 'vehicule.description', 'vehicule.photos'])
             ->get();
 
         foreach ($reservations as $reservation) {
@@ -27,10 +27,10 @@ class SendReservationReminders implements ShouldQueue
                 continue;
             }
 
-            $vehicule  = $reservation->vehicule;
-            $catalogue = $vehicule?->catalogue;
-            $nom       = $catalogue
-                ? "{$catalogue->marque} {$catalogue->modele} ({$catalogue->annee})"
+            $vehicule    = $reservation->vehicule;
+            $description = $vehicule?->description;
+            $nom         = $description
+                ? "{$description->marque} {$description->modele} ({$description->annee})"
                 : "le véhicule réservé";
 
             // Notification en base

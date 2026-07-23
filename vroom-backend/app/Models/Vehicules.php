@@ -16,7 +16,6 @@ class Vehicules extends Model
 
     protected $fillable = [
         'created_by',
-        'catalogue_id',
         'post_type',
         'type',
         'statut',
@@ -78,10 +77,6 @@ class Vehicules extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-    public function catalogue()
-    {
-        return $this->belongsTo(Catalogue::class, 'catalogue_id');
     }
     public function description()
     {

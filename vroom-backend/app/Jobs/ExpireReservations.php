@@ -17,12 +17,19 @@ class ExpireReservations implements ShouldQueue
     {
         $reservations = Reservation::where('statut', Reservation::EN_ATTENTE)
             ->where('expires_at', '<', now())
-            ->with(['client', 'vehicule.catalogue', 'vehicule.photos'])
+            ->with(['client', 'vehicule.description', 'vehicule.photos'])
             ->get();
 
         foreach ($reservations as $rs) {
-            $rs->update(['statut' => Reservation::EXPIREE]);
-            $rs->vehicule->update(['statut' => Vehicules::STATUS_DISPONIBLE]);
+            $rs->update(['statut' => Reservation::EXPIREE, 'active_key' => null]);
+
+            // Même logique que ReservationController::cancel() : ne pas afficher
+            // le véhicule comme "disponible" avant sa date de disponibilité annoncée
+            $nouveauStatut = $rs->vehicule->date_disponibilite?->isFuture()
+                ? Vehicules::STATUS_A_VENIR
+                : Vehicules::STATUS_DISPONIBLE;
+
+            $rs->vehicule->update(['statut' => $nouveauStatut]);
 
             // Email d'expiration
             if ($rs->client?->email) {

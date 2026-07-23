@@ -35,9 +35,9 @@
                         $photoUrl = $photo
                             ? (str_starts_with($photo->path, 'http') ? $photo->path : config('app.url') . '/storage/' . $photo->path)
                             : null;
-                        $catalogue = $reservation->vehicule?->catalogue;
-                        $nomVehicule = $catalogue
-                            ? "{$catalogue->marque} {$catalogue->modele} {$catalogue->annee}"
+                        $description = $reservation->vehicule?->description;
+                        $nomVehicule = $description
+                            ? "{$description->marque} {$description->modele} {$description->annee}"
                             : 'le véhicule réservé';
                     @endphp
 
