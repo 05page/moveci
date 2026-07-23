@@ -62,20 +62,20 @@ GEMINI_API_KEY=...
 ```
 
 ### User Roles
-Four roles defined on the `User` model: `client`, `vendeur`, `partenaire`, `admin`. Partners have an additional `partenaire_type`: `concessionnaire` or `auto_ecole`.
+Five roles defined directly on `users.role`: `client`, `vendeur`, `concessionnaire`, `auto_ecole`, `admin`. There is no separate `partenaire` role or `partenaire_type` column — `concessionnaire`/`auto_ecole` are stored as-is on `role`. (The frontend groups them under `app/partenaire/` as a UI convention only.)
 
 ### Key Backend Patterns
 
 **All API routes** are in `vroom-backend/routes/api.php` and require `auth:sanctum` middleware except OAuth endpoints.
 
-**Vehicle workflow**: `status_validation` goes `en_attente → validee/rejetee`. `statut` tracks availability: `disponible|vendu|loué|suspendu|banni`.
+**Vehicle workflow**: `status_validation` goes `en_attente → validee/rejetee` (also `suspendu/restauree/retrait`). `statut` tracks availability: `disponible|vendu|loué|a_venir|réservé|suspendu|banni|en_transaction`.
 
-**Transaction/RDV double-confirmation**: Both buyer and seller must call their respective confirm endpoints before a transaction is considered confirmed. See `Transactions` model methods `confirmerParClient()` and `confirmerParVendeur()`.
+**Transaction/RDV double-confirmation**: Both buyer and seller must call their respective confirm endpoints before a transaction is considered confirmed. See `TransactionConclue` model / `TransactionConclueController::confirmerVendeur()`/`confirmerClient()`. Note this is a mutual on-the-honor confirmation, not a payment — no money moves through the platform (see [`docs/REGLES-METIER.md`](docs/REGLES-METIER.md)).
 
-**Interactions model** is a multi-purpose model handling four distinct types via the `type` field: `favori`, `alerte`, `signalement`, `blocage_user`.
+**No unified `Interactions` model exists.** `Favori`, `Alerte`, and `Signalement` are separate models/tables, each with its own dedicated fields — there is no shared `type` discriminator, and no `blocage_user` mechanism exists in the codebase.
 
 ### Key Backend Services
-- `GeminiService.php` — Google Gemini AI for vehicle price suggestions
+- `GeminiService.php` / `ValidateVehiculeWithGemini.php` — Google Gemini AI auto-moderates new vehicle listings (`status_validation` workflow): cross-checks declared marque/modèle against photos, verifies declared mileage against a dashboard photo (±500km tolerance), auto-rejects on inconsistency. `prix_suggere` is a secondary output of this same analysis, not its primary purpose.
 - `GoogleCalendarService.php` — Creates Google Calendar events for appointments
 - Laravel Reverb (WebSocket) for real-time notifications
 

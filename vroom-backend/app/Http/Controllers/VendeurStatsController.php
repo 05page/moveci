@@ -4,10 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Avis;
 use App\Models\RendezVous;
-use App\Models\Transactions;
 use App\Models\User;
 use App\Models\Vehicules;
-use App\Models\VehiculeView;
 use App\Models\VehiculeVue;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
