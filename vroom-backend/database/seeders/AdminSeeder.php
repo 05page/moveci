@@ -19,7 +19,7 @@ class AdminSeeder extends Seeder
                 'fullname'               => 'Admin MoveCi',
                 'password'               => Hash::make($password),
                 'role'                   => 'admin',
-                'niveau_acces'           => 1,
+                'niveau_acces'           => 'super_admin',
                 'onboarding_completed_at'=> now(),
             ]
         );

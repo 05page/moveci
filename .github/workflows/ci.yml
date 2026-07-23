@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend (Laravel / Pest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vroom-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_sqlite, sqlite3, dom, curl, libxml, gd
+          coverage: none
+
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Generate app key
+        run: php artisan key:generate
+
+      - name: Run tests
+        run: php artisan test
+
+  frontend:
+    name: Frontend (Next.js / Vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Vroom-ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: Vroom-ci/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        # Non-bloquant pour l'instant : 66 erreurs préexistantes (règle
+        # react-hooks/set-state-in-effect + quelques `any`), backlog séparé
+        # de la Phase 1 — voir PLAN-RATTRAPAGE.md. À rendre bloquant une fois nettoyé.
+        run: pnpm lint
+        continue-on-error: true
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+        env:
+          BACKEND_URL: http://127.0.0.1:8000/api
+          NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
+          # Marge mémoire pour le TypeScript check — un OOM local a été observé
+          # après une session très chargée (voir PLAN-RATTRAPAGE.md), probablement
+          # une saturation machine plutôt qu'un vrai besoin, mais les runners CI
+          # standards (7 Go) bénéficient de cette marge de sécurité.
+          NODE_OPTIONS: --max-old-space-size=6144
