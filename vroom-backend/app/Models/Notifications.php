@@ -37,7 +37,6 @@ class Notifications extends Model
     const TYPE_RDV             = 'rdv';
     const TYPE_FORMATION       = 'formation';
     const TYPE_ALERTE_VEHICULE = 'alerte_vehicule';
-    const TYPE_ABONNEMENT      = 'abonnement';
     const TYPE_MODERATION      = 'moderation';
     const TYPE_TRANSACTION     = 'transaction';
     const TYPE_SUPPORT         = 'support';

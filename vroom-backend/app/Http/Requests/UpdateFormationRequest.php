@@ -20,6 +20,9 @@ class UpdateFormationRequest extends FormRequest
             'duree_heures' => 'sometimes|integer|min:1',
             'titre'        => 'sometimes|string|max:255',
             'texte'        => 'sometimes|string',
+            'lieu'          => 'sometimes|nullable|string|max:255',
+            'nombre_places' => 'sometimes|nullable|integer|min:1',
+            'deroulement'   => 'sometimes|nullable|string',
         ];
     }
 

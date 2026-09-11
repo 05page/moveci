@@ -143,7 +143,7 @@ test('le client peut refuser une transaction, le véhicule redevient disponible'
     ]);
 });
 
-test('le vendeur qui refuse une transaction est pénalisé (signalement auto + compteur incrémenté)', function () {
+test('le vendeur qui refuse une transaction est pénalisé (signalement auto + véhicule libéré)', function () {
     $vendeur  = User::factory()->vendeur()->create();
     $client   = User::factory()->client()->create();
     $vehicule = Vehicules::factory()->vente()->create(['created_by' => $vendeur->id]);
@@ -171,6 +171,4 @@ test('le vendeur qui refuse une transaction est pénalisé (signalement auto + c
         'cible_user_id' => $vendeur->id,
         'motif'         => 'transaction_non_confirmee',
     ]);
-
-    expect($vendeur->fresh()->nb_refus_transaction)->toBe(1);
 });

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Events\DataRefresh;
 use App\Models\Avis;
 use App\Models\RendezVous;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -41,13 +40,7 @@ class AvisController extends Controller
             'commentaire'=> $validated['commentaire'] ?? null,
         ]);
 
-        // Recalculer la note moyenne du vendeur
-        $vendeur = User::find($rdv->vendeur_id);
-        $vendeur->nb_avis      = Avis::where('vendeur_id', $vendeur->id)->count();
-        $vendeur->note_moyenne = Avis::where('vendeur_id', $vendeur->id)->avg('note');
-        $vendeur->save();
-
-        // Notifie le vendeur en temps réel (note_moyenne mise à jour)
+        // Notifie le vendeur en temps réel (sa note moyenne, calculée à la volée, a changé)
         event(new DataRefresh($rdv->vendeur_id, 'avis'));
         // Notifie le client pour mettre à jour son statut has_avis sur la page RDV
         event(new DataRefresh($user->id, 'rdv'));

@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasUuids, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, HasUuids, SoftDeletes, LogsActivity;
 
     protected $fillable = [
         'fullname',
@@ -23,6 +25,7 @@ class User extends Authenticatable
         'google_refresh_token',
         'google_token_expires_at',
         'avatar',
+        'cover_photo',
         'role',
         'statut',
         // client
@@ -30,20 +33,12 @@ class User extends Authenticatable
         'adresse',
         'latitude',
         'longitude',
-        // vendeur
-        'rccm',
-        'note_moyenne',
-        'nb_avis',
         // concessionnaire / auto_ecole
         'raison_sociale',
-        'badge_officiel',
-        'adresse_showroom',
-        'taux_reussite',
-        'numero_agrement',
-        // admin
-        'niveau_acces',
         // onboarding
         'onboarding_completed_at',
+        // vérification d'identité (vendeur particulier)
+        'identite_verifiee_le',
     ];
 
     protected $hidden = [
@@ -53,15 +48,30 @@ class User extends Authenticatable
         'google_refresh_token',
     ];
 
+    protected $appends = ['membre_since'];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['fullname', 'email', 'role', 'statut'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
     protected function casts(): array
     {
         return [
             'password'                 => 'hashed',
-            'badge_officiel'           => 'boolean',
             'google_access_token'      => 'array',
             'google_token_expires_at'  => 'datetime',
             'onboarding_completed_at'  => 'datetime',
+            'identite_verifiee_le'     => 'datetime',
         ];
+    }
+
+    public function getMembreSinceAttribute()
+    {
+        return $this->created_at;
     }
 
     // Constantes rôles
@@ -121,11 +131,6 @@ class User extends Authenticatable
     public function inscriptions()
     {
         return $this->hasMany(InscriptionFormation::class, 'client_id');
-    }
-
-    public function abonnements()
-    {
-        return $this->hasMany(Abonnement::class, 'user_id');
     }
 
     public function notifications()

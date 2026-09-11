@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Events\DataRefresh;
 use App\Http\Requests\StoreFormationRequest;
 use App\Http\Requests\UpdateFormationRequest;
-use App\Models\DescriptionFormation;
 use App\Models\Formation;
 use App\Models\InscriptionFormation;
 use App\Models\Notifications;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,8 +24,14 @@ class FormationController extends Controller
      */
     public function index(): JsonResponse
     {
-        $formations = Formation::with(['autoEcole:id,fullname,avatar,note_moyenne,nb_avis,taux_reussite', 'description'])
+        // note_moyenne n'est plus une colonne : withAvg la calcule depuis les avis
+        // et l'alias conserve le nom attendu par le front.
+        $formations = Formation::with([
+            'autoEcole' => fn ($q) => $q->select('id', 'fullname', 'avatar')
+                ->withAvg('avisVendeur as note_moyenne', 'note'),
+        ])
             ->where('statut_validation', Formation::STATUT_VALIDE)
+            ->where('statut', Formation::STATUT_DISPONIBLE)
             ->withCount('inscriptions')
             ->latest()
             ->get();
@@ -39,10 +46,11 @@ class FormationController extends Controller
     public function show(string $id): JsonResponse
     {
         $formation = Formation::with([
-            'autoEcole:id,fullname,avatar,note_moyenne,nb_avis,taux_reussite,adresse_showroom',
-            'description',
+            'autoEcole' => fn ($q) => $q->select('id', 'fullname', 'avatar')
+                ->withAvg('avisVendeur as note_moyenne', 'note'),
         ])
             ->where('statut_validation', Formation::STATUT_VALIDE)
+            ->where('statut', Formation::STATUT_DISPONIBLE)
             ->withCount('inscriptions')
             ->findOrFail($id);
 
@@ -57,8 +65,7 @@ class FormationController extends Controller
     {
         $user = Auth::user();
 
-        $formations = Formation::with(['description'])
-            ->where('auto_ecole_id', $user->id)
+        $formations = Formation::where('auto_ecole_id', $user->id)
             ->withCount('inscriptions')
             ->latest()
             ->get();
@@ -69,10 +76,6 @@ class FormationController extends Controller
     /**
      * Liste tous les inscrits de toutes les formations de cette auto-ecole.
      * GET /formations/mes-inscrits
-     *
-     * Inclut la formation (type_permis + titre) et le client pour chaque inscription.
-     * Permet a l'auto-ecole de voir d'un coup l'ensemble de ses eleves
-     * et quel type de permis chacun a choisi.
      */
     public function mesInscrits(): JsonResponse
     {
@@ -83,15 +86,15 @@ class FormationController extends Controller
             })
             ->with([
                 'client:id,fullname,email,avatar,telephone,adresse',
-                'formation:id,type_permis,auto_ecole_id',
-                'formation.description:formation_id,titre',
+                'formation:id,type_permis,auto_ecole_id,titre,prix',
             ])
+            ->withSum('versements as montant_paye', 'montant')
             ->orderByDesc('date_inscription')
             ->get();
 
         return response()->json(['success' => true, 'data' => $inscrits]);
     }
-
+    
     /**
      * Liste des inscrits d'une formation (auto-école uniquement).
      * GET /formations/{id}/inscrits
@@ -112,33 +115,24 @@ class FormationController extends Controller
         return response()->json(['success' => true, 'data' => $inscrits]);
     }
 
-    /**
-     * Crée une formation avec sa description.
-     * POST /formations
-     */
     public function store(StoreFormationRequest $request): JsonResponse
     {
         $user      = Auth::user();
         $validated = $request->validated();
 
-        DB::beginTransaction();
         try {
             $formation = Formation::create([
                 'auto_ecole_id'      => $user->id,
+                'titre'              => $validated['titre'],
+                'description'        => $validated['texte'],
                 'type_permis'        => $validated['type_permis'],
                 'prix'               => $validated['prix'],
                 'duree_heures'       => $validated['duree_heures'],
+                'lieu'               => $validated['lieu'] ?? ($user['adresse'] ?? null),
+                'nombre_places'      => $validated['nombre_places'] ?? null,
+                'deroulement'        => $validated['deroulement'] ?? null,
                 'statut_validation'  => Formation::STATUT_EN_ATTENTE,
             ]);
-
-            DescriptionFormation::create([
-                'formation_id' => $formation->id,
-                'titre'        => $validated['titre'],
-                'texte'        => $validated['texte'],
-                'langue'       => $validated['langue'] ?? 'fr',
-            ]);
-
-            DB::commit();
 
             Notifications::notifyAdmins(
                 Notifications::TYPE_FORMATION,
@@ -150,10 +144,9 @@ class FormationController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Formation soumise — en attente de validation admin',
-                'data'    => $formation->load('description'),
+                'data'    => $formation,
             ], 201);
         } catch (\Exception $e) {
-            DB::rollBack();
             return $this->serverError($e, 'Erreur lors du traitement de la formation. Réessayez dans quelques instants.');
         }
     }
@@ -172,21 +165,20 @@ class FormationController extends Controller
 
         $validated = $request->validated();
 
-        DB::beginTransaction();
         try {
-            $formation->update(array_intersect_key($validated, array_flip(['type_permis', 'prix', 'duree_heures'])));
-
-            if (isset($validated['titre']) || isset($validated['texte'])) {
-                $formation->description()->updateOrCreate(
-                    ['formation_id' => $formation->id],
-                    array_intersect_key($validated, array_flip(['titre', 'texte']))
-                );
+            // Le front envoie toujours 'texte' : on le remappe vers la colonne
+            // 'description' sans casser le contrat d'API existant.
+            if (array_key_exists('texte', $validated)) {
+                $validated['description'] = $validated['texte'];
             }
 
-            DB::commit();
-            return response()->json(['success' => true, 'data' => $formation->load('description')]);
+            $formation->update(array_intersect_key(
+                $validated,
+                array_flip(['titre', 'description', 'type_permis', 'prix', 'duree_heures', 'lieu', 'nombre_places', 'deroulement'])
+            ));
+
+            return response()->json(['success' => true, 'data' => $formation]);
         } catch (\Exception $e) {
-            DB::rollBack();
             return $this->serverError($e, 'Erreur lors du traitement de la formation. Réessayez dans quelques instants.');
         }
     }
@@ -240,11 +232,6 @@ class FormationController extends Controller
         ]);
 
         $inscription->update($validated);
-
-        // Quand un élève termine avec un résultat, on recalcule le taux de réussite global de l'auto-école
-        if ($validated['statut_eleve'] === InscriptionFormation::STATUT_TERMINE && array_key_exists('reussite', $validated)) {
-            $this->recalculerTauxReussite($user->id);
-        }
 
         // Notifie le client de l'avancement
         $messages = [
@@ -345,6 +332,43 @@ class FormationController extends Controller
             ? round(($stats->reussis / $stats->termines) * 100, 1)
             : null;
 
+        // Inscriptions par mois (année en cours) — une seule requête groupée, pas 12.
+        $parMois = InscriptionFormation::whereIn('formation_id', $formationIds)
+            ->whereYear('date_inscription', Carbon::now()->year)
+            ->selectRaw('MONTH(date_inscription) as mois, COUNT(*) as total')
+            ->groupBy('mois')
+            ->pluck('total', 'mois');
+
+        $statsMensuel = [];
+        for ($mois = 1; $mois <= 12; $mois++) {
+            $statsMensuel[] = [
+                'mois'         => $mois,
+                'nom_mois'     => Carbon::create()->month($mois)->locale('fr')->translatedFormat('F'),
+                'inscriptions' => (int) ($parMois[$mois] ?? 0),
+            ];
+        }
+
+        // Inscriptions par jour (semaine en cours) — une seule requête groupée, pas 7.
+        $debutSemaine = Carbon::now()->startOfWeek();
+        $finSemaine   = Carbon::now()->endOfWeek();
+
+        $parJour = InscriptionFormation::whereIn('formation_id', $formationIds)
+            ->whereBetween('date_inscription', [$debutSemaine, $finSemaine])
+            ->selectRaw('DATE(date_inscription) as jour, COUNT(*) as total')
+            ->groupBy('jour')
+            ->pluck('total', 'jour');
+
+        $statsSemaine = [];
+        for ($i = 0; $i < 7; $i++) {
+            $jour = $debutSemaine->copy()->addDays($i);
+            $cle  = $jour->format('Y-m-d');
+            $statsSemaine[] = [
+                'jour'         => $cle,
+                'nom_jour'     => $jour->locale('fr')->translatedFormat('D'),
+                'inscriptions' => (int) ($parJour[$cle] ?? 0),
+            ];
+        }
+
         return response()->json([
             'success' => true,
             'data'    => [
@@ -355,30 +379,10 @@ class FormationController extends Controller
                 'reussis'        => (int) $stats->reussis,
                 'abandonnes'     => (int) $stats->abandonnes,
                 'taux_reussite'  => $tauxReussite,
+                'stats_mensuel'  => $statsMensuel,
+                'stats_semaine'  => $statsSemaine,
             ],
         ]);
     }
 
-    /**
-     * Recalcule le taux_reussite global de l'auto-école et le persiste sur le User.
-     * Appelé après chaque updateInscrit() qui définit un résultat d'examen.
-     */
-    private function recalculerTauxReussite(string $autoEcoleId): void
-    {
-        $formationIds = Formation::where('auto_ecole_id', $autoEcoleId)->pluck('id');
-
-        $stats = InscriptionFormation::whereIn('formation_id', $formationIds)
-            ->where('statut_eleve', InscriptionFormation::STATUT_TERMINE)
-            ->selectRaw("
-                COUNT(*) as termines,
-                SUM(CASE WHEN reussite = true THEN 1 ELSE 0 END) as reussis
-            ")
-            ->first();
-
-        $taux = $stats->termines > 0
-            ? round(($stats->reussis / $stats->termines) * 100, 1)
-            : null;
-
-        \App\Models\User::where('id', $autoEcoleId)->update(['taux_reussite' => $taux]);
-    }
 }

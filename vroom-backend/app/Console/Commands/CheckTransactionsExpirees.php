@@ -17,7 +17,6 @@ use Illuminate\Support\Facades\DB;
  *  - Transaction → statut expiré
  *  - Véhicule → disponible (déverrouillé)
  *  - Signalement automatique créé sur le vendeur
- *  - Compteur nb_refus_transaction incrémenté
  *  - Client et vendeur notifiés
  *
  * Si le vendeur avait déjà confirmé mais pas le client → expiration neutre
@@ -79,9 +78,6 @@ class CheckTransactionsExpirees extends Command
             'statut'           => Signalement::STATUT_EN_ATTENTE,
             'date_signalement' => now(),
         ]);
-
-        // Incrémente le compteur de réputation
-        User::where('id', $transaction->vendeur_id)->increment('nb_refus_transaction');
 
         // Notifie le vendeur
         Notifications::create([

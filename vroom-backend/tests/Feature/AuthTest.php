@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
 
 test('un client peut se connecter avec des identifiants valides', function () {
     $user = User::factory()->client()->create();
@@ -54,4 +55,42 @@ test('un client peut s inscrire avec des données valides', function () {
         'role'   => 'client',
         'statut' => User::ACTIF,
     ]);
+});
+
+test('l\'onboarding met à jour le role et onboarding_completed_at ensemble', function () {
+    Http::fake(); // GeocodingService appelle Nominatim en vrai sinon
+
+    $user = User::factory()->create([
+        'role'                    => 'client',
+        'onboarding_completed_at' => null,
+    ]);
+
+    $response = $this->actingAs($user)->postJson('/api/auth/complete-onboarding', [
+        'telephone' => '0102030405',
+        'adresse'   => 'Cocody, Abidjan',
+        'role'      => 'vendeur',
+    ]);
+
+    $response->assertStatus(200);
+
+    $this->assertDatabaseHas('users', [
+        'id'   => $user->id,
+        'role' => 'vendeur',
+    ]);
+    $this->assertNotNull($user->fresh()->onboarding_completed_at);
+});
+
+test('l\'onboarding échoue si le role n\'est pas client ou vendeur', function () {
+    Http::fake();
+
+    $user = User::factory()->create(['onboarding_completed_at' => null]);
+
+    $response = $this->actingAs($user)->postJson('/api/auth/complete-onboarding', [
+        'telephone' => '0102030405',
+        'adresse'   => 'Cocody, Abidjan',
+        'role'      => 'admin',
+    ]);
+
+    $response->assertStatus(422);
+    $this->assertNull($user->fresh()->onboarding_completed_at);
 });

@@ -17,7 +17,6 @@ return new class extends Migration
             $table->text('details')->nullable();
             $table->timestamp('date_action')->useCurrent();
             $table->timestamps();
-            // Pas de soft delete — journal d'audit immuable
         });
     }
 
