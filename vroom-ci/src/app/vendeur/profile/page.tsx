@@ -11,6 +11,7 @@ import {
   KeyRound,
   Pencil,
   Star,
+  Users,
   Wallet,
 } from "lucide-react";
 
@@ -20,6 +21,8 @@ import CarteTransaction from "@/components/CarteTransaction";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
 import {
   cn,
   formaterCompact,
@@ -35,262 +38,53 @@ import {
   photoPrincipale,
   STYLE_STATUT,
 } from "@/lib/vehicule";
-import type { StatsVendeur, TransactionConclue, User } from "@/types";
-
-/** Profil complet renvoyé par `GET /api/users/{id}/profil` pour un rôle vendeur. */
-const MOCK_VENDEUR: User = {
-  id: "3f8a1b2c-9d7e-4f60-a531-8c4e6b2a9f03",
-  fullname: "Koffi Aristide",
-  avatar: null,
-  role: "vendeur",
-  membre_since: "2025-11-18T14:02:00.000000Z",
-  note_moyenne: 4.5,
-  nb_avis: 12,
-  adresse: "Cocody, Abidjan",
-  telephone: "+225 07 00 00 00 00",
-};
-
-/** Miroir de `data` dans la réponse de GET /api/stats/mes-stats. */
-const MOCK_STATS: StatsVendeur = {
-  stats: {
-    total_vehicule: 12,
-    total_vehicule_vendu: 5,
-    total_vehicule_loue: 2,
-    total_vues: 8420,
-    total_vues_mois: 1310,
-    total_vues_jour: 87,
-    total_revenus: 18750000,
-  },
-  // 12 points, janvier -> décembre. Septembre à décembre sont à 0 : l'année n'y est pas encore.
-  stats_mensuel: [
-    { mois: 1, nom_mois: "janvier", ventes: 0, vues: 210, locations: 0 },
-    { mois: 2, nom_mois: "février", ventes: 1, vues: 340, locations: 0 },
-    { mois: 3, nom_mois: "mars", ventes: 0, vues: 415, locations: 1 },
-    { mois: 4, nom_mois: "avril", ventes: 1, vues: 520, locations: 0 },
-    { mois: 5, nom_mois: "mai", ventes: 0, vues: 480, locations: 1 },
-    { mois: 6, nom_mois: "juin", ventes: 1, vues: 735, locations: 0 },
-    { mois: 7, nom_mois: "juillet", ventes: 1, vues: 910, locations: 0 },
-    { mois: 8, nom_mois: "août", ventes: 1, vues: 1310, locations: 0 },
-    { mois: 9, nom_mois: "septembre", ventes: 0, vues: 0, locations: 0 },
-    { mois: 10, nom_mois: "octobre", ventes: 0, vues: 0, locations: 0 },
-    { mois: 11, nom_mois: "novembre", ventes: 0, vues: 0, locations: 0 },
-    { mois: 12, nom_mois: "décembre", ventes: 0, vues: 0, locations: 0 },
-  ],
-  // Semaine du lundi 10 au dimanche 16 août 2026. Le week-end est volontairement creux.
-  stats_semaine: [
-    { jour: "2026-08-10", nom_jour: "lun.", ventes: 0, vues: 142, locations: 0 },
-    { jour: "2026-08-11", nom_jour: "mar.", ventes: 1, vues: 198, locations: 0 },
-    { jour: "2026-08-12", nom_jour: "mer.", ventes: 0, vues: 173, locations: 0 },
-    { jour: "2026-08-13", nom_jour: "jeu.", ventes: 0, vues: 221, locations: 0 },
-    { jour: "2026-08-14", nom_jour: "ven.", ventes: 0, vues: 87, locations: 0 },
-    { jour: "2026-08-15", nom_jour: "sam.", ventes: 0, vues: 0, locations: 0 },
-    { jour: "2026-08-16", nom_jour: "dim.", ventes: 0, vues: 0, locations: 0 },
-  ],
-  top_vehicule_vues: {
-    // `prix` en STRING : Laravel sérialise les colonnes `decimal` ainsi, ce n'est pas une coquille
-    my_top_vehicle_most_vues: [
-      {
-        id: "2c1d0e9f-8a7b-4c6d-9e5f-4a3b2c1d0e9f",
-        post_type: "vente",
-        prix: "6250000",
-        statut: "disponible",
-        views_count: 1842,
-        description: { marque: "Toyota", modele: "RAV4", annee: 2021 },
-        photos: [
-          {
-            id: "dd44ee55-ff66-4a77-8b88-cc99dd00ee11",
-            path: "/toyota.jpeg",
-            is_primary: true,
-            position: 1,
-          },
-        ],
-      },
-      {
-        id: "7f1e9c3a-4b28-4d51-8e60-9a2b3c4d5e6f",
-        post_type: "vente",
-        prix: "4800000",
-        statut: "vendu",
-        views_count: 1533,
-        description: { marque: "Hyundai", modele: "Tucson", annee: 2020 },
-        photos: [
-          {
-            id: "aa11bb22-cc33-4d44-8e55-ff66aa77bb88",
-            path: "/hyundai.jpeg",
-            is_primary: true,
-            position: 1,
-          },
-        ],
-      },
-      {
-        id: "5d4c3b2a-1f0e-4998-8776-655443322110",
-        post_type: "location",
-        prix: "45000",
-        statut: "loué",
-        views_count: 1204,
-        description: { marque: "Kia", modele: "Sportage", annee: 2022 },
-        photos: [
-          {
-            id: "bb22cc33-dd44-4e55-9f66-aa77bb88cc99",
-            path: "/kia.jpeg",
-            is_primary: true,
-            position: 1,
-          },
-        ],
-      },
-      {
-        id: "0e9f8a7b-6c5d-4e3f-8a1b-2c3d4e5f6a7b",
-        post_type: "vente",
-        prix: "3100000",
-        statut: "disponible",
-        views_count: 968,
-        description: { marque: "Nissan", modele: "Rogue", annee: 2019 },
-        photos: [
-          {
-            id: "cc33dd44-ee55-4f66-8a77-bb88cc99dd00",
-            path: "/nissan.jpeg",
-            is_primary: true,
-            position: 1,
-          },
-        ],
-      },
-      {
-        id: "4a3b2c1d-0e9f-4a8b-9c7d-6e5f4a3b2c1d",
-        post_type: "vente",
-        prix: "12400000",
-        statut: "en_transaction",
-        views_count: 742,
-        // description ET photos absentes : le back renvoie bien null et [], il faut savoir les afficher
-        description: null,
-        photos: [],
-      },
-    ],
-  },
-  rdv: {
-    total_rdv: 23,
-  },
-};
-
-/**
- * Transactions confirmées du vendeur : `GET /api/transactions-conclues/mes-transactions`
- * filtré sur `statut === "confirmé"`. Même modèle que côté client, mais c'est la
- * relation `client` qui est chargée ici, pas `vendeur`.
- */
-const MOCK_TRANSACTIONS: TransactionConclue[] = [
-  {
-    id: "1a2b3c4d-5e6f-4708-9a1b-2c3d4e5f6071",
-    type: "vente",
-    statut: "confirmé",
-    prix_final: "4300000",
-    date_debut_location: null,
-    date_fin_location: null,
-    confirme_par_vendeur: true,
-    confirme_par_client: true,
-    created_at: "2026-06-12T10:30:00.000000Z",
-    vehicule: {
-      id: "7f1e9c3a-4b28-4d51-8e60-9a2b3c4d5e6f",
-      post_type: "vente",
-      statut: "vendu",
-      prix: "4300000",
-      description: { marque: "Hyundai", modele: "Tucson", annee: 2020 },
-      photos: [
-        {
-          id: "aa11bb22-cc33-4d44-8e55-ff66aa77bb88",
-          path: "/hyundai.jpeg",
-          is_primary: true,
-          position: 1,
-        },
-      ],
-    },
-    client: {
-      id: "b1e7c3d2-5a49-4f18-9c26-3d8b1a0e7f54",
-      fullname: "Aya Konan",
-      avatar: null,
-    },
-  },
-  {
-    id: "9c8b7a6d-5e4f-4302-b1a0-9f8e7d6c5b4a",
-    type: "location",
-    statut: "confirmé",
-    prix_final: "45000",
-    date_debut_location: "2026-07-04T00:00:00.000000Z",
-    date_fin_location: "2026-07-11T00:00:00.000000Z",
-    confirme_par_vendeur: true,
-    confirme_par_client: true,
-    created_at: "2026-07-02T16:45:00.000000Z",
-    vehicule: {
-      id: "5d4c3b2a-1f0e-4998-8776-655443322110",
-      post_type: "location",
-      statut: "loué",
-      prix: "45000",
-      description: { marque: "Kia", modele: "Sportage", annee: 2022 },
-      photos: [
-        {
-          id: "bb22cc33-dd44-4e55-9f66-aa77bb88cc99",
-          path: "/kia.jpeg",
-          is_primary: true,
-          position: 1,
-        },
-      ],
-    },
-    client: {
-      id: "6e5f4a3b-2c1d-4e9f-8a7b-6c5d4e3f2a1b",
-      fullname: "Bakary Traoré",
-      avatar: null,
-    },
-  },
-  {
-    id: "3e2d1c0b-9a8f-4e7d-8c6b-5a4f3e2d1c0b",
-    type: "vente",
-    statut: "confirmé",
-    prix_final: "3100000",
-    date_debut_location: null,
-    date_fin_location: null,
-    confirme_par_vendeur: true,
-    confirme_par_client: true,
-    created_at: "2026-08-05T09:15:00.000000Z",
-    vehicule: {
-      id: "0e9f8a7b-6c5d-4e3f-8a1b-2c3d4e5f6a7b",
-      post_type: "vente",
-      statut: "vendu",
-      prix: "3100000",
-      description: { marque: "Nissan", modele: "Rogue", annee: 2019 },
-      photos: [
-        {
-          id: "cc33dd44-ee55-4f66-8a77-bb88cc99dd00",
-          path: "/nissan.jpeg",
-          is_primary: true,
-          position: 1,
-        },
-      ],
-    },
-    client: {
-      id: "8a7b6c5d-4e3f-4a1b-9c2d-3e4f5a6b7c8d",
-      fullname: "Fatou Diallo",
-      avatar: null,
-    },
-  },
-];
+import type { ReponseAvisVendeur, StatsVendeur, TransactionConclue, User } from "@/types";
 
 type DonneesProfilVendeur = {
   vendeur: User;
   stats: StatsVendeur;
   transactions: TransactionConclue[];
+  transactionsEnAttente: TransactionConclue[];
 };
 
-/** Même contrat que GET /api/stats/mes-stats : seul ce corps changera au branchement. */
-function recupererStatsVendeur(): Promise<DonneesProfilVendeur> {
-  return new Promise((resolve) =>
-    setTimeout(
-      () =>
-        resolve({
-          vendeur: MOCK_VENDEUR,
-          stats: MOCK_STATS,
-          transactions: MOCK_TRANSACTIONS,
-        }),
-      700
-    )
-  );
-}
+/**
+ * `GET /me` renvoie le modèle User BRUT : `note_moyenne`/`nb_avis` n'y existent
+ * pas (ni colonne, ni accesseur, contrairement à `membre_since`) — seul
+ * `avis/vendeur/{id}` les calcule. D'où l'attente de `reponseMe` avant de
+ * lancer les 3 autres appels : il faut l'id du vendeur pour l'interroger.
+ * `transactions` vient de `mes-transactions` (relation `client` chargée, pas
+ * `vendeur` — inverse de /client/profile.tsx) et se filtre côté front sur
+ * `statut === "confirmé"` : le back renvoie tout l'historique.
+ */
+const recupererStatsVendeur = async (): Promise<DonneesProfilVendeur> => {
+  const reponseMe = await api.get<{ data: User }>("me");
+
+  const [reponseAvis, reponseStats, reponseTransactions] = await Promise.all([
+    api.get<{ data: ReponseAvisVendeur }>(`avis/vendeur/${reponseMe.data.id}`),
+    api.get<{ data: StatsVendeur }>("stats/mes-stats"),
+    api.get<{ data: TransactionConclue[] }>("transactions-conclues/mes-transactions"),
+  ]);
+
+  return {
+    vendeur: {
+      ...reponseMe.data,
+      note_moyenne: reponseAvis.data.note_moyenne,
+      nb_avis: reponseAvis.data.total,
+    },
+    stats: reponseStats.data,
+    transactions: reponseTransactions.data.filter(
+      (transaction) => transaction.statut === "confirmé"
+    ),
+    transactionsEnAttente: reponseTransactions.data.filter(
+      (transaction) => transaction.statut === "en_attente"
+    ),
+  };
+};
+
+/** Même contrat que POST /transactions-conclues/{id}/refuser-vendeur. */
+const refuserTransaction = async (id: string): Promise<void> => {
+  await api.post(`transactions-conclues/${id}/refuser-vendeur`);
+};
 
 /** Filtre du bloc « Vos ventes et locations ». */
 type FiltreTransaction = "tout" | "vente" | "location";
@@ -425,6 +219,8 @@ export default function ProfilVendeur() {
   const [filtre, setFiltre] = useState<FiltreTransaction>("tout");
   // incrémenté par le bouton Recharger : c'est ce qui redéclenche le useEffect ci-dessous
   const [tentative, setTentative] = useState(0);
+  const [idEnCours, setIdEnCours] = useState<string | null>(null);
+  const [erreurTransaction, setErreurTransaction] = useState<string | null>(null);
 
   useEffect(() => {
     // `annule` évite un setState sur un composant démonté si la réponse arrive trop tard
@@ -446,6 +242,25 @@ export default function ProfilVendeur() {
     setTentative((t) => t + 1);
   };
 
+  const refuser = (id: string) => {
+    setErreurTransaction(null);
+    setIdEnCours(id);
+
+    refuserTransaction(id)
+      .then(() => recupererStatsVendeur())
+      .then((resultat) => {
+        setDonnees(resultat);
+        setIdEnCours(null);
+        toast.success("Transaction refusée.");
+      })
+      .catch((erreur) => {
+        setIdEnCours(null);
+        const message = erreur?.message ?? "Le refus a échoué.";
+        setErreurTransaction(message);
+        toast.error(message);
+      });
+  };
+
   if (chargement || !donnees) {
     return (
       <main className="mx-auto w-full max-w-7xl flex-1 px-5 py-10">
@@ -460,7 +275,7 @@ export default function ProfilVendeur() {
     );
   }
 
-  const { vendeur, stats, transactions } = donnees;
+  const { vendeur, stats, transactions, transactionsEnAttente } = donnees;
   const compteurs = stats.stats;
   const top = stats.top_vehicule_vues.my_top_vehicle_most_vues;
   const barres = construireBarres(stats, periode);
@@ -529,7 +344,21 @@ export default function ProfilVendeur() {
             Modifier
           </Link>
           <Link
-            href="/vendeur/vehicules/nouveau"
+            href="/vendeur/vehicules"
+            className={cn(buttonVariants({ variant: "outline" }), "effet-action")}
+          >
+            <Car className="size-4" />
+            Mes véhicules
+          </Link>
+          <Link
+            href="/vendeur/clients"
+            className={cn(buttonVariants({ variant: "outline" }), "effet-action")}
+          >
+            <Users className="size-4" />
+            Mes clients
+          </Link>
+          <Link
+            href="/vendeur/post-vehicule"
             className={cn(buttonVariants(), "effet-action")}
           >
             <ImagePlus className="size-4" />
@@ -591,7 +420,7 @@ export default function ProfilVendeur() {
             confirme les informations.
           </p>
           <Link
-            href="/vendeur/vehicules/nouveau"
+            href="/vendeur/post-vehicule"
             className={cn(buttonVariants({ size: "lg" }), "effet-action mt-6")}
           >
             <ImagePlus className="size-4" />
@@ -633,6 +462,38 @@ export default function ProfilVendeur() {
 
             <GrapheVues barres={barres} periode={periode} />
           </section>
+
+          {transactionsEnAttente.length > 0 && (
+            <section className="mt-16">
+              <h2 className="font-heading text-xl font-bold">
+                En attente de confirmation
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Montrez le QR affiché sur chaque carte au client — son scan confirme et finalise seul.
+              </p>
+
+              {erreurTransaction && (
+                <p
+                  role="status"
+                  className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
+                >
+                  {erreurTransaction}
+                </p>
+              )}
+
+              <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {transactionsEnAttente.map((transaction) => (
+                  <CarteTransaction
+                    key={transaction.id}
+                    transaction={transaction}
+                    perspective="vendeur"
+                    onRefuser={() => refuser(transaction.id)}
+                    enCours={idEnCours === transaction.id}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
 
           {transactions.length > 0 && (
             <section className="mt-16">
@@ -705,7 +566,7 @@ export default function ProfilVendeur() {
                 return (
                   <li key={vehicule.id}>
                     <Link
-                      href={`/vendeur/vehicules/${vehicule.id}`}
+                      href={`/vendeur/vehicule/${vehicule.id}`}
                       className="group flex items-center gap-3 py-4 transition-colors hover:bg-muted/40 sm:gap-4"
                     >
                       <span className="w-6 shrink-0 font-heading text-sm font-bold tabular-nums text-primary sm:w-7">

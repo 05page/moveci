@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import {
   Flag,
   GraduationCap,
   LayoutDashboard,
+  LifeBuoy,
   Menu,
   Receipt,
   ScrollText,
@@ -21,6 +22,8 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { useNotifications } from "@/lib/notification";
 import Notifications from "@/components/Notifications";
 
 /**
@@ -37,6 +40,7 @@ const NAV_ADMIN = [
   { libelle: "Formations", href: "/admin/formations", icone: GraduationCap },
   { libelle: "Statistiques", href: "/admin/stats", icone: BarChart3 },
   { libelle: "Logs", href: "/admin/logs", icone: ScrollText },
+  { libelle: "Support", href: "/admin/support", icone: LifeBuoy },
   { libelle: "Profil", href: "/admin/profile", icone: UserCog },
 ] as const;
 
@@ -108,6 +112,15 @@ export default function LayoutAdmin({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const navigate = useRouter();
   const [menuOuvert, setMenuOuvert] = useState(false);
+  const { notifications, nonLues: nonLuesNotifications, marquerLue, marquerToutesLues } =
+    useNotifications();
+  const [nonLuesMessages, setNonLuesMessages] = useState(0);
+
+  useEffect(() => {
+    api.get<{ unread_count: number }>("conversations/unread-count")
+      .then((reponse) => setNonLuesMessages(reponse.unread_count))
+      .catch(() => { });
+  }, []);
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -133,14 +146,24 @@ export default function LayoutAdmin({ children }: { children: React.ReactNode })
         </span>
 
         <div className="ml-auto flex items-center gap-2">
-          <Notifications notifs={[]} nonLues={0} />
+          <Notifications
+            notifs={notifications}
+            nonLues={nonLuesNotifications}
+            onMarquerLue={marquerLue}
+            onToutMarquer={marquerToutesLues}
+          />
           <button
             type="button"
             onClick={() => navigate.push("/admin/messages")}
-            aria-label="Messages"
-            className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label={nonLuesMessages > 0 ? `Messages, ${nonLuesMessages} non lus` : "Messages"}
+            className="relative flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <Send className="size-4" />
+            {nonLuesMessages > 0 && (
+              <span className="absolute top-0.5 right-0.5 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold tabular-nums text-primary-foreground">
+                {nonLuesMessages > 9 ? "9+" : nonLuesMessages}
+              </span>
+            )}
           </button>
         </div>
       </div>

@@ -22,6 +22,12 @@ Schedule::command('tendances:check')->hourly();
  * déverrouille les véhicules bloqués et pénalise les vendeurs qui n'ont pas confirmé.
  */
 Schedule::command('transactions:expirer')->hourly();
+
+/*
+ * Ouvre chaque jour la restitution des locations dont date_fin_location est atteinte :
+ * génère le code de restitution et notifie client + vendeur.
+ */
+Schedule::command('transactions:generer-codes-restitution')->daily();
 Schedule::command('sanctum:pruned-expired --hours=168')->daily();
 Schedule::job(new ExpireReservations())->daily();
 Schedule::job(new SendReservationReminders())->daily();

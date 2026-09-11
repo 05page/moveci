@@ -96,6 +96,36 @@ function DropdownMenuItem({
   )
 }
 
+/**
+ * Item qui NAVIGUE (rend un vrai `<a>`), distinct de `DropdownMenuItem` (un `<div>`).
+ * `Menu.Item` + `render={<Link .../>}` ferme le menu via son propre `onClick`
+ * AVANT que le clic natif de l'ancre ait fini de se propager — `Menu.LinkItem`
+ * existe précisément pour éviter ça (`closeOnClick` vaut `false` par défaut).
+ * Usage : <DropdownMenuLinkItem render={<Link href="/quelque-part" />}>...
+ */
+function DropdownMenuLinkItem({
+  className,
+  inset,
+  variant = "default",
+  ...props
+}: MenuPrimitive.LinkItem.Props & {
+  inset?: boolean
+  variant?: "default" | "destructive"
+}) {
+  return (
+    <MenuPrimitive.LinkItem
+      data-slot="dropdown-menu-link-item"
+      data-inset={inset}
+      data-variant={variant}
+      className={cn(
+        "group/dropdown-menu-item relative flex cursor-default items-center gap-2.5 rounded-2xl px-3 py-2 text-sm font-medium outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-9.5 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
 function DropdownMenuSub({ ...props }: MenuPrimitive.SubmenuRoot.Props) {
   return <MenuPrimitive.SubmenuRoot data-slot="dropdown-menu-sub" {...props} />
 }
@@ -257,6 +287,7 @@ export {
   DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuItem,
+  DropdownMenuLinkItem,
   DropdownMenuCheckboxItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,

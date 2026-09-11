@@ -3,7 +3,7 @@
 import { usePathname} from "next/navigation";
 import React from "react";
 
-const ROUTES_SANS_FOOTER = ["/messages", "/admin"];
+const ROUTES_SANS_FOOTER = ["/messages", "/admin", "/partenaire"];
 
 export default function FooterConditionnel({children}: {children: React.ReactNode}){
     const chemin = usePathname()

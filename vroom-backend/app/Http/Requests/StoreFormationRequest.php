@@ -21,6 +21,9 @@ class StoreFormationRequest extends FormRequest
             'titre'        => 'required|string|max:255',
             'texte'        => 'required|string',
             'langue'       => 'nullable|string|max:10',
+            'lieu'          => 'nullable|string|max:255',
+            'nombre_places' => 'nullable|integer|min:1',
+            'deroulement'   => 'nullable|string',
         ];
     }
 

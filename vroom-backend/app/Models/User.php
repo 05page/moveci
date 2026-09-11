@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasUuids, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, HasUuids, SoftDeletes, LogsActivity;
 
     protected $fillable = [
         'fullname',
@@ -46,10 +48,15 @@ class User extends Authenticatable
         'google_refresh_token',
     ];
 
-    // 1. Ajoute `$appends = ['membre_since']` ici — même principe que
-    //    Notifications.php:28 : expose un champ calculé dans le JSON, sans
-    //    que ce soit une vraie colonne en base.
     protected $appends = ['membre_since'];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['fullname', 'email', 'role', 'statut'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 
     protected function casts(): array
     {
@@ -62,11 +69,6 @@ class User extends Authenticatable
         ];
     }
 
-    // 2. Ajoute un accesseur `getMembreSinceAttribute()` (n'importe où dans
-    //    la classe), sur le modèle de Notifications.php:86-89 : renvoie
-    //    `$this->created_at` tel quel — Eloquent le sérialise déjà en ISO
-    //    8601 automatiquement, pas besoin de le formater à la main.
-    //    Exemple :
     public function getMembreSinceAttribute()
     {
         return $this->created_at;

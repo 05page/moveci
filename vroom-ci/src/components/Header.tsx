@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Menu, X, User, Compass, type LucideIcon, Bell, Heart, Send, Calendar, LogOut } from "lucide-react";
+import { Menu, X, User, Compass, type LucideIcon, Bell, Heart, Send, Calendar, LogOut, GraduationCap, LifeBuoy, BookmarkCheck, Users, BellRing, Flag, Handshake } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -14,6 +14,8 @@ import {
 import { useRouter } from "next/navigation";
 import Notifications from "./Notifications";
 import type { RoleUser } from "@/types";
+import { api } from "@/lib/api";
+import { useNotifications } from "@/lib/notification";
 
 /**
  * DUPLIQUÉ depuis DESTINATION_PAR_ROLE (app/auth/page.tsx) et ACCUEIL_PAR_ROLE
@@ -25,7 +27,7 @@ const DESTINATION_PAR_ROLE: Record<RoleUser, string> = {
   vendeur: "/vendeur/profile",
   concessionnaire: "/partenaire/concessionnaire/dashboard",
   auto_ecole: "/partenaire/auto_ecole/dashboard",
-  admin: "/",
+  admin: "/admin/dashboard",
 };
 
 type HeaderProps = {
@@ -37,31 +39,42 @@ type HeaderProps = {
 const CLASSES_LIEN_NAV =
   "lien-anime flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground";
 
-/**
- * Un lien de navigation du header : le libellé affiché, la route Next,
- * et l'icône Lucide À AFFICHER.
- *
- * `icone: LucideIcon` stocke le COMPOSANT lui-même (la référence `Compass`),
- * pas son nom en texte ("Compass"). Une string obligerait à écrire une table
- * de correspondance string -> composant pour pouvoir la rendre : inutile.
- */
 export type LienNav = {
   libelle: string;
   href: string;
   icone: LucideIcon;
+  /** Absent = visible par tout le monde. Présent = restreint à ces rôles (donc masqué si non connecté). */
+  roles?: RoleUser[];
 };
 
 const LIENS_NAV: LienNav[] = [
   { libelle: "Découvrir", href: "/vehicules", icone: Compass },
-  { libelle: "Favoris", href: "/client/favoris", icone: Heart },
-  { libelle: "Rendez-vous", href: "/client/rdv", icone: Calendar },
-  //{ libelle: "Vendre", href: "/vendeur/vehicules/nouveau", icone: Tag },
-  //{ libelle: "Partenaires", href: "/partenaire", icone: Building2 },
+  { libelle: "Auto École", href: "/client/auto-ecole", icone: GraduationCap, roles: ["client"] },
+  { libelle: "Favoris", href: "/client/favoris", icone: Heart, roles: ["client"] },
+  { libelle: "Rendez-vous", href: "/client/rdv", icone: Calendar, roles: ["client"] },
+  { libelle: "Réservations", href: "/client/reservations", icone: BookmarkCheck, roles: ["client"] },
+  { libelle: "Transactions", href: "/client/transactions", icone: Handshake, roles: ["client"] },
+  { libelle: "Alertes", href: "/client/alertes", icone: BellRing, roles: ["client"] },
+  { libelle: "Signalements", href: "/client/signalements", icone: Flag, roles: ["client"] },
+  { libelle: "Rendez-vous", href: "/vendeur/rdv", icone: Calendar, roles: ["vendeur"] },
+  { libelle: "Mes clients", href: "/vendeur/clients", icone: Users, roles: ["vendeur"] },
+  { libelle: "Transactions", href: "/vendeur/transactions", icone: Handshake, roles: ["vendeur"] },
 ];
 
 export default function Header({ estConnecte, role }: HeaderProps) {
   const [menuOuvert, setMenuOuvert] = useState(false);
+  const [nonLuesMessages, setNonLuesMessages] = useState(0);
+  const { notifications, nonLues: nonLuesNotifications, marquerLue, marquerToutesLues } =
+    useNotifications(estConnecte);
   const navigate = useRouter();
+
+  useEffect(() => {
+    if (!estConnecte) return;
+
+    api.get<{ unread_count: number }>("conversations/unread-count")
+      .then((reponse) => setNonLuesMessages(reponse.unread_count))
+      .catch(() => { });
+  }, [estConnecte]);
 
   const hrefCompte = estConnecte && role ? DESTINATION_PAR_ROLE[role] : "/auth";
   const libelleCompte = estConnecte ? "Mon compte" : "Connexion";
@@ -85,7 +98,13 @@ export default function Header({ estConnecte, role }: HeaderProps) {
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
-          {LIENS_NAV.map((lien) => (
+          {LIENS_NAV.filter((lien) => {
+            const lienPublic = !lien.roles || lien.roles.length === 0;
+            if(!role) return lienPublic;
+            // 3. Un utilisateur connecté voit les liens publics ET ceux qui contiennent son rôle
+            return lienPublic || lien.roles?.includes(role)
+          })
+          .map((lien) => (
             <Link key={lien.href} href={lien.href} className={CLASSES_LIEN_NAV}>
               <lien.icone className="size-4" />
               <span>{lien.libelle}</span>
@@ -96,9 +115,23 @@ export default function Header({ estConnecte, role }: HeaderProps) {
 
         {/* Bouton + burger regroupés, sinon justify-between les éparpille */}
         <div className="flex items-center gap-2">
-          <Notifications notifs={[]} nonLues={0} />
-          <button onClick={() => navigate.push("/messages")}>
+          <Notifications
+            notifs={notifications}
+            nonLues={nonLuesNotifications}
+            onMarquerLue={marquerLue}
+            onToutMarquer={marquerToutesLues}
+          />
+          <button
+            onClick={() => navigate.push("/messages")}
+            className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label={nonLuesMessages > 0 ? `Messages, ${nonLuesMessages} non lus` : "Messages"}
+          >
             <Send className="size-4" />
+            {nonLuesMessages > 0 && (
+              <span className="absolute top-0.5 right-0.5 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold tabular-nums text-primary-foreground">
+                {nonLuesMessages > 9 ? "9+" : nonLuesMessages}
+              </span>
+            )}
           </button>
           {estConnecte ? (
             <DropdownMenu>
@@ -112,6 +145,10 @@ export default function Header({ estConnecte, role }: HeaderProps) {
                 <DropdownMenuItem render={<Link href={hrefCompte} />}>
                   <User className="size-4" />
                   Mon compte
+                </DropdownMenuItem>
+                <DropdownMenuItem render={<Link href="/support" />}>
+                  <LifeBuoy className="size-4" />
+                  Support
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive" onClick={seDeconnecter}>
@@ -147,7 +184,12 @@ export default function Header({ estConnecte, role }: HeaderProps) {
 
       {menuOuvert && (
         <nav id="menu-mobile" className="border-t p-2 md:hidden">
-          {LIENS_NAV.map((lien) => (
+          {LIENS_NAV.filter((lien) => {
+            const lienPublic = !lien.roles || lien.roles.length === 0;
+            if (!role) return lienPublic;
+            return lienPublic || lien.roles?.includes(role);
+          })
+          .map((lien) => (
             <Link
               key={lien.href}
               href={lien.href}

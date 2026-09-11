@@ -14,17 +14,10 @@ import BoutonRecharger from "@/components/BoutonRecharger";
 import CarteStat from "@/components/CarteStat";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api";
 import { cn, formaterCompact, formaterFcfa } from "@/lib/utils";
 import { STYLE_STATUT, STYLE_VALIDATION } from "@/lib/vehicule";
 import type { StatsAdmin, StatutValidation, StatutVehicule } from "@/types";
-
-/* ────────────────────────────────────────────────────────────────────────────
-   DASHBOARD ADMIN — /admin/dashboard
-   Miroir de AdminController::stats() (vroom-backend, routes/api.php:253).
-   Sous-ensemble volontaire : `statsMarche()`/`statsGeographie()` (comportement
-   acheteurs, géographie) sont deux endpoints à part, pour une page d'analyse
-   dédiée — pas ce dashboard d'accueil.
-   ──────────────────────────────────────────────────────────────────────────── */
 
 /** "2026-03" -> "mars". Distinct de l'`abregerMois` de /vendeur/profile : la source y est 1-12, ici une string ISO. */
 const abregerMoisIso = (moisIso: string): string => {
@@ -34,50 +27,9 @@ const abregerMoisIso = (moisIso: string): string => {
   );
 };
 
-/** Même contrat que GET /admin/stats : seul ce corps changera au branchement. */
-const recupererStatsAdmin = (): Promise<StatsAdmin> => {
-  const MOCK: StatsAdmin = {
-    users_par_role: { client: 1284, vendeur: 96, concessionnaire: 22, auto_ecole: 9 },
-    users_par_statut: { actif: 1367, en_attente: 18, suspendu: 6, banni: 3 },
-    inscriptions_par_mois: [
-      { mois: "2026-03", total: 64 },
-      { mois: "2026-04", total: 81 },
-      { mois: "2026-05", total: 77 },
-      { mois: "2026-06", total: 102 },
-      { mois: "2026-07", total: 118 },
-      { mois: "2026-08", total: 96 },
-    ],
-    vehicules_validation: {
-      en_attente: 14,
-      validee: 512,
-      rejetee: 37,
-      suspendu: 4,
-      restauree: 2,
-    },
-    vehicules_statut: {
-      disponible: 398,
-      a_venir: 12,
-      réservé: 9,
-      vendu: 87,
-      loué: 21,
-      suspendu: 4,
-      banni: 2,
-      en_transaction: 6,
-    },
-    transactions: [
-      { type: "vente", statut: "confirmé", total: 214 },
-      { type: "vente", statut: "en_attente", total: 11 },
-      { type: "vente", statut: "expiré", total: 6 },
-      { type: "location", statut: "confirmé", total: 58 },
-      { type: "location", statut: "en_attente", total: 3 },
-    ],
-    ca_ventes: 842_500_000,
-    signalements_statut: { en_attente: 7, traité: 63, rejeté: 12 },
-    partenaires_par_type: { concessionnaire: 22, auto_ecole: 9 },
-  };
-
-  // 700 ms : sans délai, l'état de chargement n'est jamais observable
-  return new Promise((resolve) => setTimeout(() => resolve(MOCK), 700));
+const recupererStatsAdmin = async (): Promise<StatsAdmin> => {
+  const reponse = await api.get<{ data: StatsAdmin }>("admin/stats");
+  return reponse.data;
 };
 
 export default function PageDashboardAdmin() {

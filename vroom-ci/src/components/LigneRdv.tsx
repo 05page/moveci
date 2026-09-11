@@ -24,6 +24,7 @@ import {
 } from "@/lib/rdv";
 import { libelleVehicule, photoPrincipale } from "@/lib/vehicule";
 import type { RendezVousClient } from "@/types";
+import { toast } from "sonner";
 
 /**
  * Une entrée de la frise de /client/rdv.
@@ -67,14 +68,16 @@ export default function LigneRdv({
   const photo = photoPrincipale(rdv.vehicule.photos);
   const libelle = libelleVehicule(rdv.vehicule.description, rdv.vehicule.id);
 
-  const soumettre = async (action: () => Promise<void>) => {
+  const soumettre = async (action: () => Promise<void>, messageSucces: string) => {
     setEnvoi(true);
     setErreur(null);
     try {
       await action();
       setPanneau("aucun");
+      toast.success(messageSucces);
     } catch {
       setErreur("L'opération a échoué. Réessayez dans un instant.");
+      toast.error("L'opération a échoué. Réessayez dans un instant.");
     } finally {
       setEnvoi(false);
     }
@@ -277,7 +280,7 @@ export default function LigneRdv({
                 <button
                   type="button"
                   disabled={envoi}
-                  onClick={() => soumettre(() => onAnnuler(rdv.id, motif))}
+                  onClick={() => soumettre(() => onAnnuler(rdv.id, motif), "Rendez-vous annulé.")}
                   className={cn(
                     buttonVariants({ variant: "destructive", size: "sm" }),
                     "effet-action"
@@ -333,7 +336,7 @@ export default function LigneRdv({
                   // le back valide `note` entre 1 et 5 : sans note, l'appel partirait pour un 422
                   disabled={envoi || note === 0}
                   onClick={() =>
-                    soumettre(() => onNoter(rdv.id, note, commentaire))
+                    soumettre(() => onNoter(rdv.id, note, commentaire), "Avis envoyé.")
                   }
                   className={cn(buttonVariants({ size: "sm" }), "effet-action")}
                 >

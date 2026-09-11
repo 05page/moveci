@@ -2,53 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
 import { estBlocante, estErreurAuth } from "@/lib/erreurs";
-import type { ErreurAuth } from "@/types";
 import { ArrowLeft, MailCheck } from "lucide-react";
 import Link from "next/link";
 import { useState, type SubmitEvent } from "react";
 
-/** Message neutre du back : identique que le compte existe ou non (PasswordResetController:33). */
-const MESSAGE_NEUTRE =
-  "Si cet email est enregistré, vous recevrez un lien dans quelques minutes.";
-
-/**
- * Fausse API de POST /api/forgot-password. Signature identique à celle du vrai
- * appel : au branchement, seul ce corps change.
- *
- * Elle simule aussi les DEUX échecs possibles, pas seulement le succès — une
- * fausse API qui réussit toujours ne teste jamais l'affichage des erreurs.
- */
-function demanderLienReset(email: string): Promise<{ message: string }> {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      // compte Google : 422 sans `errors`, aucun mot de passe local à réinitialiser
-      if (email === "google@test.ci") {
-        const erreur: ErreurAuth = {
-          success: false,
-          status: 422,
-          message: "Ce compte utilise Google. Connectez-vous via le bouton Google.",
-        };
-        reject(erreur);
-        return;
-      }
-
-      // 422 de validation : le détail est dans `errors`, pas dans `message`
-      if (email === "invalide@test.ci") {
-        const erreur: ErreurAuth = {
-          success: false,
-          status: 422,
-          message: "Les données fournies sont invalides.",
-          errors: { email: ["Le format de l'adresse email est invalide."] },
-        };
-        reject(erreur);
-        return;
-      }
-
-      resolve({ message: MESSAGE_NEUTRE });
-    }, 700);
-  });
-}
+/** Même contrat que POST /api/forgot-password (PasswordResetController::sendResetLink). */
+const demanderLienReset = (email: string): Promise<{ message: string }> =>
+  api.post<{ message: string }>("forgot-password", { email });
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Geist, Geist_Mono, Inter, Montserrat } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import type { RoleUser } from "@/types";
@@ -55,6 +56,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable, montserrat.variable)}
     >
       <body className="min-h-full flex flex-col">
+        <Toaster position="top-center" richColors />
         <HeaderConditionnel>
           <Header estConnecte={estConnecte} role={role} />
         </HeaderConditionnel>

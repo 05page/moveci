@@ -6,14 +6,17 @@ import {
   Ban,
   Car,
   CheckCircle2,
+  ClipboardCheck,
   ExternalLink,
   MoreHorizontal,
+  RotateCcw,
   Search,
   Trash2,
   XCircle,
 } from "lucide-react";
 
 import BoutonRecharger from "@/components/BoutonRecharger";
+import CarteStat from "@/components/CarteStat";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +41,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLinkItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -60,117 +64,46 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { cn, formaterDateCourte, formaterFcfa, urlPhoto } from "@/lib/utils";
+import { toast } from "sonner";
+import { api, messageErreur } from "@/lib/api";
+import { cn, formaterDateCourte, formaterFcfa, LIBELLES_ROLE, urlPhoto } from "@/lib/utils";
 import {
   libelleVehicule,
   photoPrincipale,
   STYLE_STATUT,
   STYLE_VALIDATION,
 } from "@/lib/vehicule";
-import type { StatutValidation, StatutVehicule, VehiculeCatalogue } from "@/types";
+import type { RoleUser, StatutValidation, StatutVehicule, VehiculeAdmin } from "@/types";
 
-/* ────────────────────────────────────────────────────────────────────────────
-   PARC AUTO — /admin/parc-auto
-   Miroir de AdminController::vehicules() (vroom-backend, routes/api.php:239) :
-   la route back renvoie TOUS les véhicules, tous créateurs confondus. Cette
-   page les filtre côté client sur `creator.role === "concessionnaire"` — le
-   parc des concessionnaires, pas celui des vendeurs particuliers ni des
-   auto-écoles. Aucun endpoint dédié n'existe : c'est au front de trier.
-   ──────────────────────────────────────────────────────────────────────────── */
-
-const IVOIRE = {
-  id: "9d4e2f1a-6c3b-4a71-8e15-2b7f0c9d4e11",
-  fullname: "Ivoire Auto Motors",
-  role: "concessionnaire" as const,
-};
-const ABIDJAN_MOTORS = {
-  id: "1a2b3c4d-5e6f-4708-9a1b-2c3d4e5f6071",
-  fullname: "Abidjan Prestige Motors",
-  role: "concessionnaire" as const,
-};
-const KOFFI = {
-  id: "3f8a1b2c-9d7e-4f60-a531-8c4e6b2a9f03",
-  fullname: "Koffi Aristide",
-  role: "vendeur" as const,
-};
-const AUTO_ECOLE_PLATEAU = {
-  id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e8f",
-  fullname: "Auto-École du Plateau",
-  role: "auto_ecole" as const,
-};
-
-/** Réduit le bruit du bloc de mocks. La vraie charge utile reste celle de `VehiculeCatalogue`. */
-const vehiculeAdmin = (
-  id: string,
-  creator: typeof IVOIRE | typeof KOFFI | typeof AUTO_ECOLE_PLATEAU,
-  marque: string,
-  modele: string,
-  annee: number,
-  prix: number,
-  statut: StatutVehicule,
-  statusValidation: StatutValidation,
-  vues: number,
-  photo: string | null,
-  cree: string
-): VehiculeCatalogue => ({
-  id,
-  created_by: creator.id,
-  post_type: "vente",
-  type: "occasion",
-  statut,
-  prix: prix.toFixed(2),
-  prix_suggere: null,
-  negociable: false,
-  date_disponibilite: null,
-  status_validation: statusValidation,
-  views_count: vues,
-  created_at: cree,
-  description: {
-    marque,
-    modele,
-    annee,
-    kilometrage: 32_000,
-    carburant: "Essence",
-    transmission: "Automatique",
-    carrosserie: "SUV",
-  },
-  photos: photo ? [{ id: `photo-${id}`, path: photo, is_primary: true, position: 1 }] : [],
-  creator,
-});
-
-/** Même contrat que GET /admin/vehicules : seul ce corps changera au branchement. */
-const recupererVehiculesAdmin = (): Promise<VehiculeCatalogue[]> => {
-  const MOCK: VehiculeCatalogue[] = [
-    vehiculeAdmin("a1000000-0000-4000-8000-0000000000a1", IVOIRE, "Toyota", "Land Cruiser", 2024, 28_500_000, "disponible", "validee", 512, "/toyota.jpeg", "2026-08-01T09:00:00Z"),
-    vehiculeAdmin("a1000000-0000-4000-8000-0000000000a2", IVOIRE, "Hyundai", "Tucson", 2025, 14_200_000, "disponible", "en_attente", 8, "/hyundai.jpeg", "2026-08-15T11:30:00Z"),
-    vehiculeAdmin("a1000000-0000-4000-8000-0000000000a3", ABIDJAN_MOTORS, "Mercedes", "Classe G", 2024, 42_000_000, "a_venir", "en_attente", 3, "/merco.jpeg", "2026-08-16T08:10:00Z"),
-    vehiculeAdmin("a1000000-0000-4000-8000-0000000000a4", ABIDJAN_MOTORS, "Kia", "Sportage", 2023, 11_800_000, "vendu", "validee", 340, "/kia.jpeg", "2026-06-20T14:00:00Z"),
-    vehiculeAdmin("a1000000-0000-4000-8000-0000000000a5", IVOIRE, "Nissan", "Patrol", 2022, 19_500_000, "suspendu", "suspendu", 96, null, "2026-05-11T10:00:00Z"),
-    vehiculeAdmin("a1000000-0000-4000-8000-0000000000a6", ABIDJAN_MOTORS, "Toyota", "Hilux", 2021, 13_400_000, "disponible", "rejetee", 4, "/toyota.jpeg", "2026-07-02T16:45:00Z"),
-    // deux annonces hors périmètre (vendeur, auto-école) : prouvent que le filtre fonctionne
-    vehiculeAdmin("a1000000-0000-4000-8000-0000000000a7", KOFFI, "Toyota", "RAV4", 2021, 6_250_000, "disponible", "validee", 1842, "/toyota.jpeg", "2026-07-28T11:00:00Z"),
-    vehiculeAdmin("a1000000-0000-4000-8000-0000000000a8", AUTO_ECOLE_PLATEAU, "Kia", "Picanto", 2020, 25_000, "disponible", "validee", 210, "/kia.jpeg", "2026-08-01T07:15:00Z"),
-  ];
-
-  // 700 ms : sans délai, l'état de chargement n'est jamais observable
-  return new Promise((resolve) => setTimeout(() => resolve(MOCK), 700));
+/** Même contrat que GET /admin/vehicules. */
+const recupererVehiculesAdmin = async (): Promise<VehiculeAdmin[]> => {
+  const reponse = await api.get<{ data: VehiculeAdmin[] }>("admin/vehicules");
+  return reponse.data;
 };
 
 /** Même contrat que POST /admin/vehicules/{id}/valider. */
-const validerVehiculeAdmin = (): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, 500));
+const validerVehiculeAdmin = async (id: string): Promise<void> => {
+  await api.post<{ message: string }>(`admin/vehicules/${id}/valider`);
+};
 
-/** Même contrat que POST /admin/vehicules/{id}/rejeter, corps `{ details }`. */
-const rejeterVehiculeAdmin = (): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, 500));
+/** Même contrat que POST /admin/vehicules/{id}/rejeter, corps `{ details }` requis. */
+const rejeterVehiculeAdmin = async (id: string, details: string): Promise<void> => {
+  await api.post<{ message: string }>(`admin/vehicules/${id}/rejeter`, { details });
+};
 
 /** Même contrat que POST /admin/vehicules/{id}/suspendre. */
-const suspendreVehiculeAdmin = (): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, 500));
+const suspendreVehiculeAdmin = async (id: string): Promise<void> => {
+  await api.post<{ message: string }>(`admin/vehicules/${id}/suspendre`);
+};
+
+const restaurerVehiculeAdmin = async (id: string): Promise<void> => {
+  await api.post<{ message: string }>(`/admin/vehicules/${id}/restaurer`)
+}
 
 /** Même contrat que DELETE /admin/vehicules/{id}. */
-const supprimerVehiculeAdmin = (): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, 500));
+const supprimerVehiculeAdmin = async (id: string): Promise<void> => {
+  await api.delete<{ message: string }>(`admin/vehicules/${id}`);
+};
 
 /** L'input `<select>` natif n'a pas de valeur "tout" possible : on la porte au niveau du filtre. */
 const OPTIONS_STATUT: { valeur: StatutVehicule | "tout"; libelle: string }[] = [
@@ -194,17 +127,25 @@ const OPTIONS_VALIDATION: { valeur: StatutValidation | "tout"; libelle: string }
   { valeur: "restauree", libelle: "Restauré" },
 ];
 
-type DialogueRejet = { vehicule: VehiculeCatalogue };
-type DialogueConfirmation = { action: "suspendre" | "supprimer"; vehicule: VehiculeCatalogue };
+/** Client, admin et auto_ecole ne publient jamais de véhicule (règle métier) : pas d'option pour ces trois rôles. */
+const OPTIONS_ROLE: { valeur: RoleUser | "tout"; libelle: string }[] = [
+  { valeur: "tout", libelle: "Tous les vendeurs" },
+  { valeur: "vendeur", libelle: LIBELLES_ROLE.vendeur },
+  { valeur: "concessionnaire", libelle: LIBELLES_ROLE.concessionnaire },
+];
+
+type DialogueRejet = { vehicule: VehiculeAdmin };
+type DialogueConfirmation = { action: "valider" | "suspendre" | "restaurer" | "supprimer"; vehicule: VehiculeAdmin };
 
 export default function PageParcAuto() {
-  const [vehicules, setVehicules] = useState<VehiculeCatalogue[]>([]);
+  const [vehicules, setVehicules] = useState<VehiculeAdmin[]>([]);
   const [chargement, setChargement] = useState(true);
   // incrémenté par le bouton Recharger : c'est ce qui redéclenche le useEffect ci-dessous
   const [tentative, setTentative] = useState(0);
   const [recherche, setRecherche] = useState("");
   const [filtreStatut, setFiltreStatut] = useState<StatutVehicule | "tout">("tout");
   const [filtreValidation, setFiltreValidation] = useState<StatutValidation | "tout">("tout");
+  const [filtreRole, setFiltreRole] = useState<RoleUser | "tout">("tout");
   const [idEnCours, setIdEnCours] = useState<string | null>(null);
   const [dialogueRejet, setDialogueRejet] = useState<DialogueRejet | null>(null);
   const [motifRejet, setMotifRejet] = useState("");
@@ -230,18 +171,23 @@ export default function PageParcAuto() {
     setTentative((t) => t + 1);
   };
 
-  // le parc des concessionnaires uniquement — pas les vendeurs particuliers, pas les auto-écoles
-  const parcConcessionnaires = useMemo(
-    () => vehicules.filter((v) => v.creator.role === "concessionnaire"),
+  /** Comptes sur `vehicules` (liste complète, non filtrée) — les cards restent stables quand on tape dans la recherche. */
+  const compteurs = useMemo(
+    () => ({
+      enAttente: vehicules.filter((v) => v.status_validation === "en_attente").length,
+      disponibles: vehicules.filter((v) => v.statut === "disponible").length,
+      suspendus: vehicules.filter((v) => v.statut === "suspendu").length,
+    }),
     [vehicules]
   );
 
   const resultats = useMemo(() => {
     const q = recherche.trim().toLowerCase();
 
-    return parcConcessionnaires.filter((v) => {
+    return vehicules.filter((v) => {
       if (filtreStatut !== "tout" && v.statut !== filtreStatut) return false;
       if (filtreValidation !== "tout" && v.status_validation !== filtreValidation) return false;
+      if (filtreRole !== "tout" && v.creator.role !== filtreRole) return false;
 
       if (q) {
         const cible =
@@ -251,32 +197,22 @@ export default function PageParcAuto() {
 
       return true;
     });
-  }, [parcConcessionnaires, filtreStatut, filtreValidation, recherche]);
-
-  const executerAction = async (id: string, action: () => Promise<void>, appliquer: (v: VehiculeCatalogue) => VehiculeCatalogue) => {
-    setIdEnCours(id);
-    try {
-      await action();
-      setVehicules((liste) => liste.map((v) => (v.id === id ? appliquer(v) : v)));
-    } finally {
-      setIdEnCours(null);
-    }
-  };
-
-  const valider = (v: VehiculeCatalogue) =>
-    executerAction(v.id, validerVehiculeAdmin, (item) => ({ ...item, status_validation: "validee" }));
+  }, [vehicules, filtreStatut, filtreValidation, filtreRole, recherche]);
 
   const confirmerRejet = async () => {
     if (!dialogueRejet) return;
     const id = dialogueRejet.vehicule.id;
     setIdEnCours(id);
     try {
-      await rejeterVehiculeAdmin();
+      await rejeterVehiculeAdmin(id, motifRejet);
       setVehicules((liste) =>
         liste.map((v) => (v.id === id ? { ...v, status_validation: "rejetee" } : v))
       );
       setDialogueRejet(null);
       setMotifRejet("");
+      toast.success("Véhicule rejeté.");
+    } catch (e) {
+      toast.error(messageErreur(e, "Le rejet a échoué."));
     } finally {
       setIdEnCours(null);
     }
@@ -287,16 +223,33 @@ export default function PageParcAuto() {
     const { action, vehicule } = dialogueConfirmation;
     setIdEnCours(vehicule.id);
     try {
-      if (action === "suspendre") {
-        await suspendreVehiculeAdmin();
+      if (action === "valider") {
+        await validerVehiculeAdmin(vehicule.id);
+        setVehicules((liste) =>
+          liste.map((v) => (v.id === vehicule.id ? { ...v, status_validation: "validee" } : v))
+        );
+        toast.success("Véhicule validé.");
+      } else if (action === "suspendre") {
+        await suspendreVehiculeAdmin(vehicule.id);
         setVehicules((liste) =>
           liste.map((v) => (v.id === vehicule.id ? { ...v, statut: "suspendu" } : v))
         );
-      } else {
-        await supprimerVehiculeAdmin();
+        toast.success("Véhicule suspendu.");
+      } else if (action === "restaurer") {
+        await restaurerVehiculeAdmin(vehicule.id);
+        setVehicules((l) =>
+          l.map((v) => (v.id === vehicule.id ? { ...v, statut: "disponible" } : v))
+        );
+        toast.success("Véhicule restauré.");
+      }
+      else {
+        await supprimerVehiculeAdmin(vehicule.id);
         setVehicules((liste) => liste.filter((v) => v.id !== vehicule.id));
+        toast.success("Véhicule supprimé.");
       }
       setDialogueConfirmation(null);
+    } catch (e) {
+      toast.error(messageErreur(e, "L'action a échoué."));
     } finally {
       setIdEnCours(null);
     }
@@ -322,13 +275,40 @@ export default function PageParcAuto() {
         <div>
           <h1 className="font-heading text-2xl font-bold md:text-3xl">Parc auto</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            {parcConcessionnaires.length} annonce{parcConcessionnaires.length > 1 ? "s" : ""} publiée
-            {parcConcessionnaires.length > 1 ? "s" : ""} par des concessionnaires, sur{" "}
-            {vehicules.length} au total tous vendeurs confondus.
+            {vehicules.length} annonce{vehicules.length > 1 ? "s" : ""}, tous vendeurs
+            confondus — particuliers, concessionnaires et auto-écoles.
           </p>
         </div>
         <BoutonRecharger onClick={recharger} chargement={chargement} className="mt-1" />
       </header>
+
+      <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <CarteStat
+          libelle="Annonces au total"
+          valeur={vehicules.length}
+          icone={Car}
+          precision="Tous vendeurs confondus"
+        />
+        <CarteStat
+          libelle="En attente de validation"
+          valeur={compteurs.enAttente}
+          icone={ClipboardCheck}
+          precision="Modération à traiter"
+          accent={compteurs.enAttente > 0}
+        />
+        <CarteStat
+          libelle="Disponibles"
+          valeur={compteurs.disponibles}
+          icone={CheckCircle2}
+          precision="Visibles dans le catalogue public"
+        />
+        <CarteStat
+          libelle="Suspendues"
+          valeur={compteurs.suspendus}
+          icone={Ban}
+          precision="Retirées du catalogue public"
+        />
+      </section>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
@@ -337,10 +317,23 @@ export default function PageParcAuto() {
             type="search"
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Marque, modèle, concessionnaire…"
+            placeholder="Marque, modèle, vendeur…"
             className="pl-9"
           />
         </div>
+
+        <Select value={filtreRole} onValueChange={(v) => v && setFiltreRole(v as RoleUser | "tout")}>
+          <SelectTrigger className="sm:w-52">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {OPTIONS_ROLE.map((o) => (
+              <SelectItem key={o.valeur} value={o.valeur}>
+                {o.libelle}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <Select value={filtreStatut} onValueChange={(v) => v && setFiltreStatut(v as StatutVehicule | "tout")}>
           <SelectTrigger className="sm:w-52">
@@ -388,7 +381,7 @@ export default function PageParcAuto() {
             <TableHeader>
               <TableRow>
                 <TableHead>Véhicule</TableHead>
-                <TableHead>Concessionnaire</TableHead>
+                <TableHead>Vendeur</TableHead>
                 <TableHead>Prix</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Validation</TableHead>
@@ -418,15 +411,17 @@ export default function PageParcAuto() {
                           )}
                         </span>
                         <Link
-                          href={`/vehicules/${v.id}`}
-                          target="_blank"
+                          href={`/admin/parc-auto/${v.id}`}
                           className="truncate text-sm font-semibold hover:text-primary"
                         >
                           {libelle}
                         </Link>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{v.creator.fullname}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {v.creator.fullname}
+                      <span className="block text-xs">{LIBELLES_ROLE[v.creator.role]}</span>
+                    </TableCell>
                     <TableCell className="text-sm font-medium tabular-nums">
                       {formaterFcfa(Number(v.prix))}
                     </TableCell>
@@ -454,17 +449,19 @@ export default function PageParcAuto() {
                           <MoreHorizontal className="size-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            render={<Link href={`/vehicules/${v.id}`} target="_blank" />}
+                          <DropdownMenuLinkItem
+                            render={<Link href={`/admin/parc-auto/${v.id}`} />}
                           >
                             <ExternalLink className="size-4" />
-                            Voir la fiche publique
-                          </DropdownMenuItem>
+                            Voir la fiche
+                          </DropdownMenuLinkItem>
 
                           {v.status_validation === "en_attente" && (
                             <>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => valider(v)}>
+                              <DropdownMenuItem
+                                onClick={() => setDialogueConfirmation({ action: "valider", vehicule: v })}
+                              >
                                 <CheckCircle2 className="size-4" />
                                 Valider
                               </DropdownMenuItem>
@@ -488,6 +485,18 @@ export default function PageParcAuto() {
                               >
                                 <Ban className="size-4" />
                                 Suspendre
+                              </DropdownMenuItem>
+                            </>
+                          )}
+
+                          {v.statut == "suspendu" && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => setDialogueConfirmation({ action: "restaurer", vehicule: v })}
+                              >
+                                <RotateCcw className="size-4" />
+                                Restaurer
                               </DropdownMenuItem>
                             </>
                           )}
@@ -565,7 +574,10 @@ export default function PageParcAuto() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {dialogueConfirmation?.action === "supprimer" ? "Supprimer cette annonce ?" : "Suspendre cette annonce ?"}
+              {dialogueConfirmation?.action === "supprimer" ? "Supprimer cette annonce ?" :
+               dialogueConfirmation?.action === "restaurer" ? "Restaurer ce véhicule ?" :
+               dialogueConfirmation?.action === "valider" ? "Valider cette annonce ?" :
+              "Suspendre cette annonce ?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {dialogueConfirmation &&
@@ -574,7 +586,11 @@ export default function PageParcAuto() {
                   dialogueConfirmation.vehicule.id
                 )}
               {dialogueConfirmation?.action === "supprimer"
-                ? " — l'annonce quitte le parc auto. Cette action reste réversible depuis la corbeille."
+                ? " — l'annonce quitte définitivement le parc auto. Cette action est irréversible."
+                : dialogueConfirmation?.action === "restaurer"
+                ? " — l'annonce réapparaît dans le catalogue public."
+                : dialogueConfirmation?.action === "valider"
+                ? " — l'annonce devient visible dans le catalogue public."
                 : " — l'annonce reste en ligne mais n'apparaît plus dans le catalogue public."}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -585,7 +601,10 @@ export default function PageParcAuto() {
               disabled={idEnCours !== null}
               onClick={confirmerAction}
             >
-              {dialogueConfirmation?.action === "supprimer" ? "Supprimer" : "Suspendre"}
+              {dialogueConfirmation?.action === "supprimer" ? "Supprimer" :
+               dialogueConfirmation?.action === "restaurer" ? "Restaurer" :
+               dialogueConfirmation?.action === "valider" ? "Valider" :
+               "Suspendre"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

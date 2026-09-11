@@ -357,6 +357,7 @@ class AuthController extends Controller
                 'email' => 'sometimes|email|unique:users,email,' . $user->id,
                 'telephone' => 'sometimes|string|max:10',
                 'adresse' => 'sometimes|string|max:500',
+                'raison_sociale' => 'sometimes|string|max:255',
             ]);
 
             $user->update($data);

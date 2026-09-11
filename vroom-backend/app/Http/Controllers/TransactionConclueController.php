@@ -17,71 +17,7 @@ use Illuminate\Validation\Rule;
 
 class TransactionConclueController extends Controller
 {
-    /**
-     * Vendeur renseigne les infos du deal + confirme avec le code.
-     * POST /transactions-conclues/{id}/confirmer-vendeur
-     *
-     * Body: { code, type, prix_final, date_debut_location?, date_fin_location? }
-     */
-    public function confirmerVendeur(Request $request, string $id): JsonResponse
-    {
-        $user = Auth::user();
 
-        $transaction = TransactionConclue::where('id', $id)
-            ->where('vendeur_id', $user->id)
-            ->where('statut', TransactionConclue::STATUT_EN_ATTENTE)
-            ->firstOrFail();
-        $transaction->load('vehicule');
-
-        if (!$transaction->isCodeValide()) {
-            $transaction->update(['statut' => TransactionConclue::STATUT_EXPIRE]);
-            return response()->json(['success' => false, 'message' => 'Le code a expiré'], 422);
-        }
-
-        if (!$transaction->confirme_par_client) {
-            return response()->json([
-                'success' => false,
-                'message' => 'En attente de la confirmation du client'
-            ], 422);
-        }
-
-        $validated = $request->validate([
-            'code'               => 'required|string|size:6',
-        ]);
-
-        if ($validated['code'] !== $transaction->code_confirmation) {
-            return response()->json(['success' => false, 'message' => 'Code incorrect'], 422);
-        }
-
-        DB::beginTransaction();
-        try {
-            $transaction->update([
-                'confirme_par_vendeur' => true,
-            ]);
-
-            // Si le client avait déjà confirmé, on finalise
-            if ($transaction->confirme_par_client) {
-                $this->finaliser($transaction);
-            }
-
-            DB::commit();
-            return response()->json([
-                'success' => true,
-                'message' => 'Confirmation vendeur enregistrée',
-                'data'    => $transaction->fresh(),
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return $this->serverError($e, 'Erreur lors de la confirmation vendeur. Réessayez dans quelques instants.');
-        }
-    }
-
-    /**
-     * Client confirme avec le code.
-     * POST /transactions-conclues/{id}/confirmer-client
-     *
-     * Body: { code }
-     */
     public function confirmerClient(Request $request, string $id): JsonResponse
     {
         $user = Auth::user();
@@ -108,7 +44,10 @@ class TransactionConclueController extends Controller
 
         DB::beginTransaction();
         try {
-            $updateData = ['confirme_par_client' => true];
+            $updateData = [
+                'confirme_par_client'  => true,
+                'confirme_par_vendeur' => true,
+            ];
 
             // Sauvegarde les dates fournies par le client pour une location
             if ($transaction->type === 'location') {
@@ -117,25 +56,12 @@ class TransactionConclueController extends Controller
             }
 
             $transaction->update($updateData);
+            $this->finaliser($transaction);
 
-            // Si le vendeur avait déjà confirmé, on finalise
-            if ($transaction->confirme_par_vendeur) {
-                $this->finaliser($transaction);
-            }
-            Notifications::create([
-                'user_id' => $transaction->vendeur_id,
-                'type'       => Notifications::TYPE_TRANSACTION,
-                'level'      => 'info',
-                'title'      =>  'Le client ' . $user->fullname . ' vient de confirmer la transaction',
-                'message'    => 'Voici votre code de confirmation '. $transaction->code_confirmation .' afin de valider cette transaction.',
-                'data' => ['transaction_id' => $transaction->id],
-                'date_envoi' => now(),
-            ]);
-            
             DB::commit();
             return response()->json([
                 'success' => true,
-                'message' => 'Confirmation client enregistrée',
+                'message' => 'Confirmation enregistrée',
                 'data'    => $transaction->fresh(),
             ]);
         } catch (\Exception $e) {
@@ -263,6 +189,13 @@ class TransactionConclueController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Le client ne doit jamais lire le code dans la réponse elle-même — sinon la
+        // présence exigée par le scan QR (voir CarteTransaction.tsx) ne sert à rien,
+        // le code serait visible dans l'onglet réseau sans même passer par une notif.
+        // C'est le VENDEUR qui détient le code ici (l'inverse de la première version) :
+        // le client doit scanner le QR du vendeur pour l'obtenir.
+        $transactions->each->makeHidden(['code_confirmation', 'code_restitution']);
+
         return response()->json(['success' => true, 'data' => $transactions]);
     }
 
@@ -284,6 +217,87 @@ class TransactionConclueController extends Controller
             ->get();
 
         return response()->json(['success' => true, 'data' => $transactions]);
+    }
+
+    /**
+     * Client scanne le QR de restitution du vendeur et confirme — finalise seul la
+     * restitution (même principe que confirmerClient(), plus de second clic vendeur).
+     * POST /transactions-conclues/{id}/restituer-client
+     *
+     * `code_restitution` est généré par la commande planifiée transactions:generer-codes-restitution
+     * à l'approche de date_fin_location — tant qu'elle n'est pas encore passée, cette route ne trouve
+     * aucune transaction éligible (le champ est encore null).
+     */
+    public function restituerClient(Request $request, string $id): JsonResponse
+    {
+        $user = Auth::user();
+
+        $transaction = TransactionConclue::where('id', $id)
+            ->where('client_id', $user->id)
+            ->where('type', 'location')
+            ->where('statut', TransactionConclue::STATUT_CONFIRME)
+            ->where('restitue_par_client', false)
+            ->firstOrFail();
+
+        if (!$transaction->code_restitution) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La restitution n\'est pas encore ouverte pour cette location.',
+            ], 422);
+        }
+
+        if (!$transaction->isCodeRestitutionValide()) {
+            return response()->json(['success' => false, 'message' => 'Le code a expiré'], 422);
+        }
+
+        $validated = $request->validate(['code' => 'required|string|size:6']);
+
+        if ($validated['code'] !== $transaction->code_restitution) {
+            return response()->json(['success' => false, 'message' => 'Code incorrect'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $transaction->update([
+                'restitue_par_client'  => true,
+                'restitue_par_vendeur' => true,
+            ]);
+            $this->finaliserRestitution($transaction);
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Restitution confirmée',
+                'data'    => $transaction->fresh(),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->serverError($e, 'Erreur lors de la confirmation de restitution. Réessayez dans quelques instants.');
+        }
+    }
+
+    /**
+     * Finalise la restitution une fois les deux confirmations reçues : redonne le véhicule
+     * disponible (il était `loué` depuis finaliser()) et notifie les deux parties.
+     * N'y touche PAS à `statut` de la transaction — le deal reste `confirmé`, la restitution
+     * n'est qu'un détail de suivi supplémentaire pour une location.
+     */
+    private function finaliserRestitution(TransactionConclue $transaction): void
+    {
+        Vehicules::where('id', $transaction->vehicule_id)
+            ->update(['statut' => Vehicules::STATUS_DISPONIBLE]);
+
+        foreach ([$transaction->vendeur_id, $transaction->client_id] as $userId) {
+            Notifications::create([
+                'user_id'    => $userId,
+                'type'       => Notifications::TYPE_TRANSACTION,
+                'level'      => 'success',
+                'title'      => 'Restitution confirmée ✓',
+                'message'    => 'Le véhicule loué a été restitué avec succès des deux côtés.',
+                'data'       => ['transaction_id' => $transaction->id],
+                'date_envoi' => now(),
+            ]);
+        }
     }
 
     /**

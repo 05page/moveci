@@ -8,6 +8,8 @@ use App\Http\Requests\UpdateFormationRequest;
 use App\Models\Formation;
 use App\Models\InscriptionFormation;
 use App\Models\Notifications;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +31,7 @@ class FormationController extends Controller
                 ->withAvg('avisVendeur as note_moyenne', 'note'),
         ])
             ->where('statut_validation', Formation::STATUT_VALIDE)
+            ->where('statut', Formation::STATUT_DISPONIBLE)
             ->withCount('inscriptions')
             ->latest()
             ->get();
@@ -47,6 +50,7 @@ class FormationController extends Controller
                 ->withAvg('avisVendeur as note_moyenne', 'note'),
         ])
             ->where('statut_validation', Formation::STATUT_VALIDE)
+            ->where('statut', Formation::STATUT_DISPONIBLE)
             ->withCount('inscriptions')
             ->findOrFail($id);
 
@@ -72,10 +76,6 @@ class FormationController extends Controller
     /**
      * Liste tous les inscrits de toutes les formations de cette auto-ecole.
      * GET /formations/mes-inscrits
-     *
-     * Inclut la formation (type_permis + titre) et le client pour chaque inscription.
-     * Permet a l'auto-ecole de voir d'un coup l'ensemble de ses eleves
-     * et quel type de permis chacun a choisi.
      */
     public function mesInscrits(): JsonResponse
     {
@@ -86,14 +86,15 @@ class FormationController extends Controller
             })
             ->with([
                 'client:id,fullname,email,avatar,telephone,adresse',
-                'formation:id,type_permis,auto_ecole_id,titre',
+                'formation:id,type_permis,auto_ecole_id,titre,prix',
             ])
+            ->withSum('versements as montant_paye', 'montant')
             ->orderByDesc('date_inscription')
             ->get();
 
         return response()->json(['success' => true, 'data' => $inscrits]);
     }
-
+    
     /**
      * Liste des inscrits d'une formation (auto-école uniquement).
      * GET /formations/{id}/inscrits
@@ -114,14 +115,6 @@ class FormationController extends Controller
         return response()->json(['success' => true, 'data' => $inscrits]);
     }
 
-    /**
-     * Crée une formation.
-     * POST /formations
-     *
-     * Plus de transaction : depuis la fusion de descriptions_formation dans
-     * formations, il n'y a qu'une seule table écrite — Eloquent gère seul
-     * l'atomicité d'un INSERT unique.
-     */
     public function store(StoreFormationRequest $request): JsonResponse
     {
         $user      = Auth::user();
@@ -135,6 +128,9 @@ class FormationController extends Controller
                 'type_permis'        => $validated['type_permis'],
                 'prix'               => $validated['prix'],
                 'duree_heures'       => $validated['duree_heures'],
+                'lieu'               => $validated['lieu'] ?? ($user['adresse'] ?? null),
+                'nombre_places'      => $validated['nombre_places'] ?? null,
+                'deroulement'        => $validated['deroulement'] ?? null,
                 'statut_validation'  => Formation::STATUT_EN_ATTENTE,
             ]);
 
@@ -178,7 +174,7 @@ class FormationController extends Controller
 
             $formation->update(array_intersect_key(
                 $validated,
-                array_flip(['titre', 'description', 'type_permis', 'prix', 'duree_heures'])
+                array_flip(['titre', 'description', 'type_permis', 'prix', 'duree_heures', 'lieu', 'nombre_places', 'deroulement'])
             ));
 
             return response()->json(['success' => true, 'data' => $formation]);
@@ -336,6 +332,43 @@ class FormationController extends Controller
             ? round(($stats->reussis / $stats->termines) * 100, 1)
             : null;
 
+        // Inscriptions par mois (année en cours) — une seule requête groupée, pas 12.
+        $parMois = InscriptionFormation::whereIn('formation_id', $formationIds)
+            ->whereYear('date_inscription', Carbon::now()->year)
+            ->selectRaw('MONTH(date_inscription) as mois, COUNT(*) as total')
+            ->groupBy('mois')
+            ->pluck('total', 'mois');
+
+        $statsMensuel = [];
+        for ($mois = 1; $mois <= 12; $mois++) {
+            $statsMensuel[] = [
+                'mois'         => $mois,
+                'nom_mois'     => Carbon::create()->month($mois)->locale('fr')->translatedFormat('F'),
+                'inscriptions' => (int) ($parMois[$mois] ?? 0),
+            ];
+        }
+
+        // Inscriptions par jour (semaine en cours) — une seule requête groupée, pas 7.
+        $debutSemaine = Carbon::now()->startOfWeek();
+        $finSemaine   = Carbon::now()->endOfWeek();
+
+        $parJour = InscriptionFormation::whereIn('formation_id', $formationIds)
+            ->whereBetween('date_inscription', [$debutSemaine, $finSemaine])
+            ->selectRaw('DATE(date_inscription) as jour, COUNT(*) as total')
+            ->groupBy('jour')
+            ->pluck('total', 'jour');
+
+        $statsSemaine = [];
+        for ($i = 0; $i < 7; $i++) {
+            $jour = $debutSemaine->copy()->addDays($i);
+            $cle  = $jour->format('Y-m-d');
+            $statsSemaine[] = [
+                'jour'         => $cle,
+                'nom_jour'     => $jour->locale('fr')->translatedFormat('D'),
+                'inscriptions' => (int) ($parJour[$cle] ?? 0),
+            ];
+        }
+
         return response()->json([
             'success' => true,
             'data'    => [
@@ -346,6 +379,8 @@ class FormationController extends Controller
                 'reussis'        => (int) $stats->reussis,
                 'abandonnes'     => (int) $stats->abandonnes,
                 'taux_reussite'  => $tauxReussite,
+                'stats_mensuel'  => $statsMensuel,
+                'stats_semaine'  => $statsSemaine,
             ],
         ]);
     }

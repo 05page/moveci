@@ -35,25 +35,22 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { api } from "@/lib/api";
+import { cn, urlPhoto } from "@/lib/utils";
 import { MARQUES, MODELES_PAR_MARQUE, type Marque } from "@/lib/marques-vehicules";
 import type {
   HistoriqueAccidents,
+  PhotoVehicule,
   PostTypeVehicule,
   StatutDocument,
   TypeVehicule,
+  VehiculeFiche,
 } from "@/types";
 
 /** `Combobox` infère son type Value depuis `items` : élargi en `string[]` pour matcher `formulaire.marque` (une simple string côté back, pas un enum). */
 const MARQUES_RECHERCHABLES: string[] = MARQUES.slice();
-
-/* ────────────────────────────────────────────────────────────────────────────
-   PUBLIER UN VÉHICULE — partagé entre /vendeur/post-vehicule et
-   /partenaire/concessionnaire/post-vehicule (un seul composant, cf. la même
-   logique que MessagerieContent : le formulaire ne change pas selon le rôle,
-   seul son point d'entrée dans le layout change).
-   Miroir de VehiculesController::postVehicules (vroom-backend, routes/api.php:83).
-   ──────────────────────────────────────────────────────────────────────────── */
 
 const OPTIONS_POST_TYPE: { valeur: PostTypeVehicule; libelle: string }[] = [
   { valeur: "vente", libelle: "Vente" },
@@ -172,28 +169,181 @@ const FORMULAIRE_VIDE: FormulaireVehicule = {
   equipements: [],
 };
 
-/**
- * Même contrat que POST /vehicules/post-vehicule : le back attend un
- * `multipart/form-data` (les photos sont des fichiers, pas du JSON), pas le
- * body typé ci-dessous. Au branchement, construire un `FormData` à partir de
- * `donnees` + `photos` et remplacer ce corps par le vrai `fetch`/`api.post`.
- */
-function posterVehicule(
-  donnees: FormulaireVehicule,
-  photos: File[]
-): Promise<{ id: string }> {
-  return new Promise((resolve) =>
-    setTimeout(() => resolve({ id: crypto.randomUUID() }), 900)
-  );
+const posterVehicule = async (donnees: FormulaireVehicule, photos: File[]) => {
+  const formData = new FormData();
+
+  // Correction au passage : marque et modele sont `required` côté back eux aussi
+  // (j'avais dit "3 seuls champs required" plus tôt, c'était faux — il y en a 5).
+  formData.append("post_type", donnees.post_type);
+  formData.append("type", donnees.type);
+  formData.append("prix", donnees.prix);
+  formData.append("marque", donnees.marque);
+  formData.append("modele", donnees.modele);
+  formData.append("negociable", donnees.negociable ? "1" : "0");
+
+  const champsOptionnels: (keyof FormulaireVehicule)[] = [
+    "annee",
+    "date_disponibilite",
+    "carburant",
+    "transmission",
+    "kilometrage",
+    "couleur",
+    "nombre_portes",
+    "nombre_places",
+    "visite_technique",
+    "date_visite_technique",
+    "carte_grise",
+    "date_carte_grise",
+    "assurance",
+    "historique_accidents",
+  ];
+
+  champsOptionnels.forEach((champ) => {
+    const valeur = donnees[champ];
+    if (typeof valeur === "string" && valeur !== "") {
+      formData.append(champ, valeur);
+    }
+  });
+
+  donnees.equipements.forEach((equipement) => {
+    formData.append("equipements[]", equipement);
+  });
+
+  photos.forEach((photo) => {
+    formData.append("photos[]", photo);
+  });
+
+  const reponse = await api.post<{data: { vehicule: { id: string } };
+}>("vehicules/post-vehicule", formData);
+
+  return reponse.data.vehicule;
+};
+
+const updateVehicule = async (id:  string, donnees: FormulaireVehicule, photos: File[]) => {
+  const formData = new FormData();
+  formData.append("_method", "PUT");
+
+  const champsOptionnels: (keyof FormulaireVehicule)[] = [
+    "post_type",
+    "type",
+    "prix",
+    "modele",
+    "marque",
+    "annee",
+    "date_disponibilite",
+    "carburant",
+    "transmission",
+    "kilometrage",
+    "couleur",
+    "nombre_portes",
+    "nombre_places",
+    "visite_technique",
+    "date_visite_technique",
+    "carte_grise",
+    "date_carte_grise",
+    "assurance",
+    "historique_accidents"
+  ];
+  formData.append("negociable", donnees.negociable ? "1" : "0");
+
+  champsOptionnels.forEach((champ) => {
+    const valeur = donnees[champ];
+    if (typeof valeur === "string" && valeur !== "") {
+      formData.append(champ, valeur);
+    }
+  });
+  donnees.equipements.forEach((equipement) => {
+    formData.append("equipements[]", equipement);
+  });
+
+  photos.forEach((photo) => {
+    formData.append("photos[]", photo);
+  });
+
+  const reponse = await api.post<{
+    data: { vehicule: { id: string } };
+  }>(`vehicules/${id}`, formData);
+
+  return reponse.data.vehicule
 }
 
-export default function PostVehiculeContent() {
+/** Même contrat que GET /vehicules/mon-vehicule/{id} (VehiculesController::monVehicule). */
+const recupererMonVehicule = async (id: string): Promise<VehiculeFiche> => {
+  const reponse = await api.get<{ data: VehiculeFiche }>(`vehicules/mon-vehicule/${id}`);
+  return reponse.data;
+};
+
+/**
+ * `VehiculeFiche` -> `FormulaireVehicule` : les colonnes numériques/nullable de la
+ * fiche deviennent des strings (le formulaire ne connaît que des strings), "" pour
+ * toute valeur absente. Les 10 premiers caractères d'une date isolent "YYYY-MM-DD"
+ * du timestamp complet que Laravel peut renvoyer, seul format qu'accepte <input type="date">.
+ */
+const formulaireDepuisFiche = (vehicule: VehiculeFiche): FormulaireVehicule => {
+  const description = vehicule.description;
+
+  return {
+    post_type: vehicule.post_type,
+    type: vehicule.type,
+    marque: description?.marque ?? "",
+    modele: description?.modele ?? "",
+    annee: description?.annee != null ? String(description.annee) : "",
+    prix: vehicule.prix,
+    negociable: vehicule.negociable,
+    date_disponibilite: vehicule.date_disponibilite?.slice(0, 10) ?? "",
+    carburant: description?.carburant ?? "",
+    transmission: description?.transmission ?? "",
+    kilometrage: description?.kilometrage != null ? String(description.kilometrage) : "",
+    couleur: description?.couleur ?? "",
+    nombre_portes: description?.nombre_portes != null ? String(description.nombre_portes) : "",
+    nombre_places: description?.nombre_places != null ? String(description.nombre_places) : "",
+    visite_technique: description?.visite_technique ?? "",
+    date_visite_technique: description?.date_visite_technique?.slice(0, 10) ?? "",
+    carte_grise: description?.carte_grise ?? "",
+    date_carte_grise: description?.date_carte_grise?.slice(0, 10) ?? "",
+    assurance: description?.assurance ?? "",
+    historique_accidents: description?.historique_accidents ?? "",
+    equipements: description?.equipements ?? [],
+  };
+};
+
+export type PostVehiculeContentProps = {
+  /** Présent = mode édition (PUT sur ce véhicule). Absent = création. */
+  id?: string;
+};
+
+export default function PostVehiculeContent({ id }: PostVehiculeContentProps) {
   const navigate = useRouter();
+  const modeEdition = id !== undefined;
   const [formulaire, setFormulaire] = useState<FormulaireVehicule>(FORMULAIRE_VIDE);
   const [photos, setPhotos] = useState<File[]>([]);
   const [apercus, setApercus] = useState<string[]>([]);
+  const [photosExistantes, setPhotosExistantes] = useState<PhotoVehicule[]>([]);
+  const [chargementFiche, setChargementFiche] = useState(modeEdition);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    let annule = false;
+
+    recupererMonVehicule(id)
+      .then((vehicule) => {
+        if (annule) return;
+        setFormulaire(formulaireDepuisFiche(vehicule));
+        setPhotosExistantes(vehicule.photos);
+        setChargementFiche(false);
+      })
+      .catch(() => {
+        if (annule) return;
+        setErreur("Impossible de charger ce véhicule.");
+        setChargementFiche(false);
+      });
+
+    return () => {
+      annule = true;
+    };
+  }, [id]);
 
   // un objectURL non révoqué fuit tant que l'onglet reste ouvert : on nettoie à chaque changement ET au démontage
   useEffect(() => {
@@ -259,26 +409,49 @@ export default function PostVehiculeContent() {
     setErreur(null);
 
     try {
-      await posterVehicule(formulaire, photos);
-      setFormulaire(FORMULAIRE_VIDE);
+      if (modeEdition) {
+        await updateVehicule(id, formulaire, photos);
+        toast.success("Annonce modifiée.");
+        navigate.push(`/vendeur/vehicule/${id}`);
+      } else {
+        await posterVehicule(formulaire, photos);
+        setFormulaire(FORMULAIRE_VIDE);
+        setPhotos([]);
+        setApercus([]);
+        toast.success("Annonce publiée.");
+        navigate.push("/vehicules");
+      }
       apercus.forEach((url) => URL.revokeObjectURL(url));
-      setPhotos([]);
-      setApercus([]);
-      navigate.push("/vehicules");
     } catch {
-      setErreur("La publication a échoué. Réessayez dans quelques instants.");
+      const message = modeEdition
+        ? "La modification a échoué. Réessayez dans quelques instants."
+        : "La publication a échoué. Réessayez dans quelques instants.";
+      setErreur(message);
+      toast.error(message);
     } finally {
       setEnvoi(false);
     }
   };
 
+  if (chargementFiche) {
+    return (
+      <main className="mx-auto w-full max-w-3xl px-5 py-8 lg:py-10">
+        <Skeleton className="h-9 w-64" />
+        <Skeleton className="mt-8 h-96 w-full" />
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-8 lg:py-10">
       <header>
-        <h1 className="font-heading text-2xl font-bold md:text-3xl">Publier un véhicule</h1>
+        <h1 className="font-heading text-2xl font-bold md:text-3xl">
+          {modeEdition ? "Modifier le véhicule" : "Publier un véhicule"}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          L&apos;annonce reste en attente de validation (vérification automatique des photos)
-          avant d&apos;apparaître dans le catalogue.
+          {modeEdition
+            ? "L'annonce repasse en attente de validation après modification."
+            : "L'annonce reste en attente de validation (vérification automatique des photos) avant d'apparaître dans le catalogue."}
         </p>
       </header>
 
@@ -701,6 +874,20 @@ export default function PostVehiculeContent() {
             Photos <span className="font-normal text-muted-foreground">({photos.length}/{PHOTOS_MAX}, 2 Mo max chacune)</span>
           </h2>
 
+          {photosExistantes.length > 0 && (
+            <div>
+              {/* pas de bouton retirer : l'API de modification ne fait qu'ajouter des photos, jamais en supprimer */}
+              <p className="text-xs text-muted-foreground">Déjà en ligne :</p>
+              <div className="mt-2 flex flex-wrap gap-3">
+                {photosExistantes.map((photo) => (
+                  <div key={photo.id} className="size-24 overflow-hidden rounded-lg border border-border">
+                    <img src={urlPhoto(photo.path)} alt="" className="size-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-3">
             {apercus.map((url, index) => (
               <div key={url} className="group relative size-24 overflow-hidden rounded-lg border border-border">
@@ -744,7 +931,13 @@ export default function PostVehiculeContent() {
           className={cn(buttonVariants({ size: "lg" }), "effet-action w-full")}
         >
           {envoi ? <Loader2 className="size-4 animate-spin" /> : <Car className="size-4" />}
-          {envoi ? "Publication…" : "Publier le véhicule"}
+          {envoi
+            ? modeEdition
+              ? "Enregistrement…"
+              : "Publication…"
+            : modeEdition
+              ? "Enregistrer les modifications"
+              : "Publier le véhicule"}
         </button>
       </form>
     </main>

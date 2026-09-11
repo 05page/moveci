@@ -5,8 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn, initiales, LIBELLES_ROLE } from "@/lib/utils";
-import type { VehiculeVus, VendeurVedette } from "@/types";
+import { api } from "@/lib/api";
+import { cn, initiales, LIBELLES_ROLE, urlPhoto } from "@/lib/utils";
+import { photoPrincipale } from "@/lib/vehicule";
+import type { ErreurAuth, VehiculeComplet, VehiculeVus, VendeurVedette } from "@/types";
 import {
   Building2,
   CalendarCheck,
@@ -32,6 +34,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type SubmitEvent } from "react";
+import { toast } from "sonner";
 const heroSlides: HeroSlide[] = [
   {
     id: 1,
@@ -86,105 +89,36 @@ const heroSlides: HeroSlide[] = [
   },
 ];
 
-// Les `href` pointent vers les ids UUID des mocks de /vehicules/page.tsx (et
-// repris dans /client/favoris, /messages) — pas des entiers 1..9. Le jour où
-// /vehicules/[id] cherchera par id réel, un lien qui pointe vers un id qui
-// n'existe dans AUCUN mock retomberait toujours sur "introuvable".
-const VehiculesPlusVus: VehiculeVus[] = [
-  {
-    id: 1,
-    marque: "Nissan",
-    modele: "Rogue",
-    image: "/nissan.jpeg",
-    href: "/vehicules/0e9f8a7b-6c5d-4e3f-8a1b-2c3d4e5f6a7b",
-  },
-  {
-    id: 2,
-    marque: "Hyundai",
-    modele: "Tucson Hybrid",
-    image: "/hyundai.jpeg",
-    href: "/vehicules/7f1e9c3a-4b28-4d51-8e60-9a2b3c4d5e6f",
-  },
-  {
-    id: 3,
-    marque: "Toyota",
-    modele: "Corolla",
-    image: "/toyota.jpeg",
-    href: "/vehicules/1b2c3d4e-5f60-4718-8a29-3b4c5d6e7f81",
-  },
+type VehiculePopulaire = Pick<VehiculeComplet, "id" | "description" | "photos">;
 
-  {
-    id: 4,
-    marque: "Mercedes",
-    modele: "Class G",
-    image: "/merco.jpeg",
-    href: "/vehicules/4a3b2c1d-0e9f-4a8b-9c7d-6e5f4a3b2c1d",
-  },
-
-  {
-    id: 5,
-    marque: "Kia",
-    modele: "Sportage",
-    image: "/kia.jpeg",
-    href: "/vehicules/5d4c3b2a-1f0e-4998-8776-655443322110",
-  },
-];
-
-/** Résultat simulé de la géoloc : c'est la commune qui distingue ce rail du principal, pas le modèle. */
-const MOCK_PROCHES: VehiculeVus[] = [
-  { id: 6, marque: "Toyota", modele: "RAV4", image: "/toyota.jpeg", href: "/vehicules/2c1d0e9f-8a7b-4c6d-9e5f-4a3b2c1d0e9f", commune: "Cocody" },
-  { id: 7, marque: "Hyundai", modele: "Tucson", image: "/hyundai.jpeg", href: "/vehicules/7f1e9c3a-4b28-4d51-8e60-9a2b3c4d5e6f", commune: "Marcory" },
-  { id: 8, marque: "Nissan", modele: "Rogue", image: "/nissan.jpeg", href: "/vehicules/0e9f8a7b-6c5d-4e3f-8a1b-2c3d4e5f6a7b", commune: "Yopougon" },
-  { id: 9, marque: "Kia", modele: "Sportage", image: "/kia.jpeg", href: "/vehicules/5d4c3b2a-1f0e-4998-8776-655443322110", commune: "Treichville" },
-];
-
-/**
- * Fausse API des véhicules proches. Signature IDENTIQUE à celle qu'aura le vrai
- * fetch vers GET /api/geo/proches : le jour du branchement, seul ce corps change.
- */
-function recupererVehiculesProches(
-  lat: number,
-  lng: number
-): Promise<VehiculeVus[]> {
-  // les 700 ms rendent l'état "chargement" observable, sinon les Skeleton ne s'affichent jamais
-  return new Promise((resolve) => setTimeout(() => resolve(MOCK_PROCHES), 700));
+// 1. Appelle `api.get<{ data: VehiculePopulaire[] }>("vehicules/populaires")`.
+const recupererVehiculePopulaires = async (): Promise<VehiculeVus[]> => {
+  const response = await api.get<{ data: VehiculePopulaire[] }>("vehicules/populaires");
+  return response.data.filter((v) => v.description !== null)
+    .map((v) => ({
+      id: v.id,
+      marque: v.description!.marque,
+      modele: v.description!.modele,
+      image: photoPrincipale(v.photos) ? urlPhoto(photoPrincipale(v.photos)!.path) : "/toyota.jpeg",
+      href: `/vehicules/${v.id}`,
+    }));
 }
 
-/** Option (a) de l'ÉTAPE 4 : mock aujourd'hui, GET /vendeurs/vedettes le jour où Laravel l'expose. */
-const MOCK_VENDEURS: VendeurVedette[] = [
-  {
-    id: "9d4e2f1a-6c3b-4a71-8e15-2b7f0c9d4e11",
-    fullname: "Ivoire Auto Motors",
-    avatar: null,
-    role: "concessionnaire",
-    note_moyenne: 4.8,
-    nb_avis: 37,
-    nb_vehicules: 24,
-  },
-  {
-    id: "3f8a1b2c-9d7e-4f60-a531-8c4e6b2a9f03",
-    fullname: "Koffi Aristide",
-    avatar: null,
-    role: "vendeur",
-    note_moyenne: 4.5,
-    nb_avis: 12,
-    nb_vehicules: 3,
-  },
-  {
-    id: "7c2d5e9a-4b81-4c36-9f72-1a3e8d6b5c42",
-    fullname: "Auto-école La Réussite",
-    avatar: null,
-    role: "auto_ecole",
-    note_moyenne: 4.6,
-    nb_avis: 21,
-    nb_vehicules: 5,
-  },
-];
+const recupererVendeurPopulaires = async (): Promise<VendeurVedette[]> => {
+  const response = await api.get<{ data: VendeurVedette[] }>("/vendeurs/vedettes");
+  return response.data.filter((vv) => vv.id !== null)
+    .map((vv) => ({
+      id: vv.id,
+      fullname: vv.fullname,
+      avatar: vv.avatar,
+      role: vv.role,
+      nb_vehicules: vv.nb_vehicules,
+      note_moyenne: vv.note_moyenne,
+      nb_avis: vv.nb_avis
+    }));
+}
 
 /** Même contrat que la future route publique : seul ce corps changera au branchement. */
-function recupererVendeursVedettes(): Promise<VendeurVedette[]> {
-  return new Promise((resolve) => setTimeout(() => resolve(MOCK_VENDEURS), 700));
-}
 
 type EtapeParcours = {
   numero: number;
@@ -204,6 +138,10 @@ type ProfilParcours = {
   href: string;
   libelleAction: string;
 };
+
+type Newsletter = {
+  email: string
+}
 
 /** Parcours des 3 profils, repris de docs/CAHIER-DES-CHARGES.md § « Parcours utilisateurs critiques ». */
 const PARCOURS: ProfilParcours[] = [
@@ -447,18 +385,34 @@ export default function Home() {
   const parcours = PARCOURS.find((profil) => profil.id === profilActif) ?? PARCOURS[0];
   const [emailNewsletter, setEmailNewsletter] = useState("");
   const [newsletterEnvoyee, setNewsletterEnvoyee] = useState(false);
-  const [proches, setProches] = useState<VehiculeVus[]>([]);
-  const [etatGeo, setEtatGeo] = useState<"idle" | "chargement" | "refuse" | "ok">("idle");
+  const [vehiculesPopulaires, setVehiculesPopulaires] = useState<VehiculeVus[]>([]);
+  const [chargementPopulaires, setChargementPopulaires] = useState(true);
+  const [tentativePopulaires, setTentativePopulaires] = useState(0);
   const [vendeurs, setVendeurs] = useState<VendeurVedette[]>([]);
   const [chargementVendeurs, setChargementVendeurs] = useState(true);
   // incrémenté par le bouton Recharger : c'est ce qui redéclenche le useEffect ci-dessous
   const [tentativeVendeurs, setTentativeVendeurs] = useState(0);
 
   useEffect(() => {
+    let annule = false;
+    recupererVehiculePopulaires().then((liste) => {
+      if (annule) return;
+      setVehiculesPopulaires(liste);
+      setChargementPopulaires(false);
+    });
+    return () => { annule = true; };
+  }, [tentativePopulaires]);
+
+  const rechargerPopulaires = () => {
+    setChargementPopulaires(true);
+    setTentativePopulaires((t) => t + 1);
+  };
+
+  useEffect(() => {
     // `annule` évite un setState sur un composant démonté si la réponse arrive trop tard
     let annule = false;
 
-    recupererVendeursVedettes().then((liste) => {
+    recupererVendeurPopulaires().then((liste) => {
       if (annule) return;
       setVendeurs(liste);
       setChargementVendeurs(false);
@@ -474,48 +428,18 @@ export default function Home() {
     setTentativeVendeurs((t) => t + 1);
   };
 
-  const handleGeo = () => {
-    // a. l'API n'existe pas hors contexte sécurisé : on sort avant de la toucher
-    if (!("geolocation" in navigator)) {
-      setEtatGeo("refuse");
-      return;
-    }
-
-    // b. posé AVANT l'appel : la popup puis le fix GPS peuvent durer plusieurs secondes
-    setEtatGeo("chargement");
-
-    // d. le navigateur appelle ceci quand il a la position
-    const succes = (position: GeolocationPosition) => {
-      const { latitude, longitude } = position.coords;
-
-      recupererVehiculesProches(latitude, longitude).then((vehicules) => {
-        setProches(vehicules);
-        setEtatGeo("ok");
-      });
-    };
-
-    // e. refus de l'utilisateur, position indisponible ou délai dépassé
-    const erreur = () => setEtatGeo("refuse");
-
-    // c. API à callbacks : on passe les deux fonctions, le navigateur en appellera UNE
-    navigator.geolocation.getCurrentPosition(succes, erreur, { timeout: 10_000 });
-  };
-  const soumettreNewsletter = (evenement: SubmitEvent<HTMLFormElement>) => {
+  const soumettreNewsletter = async (evenement: SubmitEvent<HTMLFormElement>) => {
     // sans preventDefault, le <form> recharge la page et le state est perdu
-    evenement.preventDefault();
 
-    /*
-    ÉTAPE 5 — Câbler l'inscription (rien à faire tant que le back n'a pas bougé).
-      5.1 Aucun endpoint newsletter n'existe dans vroom-backend/routes/api.php.
-          Cette section est donc une coquille visuelle : elle n'enregistre RIEN.
-      5.2 Côté Laravel, à créer avant : une table `abonnes_newsletter` (email unique,
-          token_desinscription, timestamps) + POST /api/newsletter, route publique.
-      5.3 Ici, remplace le setNewsletterEnvoyee(true) direct par un appel à cette route,
-          et ajoute un 3e état "erreur" : un email déjà inscrit doit renvoyer un message,
-          pas un faux succès.
-    */
-    setNewsletterEnvoyee(true);
-    setEmailNewsletter("");
+    evenement.preventDefault();
+    try {
+      await api.post("/newsletter", { email: emailNewsletter });
+      setNewsletterEnvoyee(true);
+      setEmailNewsletter("");
+      toast.success("Inscription à la newsletter confirmée.");
+    } catch (erreurCatch) {
+      toast.error((erreurCatch as ErreurAuth).message ?? "L'inscription à la newsletter a échoué.");
+    }
   };
 
   const scrollCategories = (direction: "left" | "right") => {
@@ -535,13 +459,14 @@ export default function Home() {
         {/* Les flèches sont FRÈRES du rail, pas ses enfants : sinon elles défilent avec lui */}
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold">Vehicules les plus vues</h1>
+          <BoutonRecharger onClick={rechargerPopulaires} chargement={chargementPopulaires} />
         </div>
 
         <div
           ref={VehiculeScrollRef}
           className="mt-6 flex gap-4 overflow-x-hidden pb-4"
         >
-          {VehiculesPlusVus.map((vehicule) => (
+          {vehiculesPopulaires.map((vehicule) => (
             <CarteVehicule
               key={vehicule.id}
               vehicule={vehicule}
@@ -646,66 +571,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Près de chez vous */}
-      <section className="mx-auto max-w-7xl px-5 py-16">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold">Près de chez vous</h1>
-        </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Les véhicules disponibles dans votre ville, sans traverser Abidjan pour un essai.
-        </p>
-
-        {/* Déclenché au clic, jamais au montage : une popup non sollicitée fait fuir */}
-        {etatGeo === "idle" && (
-          <div className="mt-10 flex justify-center">
-            <Button size="lg" className="effet-action" onClick={handleGeo}>
-              <MapPin className="size-4" />
-              Voir les véhicules près de moi
-            </Button>
-          </div>
-        )}
-
-        {/* Skeletons au format exact des cartes : la page ne saute pas à l'arrivée des données */}
-        {etatGeo === "chargement" && (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={index} className="aspect-3/4 w-full" />
-            ))}
-          </div>
-        )}
-
-        {etatGeo === "refuse" && (
-          <div className="mt-10 rounded-2xl border border-border p-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              Nous n&apos;avons pas pu vous localiser. Parcourez le catalogue et
-              filtrez par ville pour trouver un véhicule près de chez vous.
-            </p>
-            <Link
-              href="/vehicules"
-              className={cn(
-                buttonVariants({ variant: "outline" }),
-                "effet-action mt-4"
-              )}
-            >
-              Voir tout le catalogue
-            </Link>
-          </div>
-        )}
-
-        {etatGeo === "ok" &&
-          (proches.length === 0 ? (
-            <p className="mt-10 text-center text-sm text-muted-foreground">
-              Aucun véhicule dans votre zone pour l&apos;instant.
-            </p>
-          ) : (
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {proches.map((vehicule) => (
-                <CarteVehicule key={vehicule.id} vehicule={vehicule} />
-              ))}
-            </div>
-          ))}
-      </section>
-
       {/* Pourquoi Move CI */}
       <section className="bg-muted/40 py-16">
         <div className="mx-auto max-w-7xl px-5">
@@ -751,53 +616,53 @@ export default function Home() {
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {chargementVendeurs
             ? Array.from({ length: 3 }).map((_, index) => (
-                <Skeleton key={index} className="h-48 w-full" />
-              ))
+              <Skeleton key={index} className="h-48 w-full" />
+            ))
             : vendeurs.map((vendeur) => (
-                <article
-                  key={vendeur.id}
-                  className="group rounded-2xl border border-border p-6 transition-colors hover:border-primary"
+              <article
+                key={vendeur.id}
+                className="group rounded-2xl border border-border p-6 transition-colors hover:border-primary"
+              >
+                <div className="flex items-center gap-4">
+                  {/* avatar de repli : le backend renvoie null tant que l'utilisateur n'en a pas */}
+                  <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary font-heading text-lg font-bold text-primary-foreground">
+                    {initiales(vendeur.fullname)}
+                  </div>
+
+                  <div className="min-w-0">
+                    <h3 className="truncate font-heading text-lg font-bold">
+                      {vendeur.fullname}
+                    </h3>
+                    <Badge variant="secondary" className="mt-1">
+                      {LIBELLES_ROLE[vendeur.role]}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex items-center justify-between text-sm">
+                  <span className="inline-flex items-center gap-1.5 font-semibold">
+                    <Star className="size-4 fill-primary text-primary" />
+                    {vendeur.note_moyenne.toFixed(1)}
+                    <span className="font-normal text-muted-foreground">
+                      ({vendeur.nb_avis} avis)
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    {vendeur.nb_vehicules} véhicules en ligne
+                  </span>
+                </div>
+
+                <Link
+                  href={`/vendeurs/${vendeur.id}`}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                    "effet-action mt-6 w-full"
+                  )}
                 >
-                  <div className="flex items-center gap-4">
-                    {/* avatar de repli : le backend renvoie null tant que l'utilisateur n'en a pas */}
-                    <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary font-heading text-lg font-bold text-primary-foreground">
-                      {initiales(vendeur.fullname)}
-                    </div>
-
-                    <div className="min-w-0">
-                      <h3 className="truncate font-heading text-lg font-bold">
-                        {vendeur.fullname}
-                      </h3>
-                      <Badge variant="secondary" className="mt-1">
-                        {LIBELLES_ROLE[vendeur.role]}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 flex items-center justify-between text-sm">
-                    <span className="inline-flex items-center gap-1.5 font-semibold">
-                      <Star className="size-4 fill-primary text-primary" />
-                      {vendeur.note_moyenne.toFixed(1)}
-                      <span className="font-normal text-muted-foreground">
-                        ({vendeur.nb_avis} avis)
-                      </span>
-                    </span>
-                    <span className="text-muted-foreground">
-                      {vendeur.nb_vehicules} véhicules en ligne
-                    </span>
-                  </div>
-
-                  <Link
-                    href={`/vendeurs/${vendeur.id}`}
-                    className={cn(
-                      buttonVariants({ variant: "outline", size: "sm" }),
-                      "effet-action mt-6 w-full"
-                    )}
-                  >
-                    Voir le profil
-                  </Link>
-                </article>
-              ))}
+                  Voir le profil
+                </Link>
+              </article>
+            ))}
         </div>
       </section>
 

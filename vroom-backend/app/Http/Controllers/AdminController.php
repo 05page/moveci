@@ -7,6 +7,7 @@ use App\Models\Formation;
 use App\Models\InscriptionFormation;
 use App\Models\LogModeration;
 use App\Models\Notifications;
+use App\Models\Sanction;
 use App\Models\Signalement;
 use App\Models\TransactionConclue;
 use App\Models\User;
@@ -16,52 +17,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Spatie\Activitylog\Models\Activity;
 
 class AdminController extends Controller
 {
-    /**
-     * Liste tous les comptes administrateurs.
-     */
-    public function admins(): JsonResponse
-    {
-        $admins = User::admins()
-            ->select('id', 'fullname', 'email', 'telephone', 'adresse', 'statut', 'created_at')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return response()->json(['success' => true, 'data' => $admins], 200);
-    }
-
-    /**
-     * Crée un nouveau compte administrateur.
-     * Seul un admin connecté peut créer d'autres admins (route protégée par role:admin).
-     */
-    public function createAdmin(Request $request): JsonResponse
-    {
-        $request->validate([
-            'fullname'      => 'required|string|max:255',
-            'email'         => 'required|email|unique:users,email',
-            'password'      => 'required|string|min:8',
-            'telephone'     => 'sometimes|nullable|string|max:20',
-            'adresse'       => 'sometimes|nullable|string|max:500',
-        ]);
-
-        $admin = User::create([
-            'fullname'     => $request->fullname,
-            'email'        => $request->email,
-            'password'     => Hash::make($request->password),
-            'role'         => User::ADMIN,
-            'statut'       => User::ACTIF,
-            'telephone'    => $request->telephone,
-            'adresse'      => $request->adresse,
-        ]);
-
-        $this->logAction('CREATE_ADMIN', 'utilisateur', $admin->id, "Création admin : {$admin->email}");
-
-        return response()->json(['success' => true, 'data' => $admin, 'message' => 'Administrateur créé'], 201);
-    }
-
-    // ── Utilisateurs ──────────────────────────────────────
 
     public function users(Request $request): JsonResponse
     {
@@ -94,12 +54,12 @@ class AdminController extends Controller
 
     public function suspendre(Request $request, $id): JsonResponse
     {
-        return $this->changerStatut($id, User::SUSPENDU, 'SUSPEND_USER', 'utilisateur', $this->detailsValides($request));
+        return $this->changerStatut($id, User::SUSPENDU, 'SUSPEND_USER', 'utilisateur', $this->detailsValides($request), $this->reasonCodeValide($request));
     }
 
     public function bannir(Request $request, $id): JsonResponse
     {
-        return $this->changerStatut($id, User::BANNI, 'BAN_USER', 'utilisateur', $this->detailsValides($request));
+        return $this->changerStatut($id, User::BANNI, 'BAN_USER', 'utilisateur', $this->detailsValides($request), $this->reasonCodeValide($request));
     }
 
     public function restaurer(Request $request, $id): JsonResponse
@@ -182,7 +142,10 @@ class AdminController extends Controller
     public function suspendreVehicule($id): JsonResponse
     {
         $vehicule = Vehicules::findOrFail($id);
-        $vehicule->update(['statut' => 'suspendu']);
+        $vehicule->update([
+            'statut'=>'suspendu',
+            'status_validation'=>'suspendu'
+        ]);
         $this->logAction('SUSPEND_VEHICLE', 'vehicule', $id, null);
         event(new DataRefresh($vehicule->created_by, 'vehicule'));
         return response()->json(['success' => true, 'message' => 'Véhicule suspendu.']);
@@ -200,7 +163,7 @@ class AdminController extends Controller
 
     /**
      * Liste toutes les formations avec filtres optionnels.
-     * Parametre statut_validation : en_attente | validé | rejeté
+     * Parametre status_validation  : en_attente | validé | rejeté
      */
     public function formations(Request $request): JsonResponse
     {
@@ -209,11 +172,11 @@ class AdminController extends Controller
             ->orderBy('created_at', 'desc');
 
         $filtres = $request->validate([
-            'statut_validation' => 'sometimes|string|in:en_attente,validé,rejeté',
+            'status_validation ' => 'sometimes|string|in:en_attente,validé,rejeté',
         ]);
 
-        if (isset($filtres['statut_validation'])) {
-            $query->where('statut_validation', $filtres['statut_validation']);
+        if (isset($filtres['status_validation '])) {
+            $query->where('status_validation ', $filtres['status_validation ']);
         }
 
         $formations = $query->paginate(20);
@@ -222,13 +185,22 @@ class AdminController extends Controller
     }
 
     /**
-     * Valide une formation soumise par une auto-ecole.
-     * La formation devient visible dans le catalogue public.
+     * Détail d'une formation, tous statuts confondus (le back-office peut consulter
+     * une formation en_attente/rejeté, contrairement à FormationController::show()).
      */
+    public function formation($id): JsonResponse
+    {
+        $formation = Formation::with(['autoEcole:id,fullname,avatar'])
+            ->withCount('inscriptions')
+            ->findOrFail($id);
+
+        return response()->json(['success' => true, 'data' => $formation], 200);
+    }
+
     public function validerFormation(Request $request, $id): JsonResponse
     {
         $formation = Formation::findOrFail($id);
-        $formation->update(['statut_validation' => 'validé']);
+        $formation->update(['status_validation ' => 'validé']);
 
         $this->logAction('VALIDATE_FORMATION', 'formation', $id, $this->detailsValides($request));
 
@@ -247,7 +219,7 @@ class AdminController extends Controller
         $request->validate(['motif' => 'required|string|max:500']);
 
         $formation = Formation::findOrFail($id);
-        $formation->update(['statut_validation' => 'rejeté']);
+        $formation->update(['status_validation ' => 'rejeté']);
 
         $this->logAction('REJECT_FORMATION', 'formation', $id, $request->motif);
 
@@ -255,6 +227,34 @@ class AdminController extends Controller
         event(new DataRefresh($formation->auto_ecole_id, 'formation'));
 
         return response()->json(['success' => true, 'message' => 'Formation rejetée'], 200);
+    }
+
+    /**
+     * Retire une formation validée du catalogue public sans la supprimer
+     * (réversible via restaurerFormation) — même logique que suspendreVehicule().
+     */
+    public function retirerFormation(Request $request, $id): JsonResponse
+    {
+        $formation = Formation::findOrFail($id);
+        $formation->update(['statut' => Formation::STATUT_RETIREE]);
+
+        $this->logAction('WITHDRAW_FORMATION', 'formation', $id, $this->detailsValides($request));
+
+        event(new DataRefresh($formation->auto_ecole_id, 'formation'));
+
+        return response()->json(['success' => true, 'message' => 'Formation retirée du catalogue.'], 200);
+    }
+
+    public function restaurerFormation(Request $request, $id): JsonResponse
+    {
+        $formation = Formation::findOrFail($id);
+        $formation->update(['statut' => Formation::STATUT_DISPONIBLE]);
+
+        $this->logAction('RESTORE_FORMATION', 'formation', $id, $this->detailsValides($request));
+
+        event(new DataRefresh($formation->auto_ecole_id, 'formation'));
+
+        return response()->json(['success' => true, 'message' => 'Formation restaurée.'], 200);
     }
 
     // ── Signalements ───────────────────────────────────────
@@ -501,9 +501,9 @@ class AdminController extends Controller
             ->groupBy('role')
             ->pluck('total', 'role');
 
-        $formationsValidation = Formation::selectRaw('statut_validation, count(*) as total')
-            ->groupBy('statut_validation')
-            ->pluck('total', 'statut_validation');
+        $formationsValidation = Formation::selectRaw('status_validation , count(*) as total')
+            ->groupBy('status_validation ')
+            ->pluck('total', 'status_validation ');
 
         $formationsParPermis = Formation::selectRaw('type_permis, count(*) as total')
             ->groupBy('type_permis')
@@ -539,10 +539,6 @@ class AdminController extends Controller
         ]);
     }
 
-    /**
-     * Données comportementales acheteurs : marques/modèles favoris, carburant, prix, conversion RDV.
-     * GET /admin/stats/marche
-     */
     public function statsMarche(): JsonResponse
     {
         // -- Top marques favoris (+ vues associées)
@@ -661,117 +657,29 @@ class AdminController extends Controller
         ]);
     }
 
-    /**
-     * Répartition géographique des utilisateurs et véhicules par zone (commune).
-     * Extrait la commune depuis le champ adresse (format "Ville, Commune" ou "Commune").
-     * GET /admin/stats/geographie
-     */
-    public function statsGeographie(): JsonResponse
+    public function activityLog(Request $request): JsonResponse
     {
-        // Expression SQL pour extraire la zone depuis l'adresse texte
-        // Si l'adresse contient une virgule → prend la 2e partie, sinon prend l'adresse entière
-        $zoneExpr = "CASE WHEN adresse LIKE '%,%' THEN TRIM(SUBSTRING_INDEX(adresse, ',', -1)) ELSE TRIM(adresse) END";
-
-        // Acheteurs par zone (rôle client)
-        $acheteursByZone = DB::table('users')
-            ->selectRaw("$zoneExpr as zone, count(*) as total")
-            ->where('role', 'client')
-            ->whereNotNull('adresse')
-            ->where('adresse', '!=', '')
-            ->groupByRaw($zoneExpr)
-            ->orderByDesc('total')
-            ->limit(10)
-            ->get();
-
-        // Vendeurs par zone (rôle vendeur ou concessionnaire)
-        $vendeursByZone = DB::table('users')
-            ->selectRaw("$zoneExpr as zone, count(*) as total")
-            ->whereIn('role', ['vendeur', 'concessionnaire'])
-            ->whereNotNull('adresse')
-            ->where('adresse', '!=', '')
-            ->groupByRaw($zoneExpr)
-            ->orderByDesc('total')
-            ->limit(10)
-            ->get();
-
-        // Partenaires par zone (concessionnaire + auto_ecole)
-        $partenairesByZone = DB::table('users')
-            ->selectRaw("$zoneExpr as zone, count(*) as total")
-            ->whereIn('role', ['concessionnaire', 'auto_ecole'])
-            ->whereNotNull('adresse')
-            ->where('adresse', '!=', '')
-            ->groupByRaw($zoneExpr)
-            ->orderByDesc('total')
-            ->limit(10)
-            ->get();
-
-        // Véhicules par zone (via la table users — créateur du véhicule)
-        $vehiculesByZone = DB::table('vehicules')
-            ->join('users', 'vehicules.created_by', '=', 'users.id')
-            ->selectRaw("$zoneExpr as zone, count(vehicules.id) as total")
-            ->whereNotNull('users.adresse')
-            ->where('users.adresse', '!=', '')
-            ->groupByRaw($zoneExpr)
-            ->orderByDesc('total')
-            ->limit(10)
-            ->get();
-
-        // Calcul de la couverture : zones avec vendeurs vs sans vendeurs
-        $toutesZonesVendeurs = DB::table('users')
-            ->selectRaw("$zoneExpr as zone")
-            ->whereIn('role', ['vendeur', 'concessionnaire'])
-            ->whereNotNull('adresse')
-            ->where('adresse', '!=', '')
-            ->groupByRaw($zoneExpr)
-            ->pluck('zone');
-
-        $toutesZonesAcheteurs = DB::table('users')
-            ->selectRaw("$zoneExpr as zone")
-            ->where('role', 'client')
-            ->whereNotNull('adresse')
-            ->where('adresse', '!=', '')
-            ->groupByRaw($zoneExpr)
-            ->pluck('zone');
-
-        $zonesVendeursSet  = collect($toutesZonesVendeurs)->filter()->unique()->values();
-        $zonesAcheteursSet = collect($toutesZonesAcheteurs)->filter()->unique()->values();
-
-        // Zones avec acheteurs mais sans vendeurs = zones non couvertes
-        $zonesSansVendeurs = $zonesAcheteursSet->diff($zonesVendeursSet)->count();
-        $zonesAvecVendeurs = $zonesVendeursSet->count();
-        $zonesTotal        = $zonesAcheteursSet->union($zonesVendeursSet)->unique()->count();
-
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'acheteurs_par_zone'   => $acheteursByZone,
-                'vendeurs_par_zone'    => $vendeursByZone,
-                'partenaires_par_zone' => $partenairesByZone,
-                'vehicules_par_zone'   => $vehiculesByZone,
-                'couverture' => [
-                    'zones_avec_vendeurs' => $zonesAvecVendeurs,
-                    'zones_sans_vendeurs' => $zonesSansVendeurs,
-                    'zones_total'         => $zonesTotal,
-                ],
-            ],
+        $filtre = $request->validate([
+            'subject_type' => [
+                'sometimes',
+                'string',
+                Rule::in([
+                    \App\Models\Vehicules::class,
+                    \App\Models\User::class,
+                    \App\Models\TransactionConclue::class,
+                    \App\Models\RendezVous::class,
+                    \App\Models\Formation::class,
+                    \App\Models\Signalement::class,
+                ])
+            ]
         ]);
-    }
-
-    public function logs(Request $request): JsonResponse
-    {
-        $filtres = $request->validate([
-            'cible_type' => 'sometimes|string|in:utilisateur,vehicule,formation,signalement',
-        ]);
-
-        $query = LogModeration::with(['admin:id,fullname']);
-
-        if (isset($filtres['cible_type'])) $query->where('cible_type', $filtres['cible_type']);
-        $logs = $query->orderBy('date_action', 'desc')->paginate(50);
-
+        $query = Activity::with(['causer:id,fullname']);
+        if (isset($filtre['subject_type'])) $query->where('subject_type', $filtre['subject_type']);
+        $logs = $query->latest()->paginate(50);
         return response()->json(['success' => true, 'data' => $logs], 200);
     }
 
-    private function changerStatut($id, string $statut, string $action, string $cibleType, ?string $details): JsonResponse
+    private function changerStatut($id, string $statut, string $action, string $cibleType, ?string $details, ?string $reasonCode = null): JsonResponse
     {
         $user = User::findOrFail($id);
 
@@ -782,6 +690,27 @@ class AdminController extends Controller
         };
 
         $this->logAction($action, $cibleType, $id, $details);
+
+        if ($statut === User::SUSPENDU || $statut === User::BANNI) {
+            Sanction::create([
+                "user_id" => $id,
+                "admin_id" => Auth::id(),
+                "type" => match ($statut) {
+                    User::SUSPENDU => 'suspension',
+                    User::BANNI    => 'ban',
+                },
+                "reason_code" => $reasonCode,
+                "details" => $details,
+                "expires_at" => null
+            ]);
+        }
+
+        if ($statut === User::ACTIF) {
+            $sanctions = Sanction::where('user_id', $id)->whereNull('revoked_at')->latest()->first();
+            if ($sanctions) {
+                $sanctions->update(['revoked_at' => now(), 'revoked_by' => Auth::id()]);
+            }
+        }
 
         // Notifier l'utilisateur du changement de statut de son compte
         [$titre, $message] = match ($statut) {
@@ -826,6 +755,18 @@ class AdminController extends Controller
         return $validated['details'] ?? null;
     }
 
+    /**
+     * Valide et retourne le reason_code obligatoire des suspensions/bannissements.
+     */
+    private function reasonCodeValide(Request $request): string
+    {
+        $validated = $request->validate([
+            'reason_code' => ['required', 'in:spam,fraude,contenu_inapproprie,non_respect_cgu,comportement_frauduleux,autre']
+        ]);
+
+        return $validated['reason_code'];
+    }
+
     private function logAction(string $action, string $cibleType, string $idCible, ?string $details): void
     {
         LogModeration::create([
@@ -836,35 +777,16 @@ class AdminController extends Controller
             'details'    => $details,
         ]);
     }
-    // Liste les véhicules soft-deletés
-    public function corbeille(): JsonResponse
-    {
-        $vehicules = Vehicules::onlyTrashed()
-            ->with(['creator:id,fullname,role', 'description', 'photos'])
-            ->orderBy('deleted_at', 'desc')
-            ->get();
 
-        return response()->json(['success' => true, 'data' => $vehicules]);
-    }
-
-    // Restaure un véhicule soft-deleté
     public function restaurerVehicule($id): JsonResponse
     {
-        $vehicule = Vehicules::onlyTrashed()->findOrFail($id);
-        $vehicule->restore();
+        $vehicule = Vehicules::findOrFail($id);
+        $vehicule->update([
+            'statut' => 'disponible',
+            'status_validation'=>'restauree'
+        ]);
         $this->logAction('RESTORE_VEHICLE', 'vehicule', $id, null);
         event(new DataRefresh($vehicule->created_by, 'vehicule'));
         return response()->json(['success' => true, 'message' => 'Véhicule restauré.']);
-    }
-
-    // Supprime définitivement (forceDelete)
-    public function forcerSupprimerVehicule($id): JsonResponse
-    {
-        $vehicule = Vehicules::onlyTrashed()->findOrFail($id);
-        $createdBy = $vehicule->created_by;
-        $vehicule->forceDelete();
-        $this->logAction('FORCE_DELETE_VEHICLE', 'vehicule', $id, null);
-        event(new DataRefresh($createdBy, 'vehicule'));
-        return response()->json(['success' => true, 'message' => 'Véhicule supprimé définitivement.']);
     }
 }

@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
 import { estErreurAuth } from "@/lib/erreurs";
-import type { ErreurAuth } from "@/types";
 import { ArrowLeft, ShieldCheck, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -19,27 +19,9 @@ type DonneesReset = {
   password_confirmation: string;
 };
 
-/** Fausse API de POST /api/reset-password : au branchement, seul ce corps change. */
-function reinitialiserMotDePasse(donnees: DonneesReset): Promise<{ message: string }> {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      // cas le plus fréquent en vrai : le token meurt au bout de 60 minutes
-      if (donnees.token === "expire") {
-        const erreur: ErreurAuth = {
-          success: false,
-          status: 422,
-          message: "Lien invalide ou expiré. Faites une nouvelle demande.",
-        };
-        reject(erreur);
-        return;
-      }
-
-      resolve({
-        message: "Mot de passe réinitialisé. Vous pouvez maintenant vous connecter.",
-      });
-    }, 700);
-  });
-}
+/** Même contrat que POST /api/reset-password (PasswordResetController::resetPassword). */
+const reinitialiserMotDePasse = (donnees: DonneesReset): Promise<{ message: string }> =>
+  api.post<{ message: string }>("reset-password", donnees);
 
 /**
  * useSearchParams() ne peut pas être résolu au build : les query params n'existent

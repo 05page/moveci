@@ -16,6 +16,7 @@ import { api } from "@/lib/api";
 import { updateProfileSchema, type UpdateProfileFormData } from "@/lib/validation";
 import type { ErreurAuth, User } from "@/types";
 import { z } from "zod";
+import { toast } from "sonner";
 
 /**
  * Pop-up d'édition de profil. Dialog CONTRÔLÉ depuis le parent (open/onOpenChange),
@@ -78,8 +79,11 @@ export default function EditProfile({ user, open, onOpenChange, onSuccess }: Edi
             );
             onSuccess(response.data);
             onOpenChange(false)
+            toast.success("Profil mis à jour.");
         } catch (erreur) {
-            setError((erreur as ErreurAuth).message ?? "Une erreur est survenue. Réessayez.");
+            const message = (erreur as ErreurAuth).message ?? "Une erreur est survenue. Réessayez.";
+            setError(message);
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }

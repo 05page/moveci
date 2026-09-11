@@ -1,10 +1,6 @@
-/**
- * Types partagés dans toute l'app. Tout ce qui décrit une donnée venant du
- * backend Laravel vit ici — pas dans la page qui l'affiche.
- */
+/** Types partagés dans toute l'app — décrivent les données venant du backend Laravel. */
 
 /** Les cinq rôles portés par `users.role` (vroom-backend/app/Models/User.php). */
-
 export type RoleUser =
   | "client"
   | "vendeur"
@@ -20,6 +16,8 @@ export type User = {
   id: string;
   fullname: string;
   avatar: string | null;
+  /** Réservé concessionnaire/auto_ecole (AuthController::coverProfile refuse client/vendeur en 403). */
+  cover_photo?: string | null;
   role: RoleUser;
   /** Date d'inscription au format ISO 8601. */
   membre_since: string;
@@ -32,13 +30,13 @@ export type User = {
   /** Renvoyés par login/register (modèle complet), absents de profil(). */
   email?: string;
   statut?: StatutUser;
+  /** Renseigné uniquement pour concessionnaire/auto_ecole (`required_if` à l'inscription, register:156). */
+  raison_sociale?: string | null;
+  /** "google" = pas de mot de passe local, voir AuthController::changePassword(). Absent des réponses restreintes. */
+  auth_provider?: "local" | "google";
 };
 
-/**
- * Carte vendeur de la page d'accueil. `Pick` dérive les champs de `User` au lieu
- * de les recopier : si la réponse du backend change, la correction se fait à un
- * seul endroit et TypeScript signale ici tout champ disparu.
- */
+/** Carte vendeur de l'accueil ; `Pick` dérive de `User` pour rester synchro si le back change. */
 export type VendeurVedette = Pick<
   User,
   "id" | "fullname" | "avatar" | "role" | "note_moyenne" | "nb_avis"
@@ -47,10 +45,7 @@ export type VendeurVedette = Pick<
   nb_vehicules: number;
 };
 
-/**
- * Réponse commune à `POST /api/login` et `POST /api/register`
- * (AuthController::login ligne 133, register ligne 177).
- */
+/** Réponse commune à `POST /api/login` et `POST /api/register`. */
 export type ReponseAuth = {
   success: true;
   /** Token Sanctum en clair. Il ne doit JAMAIS finir dans localStorage : cookie httpOnly. */
@@ -59,19 +54,10 @@ export type ReponseAuth = {
   user: User;
 };
 
-/**
- * Erreur renvoyée par l'API d'authentification. `login` répond 401 sur mauvais
- * identifiants et 403 avec un message différent par statut (lignes 119-130) ;
- * `register` répond 422 avec les erreurs de validation champ par champ.
- */
+/** Erreur d'auth : `login` → 401/403, `register` → 422 avec `errors` par champ. */
 export type ErreurAuth = {
   success: false;
-  /**
-   * Code HTTP. Il n'est PAS dans le corps JSON : c'est le client qui le recopie
-   * depuis `reponse.status` avant de rejeter. Sans lui, impossible de distinguer
-   * un 401 (mauvais identifiants) d'un 403 (compte bloqué), les deux ayant un
-   * `message` mais appelant un traitement différent.
-   */
+  /** Status HTTP recopié par le client depuis `reponse.status`, absent du JSON. */
   status: number;
   message: string;
   /** Présent uniquement sur un 422 : { email: ["Cet email est déjà utilisé."] }. */
@@ -95,13 +81,7 @@ export type PostTypeVehicule = "vente" | "location";
 /** `vehicules.type` : état du véhicule (lignes 42-43). À ne pas confondre avec `post_type`. */
 export type TypeVehicule = "neuf" | "occasion";
 
-/**
- * `vehicules.status_validation` : le cycle de modération Gemini, PLUS les deux
- * valeurs que seul l'admin déclenche — absentes tant que rien ne les montrait.
- * `suspendu` : suspension administrative (Vehicules::suspendre(), ligne 147).
- * `retrait` : présent dans le CHECK de la migration, mais AUCUN code ne
- * l'assigne encore — à traiter en repli, pas à supposer atteignable.
- */
+/** Cycle de modération Gemini + `suspendu` (admin) + `retrait` (jamais assigné, à traiter en repli). */
 export type StatutValidation =
   | "en_attente"
   | "validee"
@@ -112,7 +92,8 @@ export type StatutValidation =
 
 /** Une carte du rail « Véhicules les plus vus » de la page d'accueil. */
 export type VehiculeVus = {
-  id: number;
+  /** UUID réel du véhicule (HasUuids côté back) — jamais un entier, même si le mock de /vehicules/proches en utilise un pour le moment. */
+  id: string;
   marque: string;
   modele: string;
   image: string;
@@ -121,7 +102,6 @@ export type VehiculeVus = {
   /** Commune d'Abidjan où se trouve le véhicule : "Cocody". Affichée dans « Près de chez vous ». */
   commune?: string;
 };
-
 
 /** Les 7 compteurs du bloc `stats`. Tous calculés sur `created_by = utilisateur courant`. */
 export type CompteursVendeur = {
@@ -179,11 +159,7 @@ export type VehiculeTopVues = {
   statut: StatutVehicule;
   views_count: number;
   description: DescriptionVehicule | null;
-  /**
-   * Chargées par le `with(['description', 'photos'])` de la requête. Le
-   * `get(['id', ...])` qui suit restreint les colonnes de `vehicules`, pas les
-   * relations : `id` étant sélectionné, Eloquent sait résoudre les deux.
-   */
+  /** Chargées par `with(['description','photos'])` malgré le `get(['id', ...])` qui restreint `vehicules`. */
   photos: PhotoVehicule[];
 };
 
@@ -201,69 +177,41 @@ export type StatsVendeur = {
   };
 };
 
-/* ────────────────────────────────────────────────────────────────────────────
-   STATS CLIENT — AUCUN ENDPOINT N'EXISTE
-   `mesStats` est réservé aux vendeurs. Ce type n'est donc PAS une réponse
-   d'API : c'est une projection que le front calcule à partir de
-   `transactions-conclues/mes-demandes`. D'où le nom `ProjectionClient` et non
-   `StatsClient` — le nommage doit dire d'où vient la donnée.
-
-   Ne PAS y remettre de compteurs de favoris, d'alertes, de rendez-vous ou de
-   messages : ces quatre-là ont leurs propres pages, où le nombre est visible
-   dans la liste elle-même. Le répéter sur le profil, c'est deux endroits à
-   tenir à jour pour la même information.
-   ──────────────────────────────────────────────────────────────────────────── */
-
-/** Les 3 compteurs du profil client, tous dérivés des transactions CONFIRMÉES. */
+/** `ProjectionClient` = projection calculée côté front depuis `mes-demandes`, PAS une réponse d'API — n'y remets pas de compteurs favoris/alertes/rdv/messages, ils ont déjà leur page. */
 export type ProjectionClient = {
   /** `mes-demandes` → statut "confirmé" ET type "vente". Un achat non confirmé n'est pas un achat. */
   nb_achats: number;
   /** `mes-demandes` → statut "confirmé" ET type "location". */
   nb_locations: number;
-  /**
-   * Somme des `prix_final` des VENTES confirmées uniquement. Les locations en
-   * sont exclues volontairement : leur `prix_final` est un tarif journalier, et
-   * l'additionner à un prix d'achat produirait un total sans signification.
-   */
+  /** Somme des `prix_final` des VENTES confirmées seulement — les locations ont un tarif journalier, pas comparable. */
   total_depense: number;
 };
 
-/**
- * Ce qui attend le client, affiché en haut de son profil. Union discriminée sur
- * `type` : chaque branche porte SES champs, impossible de lire `expires_at` sur un rdv.
- */
+/** Ce qui attend le client en haut de son profil — union discriminée sur `type`. */
 export type ProchaineEcheance =
   | {
-      type: "rdv";
-      /** UUID : RendezVous utilise HasUuids (ligne 12). */
-      id: string;
-      /** ISO 8601 complet, `rendez_vous.date_heure` est casté en datetime côté Laravel. */
-      date_heure: string;
-      /** `rendez_vous.type` : les 3 valeurs du modèle. */
-      nature: "visite" | "essai_routier" | "premiere_rencontre";
-      lieu: string | null;
-      vehicule_libelle: string;
-    }
+    type: "rdv";
+    /** UUID : RendezVous utilise HasUuids (ligne 12). */
+    id: string;
+    /** ISO 8601 complet, `rendez_vous.date_heure` est casté en datetime côté Laravel. */
+    date_heure: string;
+    /** `rendez_vous.type` : les 3 valeurs du modèle. */
+    nature: "visite" | "essai_routier" | "premiere_rencontre";
+    lieu: string | null;
+    vehicule_libelle: string;
+  }
   | {
-      type: "transaction";
-      /** UUID : TransactionConclue utilise HasUuids (ligne 12). */
-      id: string;
-      /** `transactions_conclues.expires_at` : passé cette date, la transaction tombe en "expiré". */
-      expires_at: string;
-      /** Laravel sérialise `decimal` en string, comme `prix` plus haut. */
-      prix_final: string;
-      vehicule_libelle: string;
-    };
+    type: "transaction";
+    /** UUID : TransactionConclue utilise HasUuids (ligne 12). */
+    id: string;
+    /** `transactions_conclues.expires_at` : passé cette date, la transaction tombe en "expiré". */
+    expires_at: string;
+    /** Laravel sérialise `decimal` en string, comme `prix` plus haut. */
+    prix_final: string;
+    vehicule_libelle: string;
+  };
 
-/* ────────────────────────────────────────────────────────────────────────────
-   TRANSACTIONS CONCLUES — les véhicules réellement achetés, loués ou vendus
-   Un SEUL modèle sert les deux camps :
-     client  → GET /api/transactions-conclues/mes-demandes    (relation `vendeur` chargée)
-     vendeur → GET /api/transactions-conclues/mes-transactions (relation `client`  chargée)
-   Attention au préfixe de route : `transactions-conclues`, pas `transactions`.
-   ──────────────────────────────────────────────────────────────────────────── */
-
-/** Les 4 valeurs de `transactions_conclues.statut` (constantes du modèle, lignes 31-34). */
+/** `TransactionConclue` : un seul modèle pour `mes-demandes` (client) et `mes-transactions` (vendeur) — préfixe `transactions-conclues`, pas `transactions`. */
 export type StatutTransaction = "en_attente" | "confirmé" | "expiré" | "refusé";
 
 /** Une ligne de `vehicules_photos`. `path` est relatif au disque de stockage Laravel. */
@@ -290,25 +238,37 @@ export type UtilisateurResume = Pick<User, "id" | "fullname" | "avatar">;
 /** L'autre partie : le vendeur vu du client, le client vu du vendeur. */
 export type ContrepartieTransaction = UtilisateurResume;
 
-/**
- * Une transaction conclue. `vendeur` et `client` sont tous deux optionnels parce
- * qu'une seule des deux relations est chargée selon l'endpoint appelé — c'est le
- * composant d'affichage qui décide laquelle il regarde, via sa prop `perspective`.
- */
-/* ────────────────────────────────────────────────────────────────────────────
-   FAVORIS — GET /api/favoris (FavoriController::index)
-   `Favori::with(['vehicule.description', 'vehicule.photos'])` sans restriction
-   de colonnes : le véhicule arrive ENTIER, pas réduit comme dans le top 5.
-   Aucun filtre sur le statut non plus — un favori vendu ou réservé reste dans
-   la liste. C'est voulu : l'acheteur doit apprendre que le marché a bougé.
-   ──────────────────────────────────────────────────────────────────────────── */
+/** `vendeur`/`client` optionnels — une seule des deux relations est chargée selon l'endpoint, le composant choisit via sa prop `perspective`. */
+export type TransactionConclue = {
+  id: string;
+  /** Décide du statut final du véhicule : "vente" → vendu, "location" → loué (contrôleur, ligne 298). */
+  type: PostTypeVehicule;
+  statut: StatutTransaction;
+  /** En FCFA, sérialisé en STRING comme tous les `decimal` de Laravel. */
+  prix_final: string;
+  /** Renseignées par le client à la confirmation, et UNIQUEMENT si `type === "location"`. */
+  date_debut_location: string | null;
+  date_fin_location: string | null;
+  confirme_par_vendeur: boolean;
+  confirme_par_client: boolean;
+  /** Absent (pas juste null : la clé n'existe pas) sur `mes-demandes` — le contrôleur le masque
+   * volontairement côté CLIENT (`makeHidden`) pour que le scan QR reste la seule façon de l'obtenir.
+   * Visible normalement sur `mes-transactions` (c'est le vendeur qui détient le code et l'affiche en QR). */
+  code_confirmation?: string;
+  /** Même règle de masquage que `code_confirmation` (inversée côté client cette fois), et non-null
+   * uniquement une fois la commande planifiée transactions:generer-codes-restitution passée
+   * (date_fin_location atteinte, location confirmée). */
+  code_restitution?: string | null;
+  restitue_par_vendeur: boolean;
+  restitue_par_client: boolean;
+  /** ISO 8601. Sert de date de la transaction à l'affichage. */
+  created_at: string;
+  vehicule: VehiculeTransaction;
+  vendeur?: ContrepartieTransaction;
+  client?: ContrepartieTransaction;
+};
 
-/**
- * La relation `description` au complet. `with('description')` charge TOUTES les
- * colonnes ; `DescriptionVehicule` n'en déclare que les trois dont se servent le
- * top 5 et les transactions. Ce type-ci ajoute celles que la fiche favori affiche.
- * Toutes nullable : la migration les déclare `->nullable()`.
- */
+/** `Favori` : `GET /favoris` charge le véhicule ENTIER sans filtre de statut — un favori vendu reste dans la liste. */
 export type DescriptionVehiculeDetaillee = DescriptionVehicule & {
   kilometrage: number | null;
   /** Chaîne libre de 100 caractères en base, pas un enum : "Essence", "Diesel", "Hybride"… */
@@ -326,13 +286,7 @@ export type HistoriqueAccidents =
   | "quelques_accidents"
   | "nombreux_accidents";
 
-/**
- * Les colonnes de `vehicules_description` que SEULE la fiche véhicule montre —
- * pas la carte catalogue, pas la carte favori. Un palier de plus au-dessus de
- * `DescriptionVehiculeDetaillee`, pour ne pas forcer tous les autres mocks
- * (catalogue, favoris, messagerie) à connaître des champs dont ils ne se
- * servent pas. Toutes nullable, comme le reste : `->nullable()` en migration.
- */
+/** Colonnes réservées à la fiche véhicule (pas catalogue/favoris) pour ne pas forcer les autres mocks à les connaître. Toutes nullable. */
 export type DescriptionVehiculeFiche = DescriptionVehiculeDetaillee & {
   couleur: string | null;
   nombre_portes: number | null;
@@ -367,19 +321,7 @@ export type VehiculeComplet = {
   photos: PhotoVehicule[];
 };
 
-/* ────────────────────────────────────────────────────────────────────────────
-   CATALOGUE — GET /api/vehicules (VehiculesController::index), route PUBLIQUE
-   La méthode n'accepte AUCUN paramètre : ni filtre, ni tri, ni recherche, ni
-   pagination. Elle fait un `->get()` et renvoie tout le catalogue validé et
-   disponible d'un bloc. Tout le tri et le filtrage se font donc côté client.
-   ──────────────────────────────────────────────────────────────────────────── */
-
-/**
- * Le vendeur attaché à une annonce. Le back charge `creator:id,fullname,email,role`
- * — `email` est volontairement ABSENT de ce type : la route est publique, et
- * l'afficher contredirait la promesse « votre numéro reste privé » de l'accueil.
- * Ne pas le déclarer ici, c'est se rendre incapable de le rendre par accident.
- */
+/** Catalogue : `GET /vehicules`, public, sans filtre/tri/pagination — tout se fait côté client. */
 export type CreateurVehicule = Pick<User, "id" | "fullname" | "role">;
 
 /** Un véhicule du catalogue : le modèle complet, plus son vendeur. */
@@ -387,55 +329,30 @@ export type VehiculeCatalogue = VehiculeComplet & {
   creator: CreateurVehicule;
 };
 
-/* ────────────────────────────────────────────────────────────────────────────
-   FICHE VÉHICULE — GET /api/vehicules/{id} (VehiculesController::vehicule), route PUBLIQUE
-   ──────────────────────────────────────────────────────────────────────────── */
-
-/**
- * Le vendeur tel que CETTE route le charge : `creator:id,fullname,email`.
- *
- * ⚠️ Pas `role`, contrairement à `CreateurVehicule` (index/populaires chargent
- * `role` mais pas `email` ; cette route fait l'inverse). Un `creator.role` ici
- * vaudrait `undefined` à l'exécution alors que TypeScript le dirait présent —
- * ne pas réutiliser `CreateurVehicule` sur la fiche pour cette raison.
- */
+/** Fiche véhicule : `GET /vehicules/{id}`, publique. */
 export type CreateurVehiculeFiche = Pick<User, "id" | "fullname" | "email">;
 
-/**
- * Un véhicule tel que renvoyé par la fiche : le modèle complet, plus son
- * vendeur (sans rôle) et une `description` enrichie des champs propres à la
- * fiche (voir `DescriptionVehiculeFiche`) — `Omit` puis réécriture, plutôt
- * qu'un `&`, parce que `VehiculeComplet.description` est déjà typée en
- * `DescriptionVehiculeDetaillee | null` et qu'une intersection des deux
- * élargirait le type au lieu de le préciser.
- */
+/** Fiche complète : `Omit`+réécriture plutôt que `&`, pour ne pas élargir le type de `description`. */
 export type VehiculeFiche = Omit<VehiculeComplet, "description"> & {
   creator: CreateurVehiculeFiche;
   description: DescriptionVehiculeFiche | null;
 };
 
-/**
- * Compteurs renvoyés à côté de la liste.
- *
- * ⚠️ Ils ne comptent PAS la même chose que `vehicules` : les trois passent par
- * le scope `validee()` sans filtrer sur `statut`, ils incluent donc les véhicules
- * vendus et loués, que la liste exclut. `total_vehicules` sera toujours supérieur
- * à `vehicules.length`. Ne jamais l'afficher comme « N véhicules disponibles ».
- */
+export type VehiculeAdmin = Omit<VehiculeComplet, "description"> & {
+  creator: CreateurVehicule;
+  description: DescriptionVehiculeFiche | null;
+  /** Motif saisi par l'admin au rejet (`rejeterVehicule`). Null tant qu'aucun rejet n'a eu lieu. */
+  description_validation: string | null;
+};
+
+/** Compteurs incluant vendus/loués (scope `validee()` sans filtre statut) — jamais égal à `vehicules.length`. */
 export type StatsCatalogue = {
   total_vehicules: number;
   en_vente: number;
   en_location: number;
 };
 
-/**
- * Champ `data` de la réponse — QUAND il y a des résultats.
- *
- * ⚠️ Le contrôleur renvoie `data: []` (un tableau nu) sur catalogue vide, et
- * `data: { vehicules, statsVehicules }` sinon. La forme change avec le contenu :
- * un `data.vehicules.map()` naïf plante sur une base fraîchement installée.
- * C'est au client de normaliser tant que le back n'est pas corrigé.
- */
+/** `data` vaut `[]` si catalogue vide, sinon `{ vehicules, statsVehicules }` — à normaliser côté client. */
 export type ReponseCatalogue = {
   vehicules: VehiculeCatalogue[];
   statsVehicules: StatsCatalogue;
@@ -446,42 +363,13 @@ export type Favori = {
   id: string;
   user_id: string;
   vehicule_id: string;
-  /**
-   * Jamais null : la colonne porte un `->useCurrent()` en base
-   * (2026_02_22_000001_create_favoris_table.php), alors même que
-   * `FavoriController::store()` ne la renseigne pas à la création.
-   */
+  /** Jamais null (`useCurrent()` en base) même si `store()` ne la renseigne pas à la création. */
   date_ajout: string;
   created_at: string;
   vehicule: VehiculeComplet;
 };
 
-export type TransactionConclue = {
-  id: string;
-  /** Décide du statut final du véhicule : "vente" → vendu, "location" → loué (contrôleur, ligne 298). */
-  type: PostTypeVehicule;
-  statut: StatutTransaction;
-  /** En FCFA, sérialisé en STRING comme tous les `decimal` de Laravel. */
-  prix_final: string;
-  /** Renseignées par le client à la confirmation, et UNIQUEMENT si `type === "location"`. */
-  date_debut_location: string | null;
-  date_fin_location: string | null;
-  confirme_par_vendeur: boolean;
-  confirme_par_client: boolean;
-  /** ISO 8601. Sert de date de la transaction à l'affichage. */
-  created_at: string;
-  vehicule: VehiculeTransaction;
-  vendeur?: ContrepartieTransaction;
-  client?: ContrepartieTransaction;
-};
-
-/* ────────────────────────────────────────────────────────────────────────────
-   RENDEZ-VOUS — GET /api/rdv/mes-rdv (RendezVousController::mesRdv)
-   Triés par `date_heure` DESC côté back : les plus lointains d'abord, à venir
-   et passés mêlés dans un seul flux. La page les re-partitionne.
-   ──────────────────────────────────────────────────────────────────────────── */
-
-/** Les 3 valeurs de `rendez_vous.type` (constantes du modèle, lignes 31-33). */
+/** Rendez-vous : `GET /rdv/mes-rdv`, triés `date_heure` DESC, à venir et passés mêlés — la page re-partitionne. */
 export type TypeRendezVous = "visite" | "essai_routier" | "premiere_rencontre";
 
 /** Les 5 valeurs de `rendez_vous.statut` (lignes 35-39). Noter les accents : "confirmé", pas "confirme". */
@@ -509,28 +397,44 @@ export type RendezVousClient = {
   created_at: string;
   vendeur: UtilisateurResume;
   vehicule: VehiculeTransaction;
-  /**
-   * Champ CALCULÉ, ajouté à la volée par `mesRdv()` — il n'existe pas en base.
-   *
-   * ⚠️ Il vaut vrai dès que le client a noté CE VENDEUR, pas ce rendez-vous :
-   * le back interroge `Avis` sur le couple (client_id, vendeur_id). Deux RDV
-   * terminés avec le même vendeur passent donc tous les deux à `true` après un
-   * seul avis, et `AvisController::store()` répond 409 sur le second.
-   */
+  /** Champ CALCULÉ (pas en base) : vrai dès qu'un avis existe pour ce VENDEUR, pas ce rdv — deux rdv confirmés avec le même vendeur passent tous les deux à `true`. */
   has_avis: boolean;
 };
 
-/* ────────────────────────────────────────────────────────────────────────────
-   MESSAGERIE — ConversationController (routes/api.php lignes 146-154)
-   Une conversation est la clé unique (participant_1, participant_2, vehicule_id) :
-   elle est TOUJOURS adossée à un véhicule, on n'en ouvre jamais « dans le vide ».
+export type RendezVousVendeur = {
+  id: string;
+  client_id: string;
+  vendeur_id: string;
+  vehicule_id: string;
+  date_heure: string;
+  type: TypeRendezVous;
+  statut: StatutRendezVous;
+  motif: string | null;
+  lieu: string | null;
+  notes: string | null;
+  created_at: string;
+  client: UtilisateurResume;
+  vehicule: VehiculeTransaction;
+};
 
-   ⚠️ Ces trois endpoints renvoient leur charge utile À LA RACINE
-   (`{ success, conversations }`, `{ success, messages }`), pas sous `data`
-   comme le reste de l'API. C'est l'exception du fichier.
-   ──────────────────────────────────────────────────────────────────────────── */
+export type Rdv = {
+  id: string;
+  client_id: string;
+  vendeur_id: string;
+  vehicule_id: string;
+  date_heure: string;
+  type: TypeRendezVous;
+  statut: StatutRendezVous;
+  motif: string | null;
+  lieu: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  client: Pick<User, "id" | "fullname">;
+  vendeur: Pick<User, "id" | "fullname">;
+}
 
-/** Un participant tel que le back le charge partout ici : `select('id','fullname','avatar','role')`. */
+/** Messagerie : charge utile à la RACINE (pas sous `data`), contrairement au reste de l'API — exception du fichier. */
 export type ParticipantConversation = UtilisateurResume & { role: RoleUser };
 
 /** Une ligne de `messages`, avec son expéditeur chargé en eager (`with('sender:...')`). */
@@ -548,14 +452,7 @@ export type MessageChat = {
   sender: ParticipantConversation;
 };
 
-/**
- * L'aperçu attaché à chaque conversation par `index()`.
- *
- * ⚠️ TROIS champs, pas un de plus : le back fait
- * `->select('content', 'created_at', 'sender_id')` (ConversationController:79).
- * Ni `id`, ni `read_at`, ni `sender`. Les déclarer ici rendrait compilable un
- * `last_message.read_at` qui vaudrait `undefined` à l'exécution.
- */
+/** Exactement 3 champs sélectionnés par le back (`select('content','created_at','sender_id')`) — pas `id`, pas `read_at`, pas `sender`. */
 export type DernierMessage = {
   content: string;
   created_at: string;
@@ -572,14 +469,7 @@ export type Conversation = {
   /** Null tant qu'aucun message n'a été envoyé : `findOrCreate` ne la renseigne pas. */
   last_message_at: string | null;
   created_at: string;
-  /**
-   * Produit par le `withCount(['messages as unread_count'])`, filtré sur
-   * `sender_id != moi` et `read_at IS NULL`. Ne compte donc QUE les messages reçus.
-   *
-   * ⚠️ Il devient périmé dès l'ouverture du fil : `messages()` marque comme lu
-   * en effet de bord côté serveur (lignes 172-178) sans que ce nombre-ci bouge.
-   * C'est au client de le remettre à 0 localement.
-   */
+  /** `withCount` filtré `sender_id != moi` et `read_at IS NULL` — devient périmé à l'ouverture du fil, à remettre à 0 côté client. */
   unread_count: number;
   /** L'autre participant, résolu par comparaison de `participant_1_id` avec le mien. */
   other_participant: ParticipantConversation;
@@ -588,32 +478,7 @@ export type Conversation = {
   vehicule: VehiculeComplet;
 };
 
-/* ────────────────────────────────────────────────────────────────────────────
-   NOTIFICATIONS — GET /api/notifications/mes-notifs (NotificationsController)
-     GET  /notifications/mes-notifs   → { success, data: { notifications, unread_count } }
-     POST /notifications/{id}/read    → { success, message }
-     POST /notifications/read-all     → { success, message }
-
-   ⚠️ Ici la charge utile EST sous `data`, contrairement à la messagerie qui la
-   met à la racine. Les deux conventions coexistent dans l'API, il faut vérifier
-   au cas par cas.
-
-   ⚠️ Aucune pagination : `index()` fait un `->get()` sur tout l'historique de
-   l'utilisateur, y compris les notifications lues d'il y a six mois.
-
-   ⚠️ `markAsRead` et `markAsAllRead` ne renvoient PAS la notification modifiée,
-   seulement un message. Le front doit mettre son état à jour lui-même.
-   ──────────────────────────────────────────────────────────────────────────── */
-
-/**
- * Les valeurs acceptées par la colonne `notifications.type`.
- *
- * ⚠️ NEUF valeurs en base, mais seulement HUIT constantes dans le modèle :
- * `abonnement` reste dans le CHECK de la migration alors que les abonnements
- * ont été supprimés (commit cdb70b2). Aucun code n'en crée plus, mais les
- * lignes historiques en portent encore. L'omettre ici ferait planter tout
- * `Record<TypeNotification, …>` exhaustif sur une base de production.
- */
+/** Notifications : `GET /notifications/mes-notifs`, charge utile SOUS `data` (contrairement à la messagerie) — pas de pagination. */
 export type TypeNotification =
   | "rdv"
   | "formation"
@@ -626,28 +491,10 @@ export type TypeNotification =
   /** Hérité. Plus jamais produit — à traiter en repli, pas à afficher. */
   | "abonnement";
 
-/**
- * Gravité, qui décide de la couleur d'affichage.
- * Colonne ajoutée après coup (migration `2026_06_08_215955_add_level`) et
- * `->nullable()` : les notifications antérieures, et celles de `notifyAdmins()`
- * qui ne le renseigne pas, arrivent avec `level: null`. Prévoir un défaut.
- */
+/** Colonne nullable ajoutée après coup — notifications antérieures et `notifyAdmins()` arrivent avec `level: null`. */
 export type NiveauNotification = "success" | "warning" | "error" | "info";
 
-/**
- * Le sac de données joint à la notification (`json` casté en `array`).
- *
- * Volontairement non typé finement : chaque site de création y met ses propres
- * clés, et un type par variante mentirait au premier ajout côté back. Les
- * formes observées aujourd'hui, par `type` :
- *   rdv             → { rdv_id }
- *   transaction     → { transaction_id }
- *   moderation      → { signalement_id, action_cible? }
- *   support         → { ticket_id }
- *   formation       → { inscription_id, formation_id }
- *   tendance        → { vehicule_id | formation_id, nb_vues | nb_inscrits, tranche, periode }
- * Narrower au point d'usage (`data?.rdv_id as string | undefined`), pas ici.
- */
+/** Sac de données non typé finement, forme dépend de `type` (rdv→rdv_id, transaction→transaction_id, etc.) — à narrower au point d'usage. */
 export type DonneesNotification = Record<string, unknown> | null;
 
 /** Une ligne de `notifications`. Le modèle utilise HasUuids et SoftDeletes. */
@@ -673,33 +520,277 @@ export type Notification = {
   deleted_at: string | null;
 };
 
-/** Champ `data` de `GET /api/notifications/mes-notifs`. */
-export type ReponseNotifications = {
-  notifications: Notification[];
-  /** Recompté côté serveur via le scope `unread()`, pas déduit de la liste. */
-  unread_count: number;
-};
-
-/** Corps de `POST /api/avis` (AvisController::store, lignes 17-21). */
-export type NouvelAvis = {
-  rdv_id: string;
-  /** Entier de 1 à 5, validé côté back. */
+/** Une ligne d'avis laissé par un client sur un vendeur/auto-école (`vroom-backend/app/Models/Avis.php`). */
+export type Avis = {
+  id: string;
+  client_id: string;
+  /** L'un des deux vaut l'id du profil consulté, l'autre `null` — jamais les deux à la fois. */
+  vendeur_id: string | null;
+  auto_ecole_id: string | null;
   note: number;
-  /** 1000 caractères maximum. */
-  commentaire?: string;
+  commentaire: string | null;
+  date_avis: string;
+  created_at: string;
+  client: Pick<User, "id" | "fullname">;
 };
 
-/* ────────────────────────────────────────────────────────────────────────────
-   ADMIN — routes/api.php lignes 231-260, toutes derrière `role:admin`.
-   Un véhicule vu par l'admin est un `VehiculeCatalogue` : même forme exacte
-   (`AdminController::vehicules()` charge `creator:id,fullname,role`, comme le
-   catalogue public), SAUF que `statut`/`status_validation` peuvent y prendre
-   n'importe laquelle de leurs valeurs — l'admin voit aussi le suspendu, le
-   banni, l'en_attente. Pas de nouveau type : `VehiculeCatalogue` suffit.
-   ──────────────────────────────────────────────────────────────────────────── */
+export type ProfilPublic = {
+  vendeur: User;
+  vehicules: VehiculeComplet[];
+  formations: FormationCatalogue[];
+  avis: Avis[];
+};
 
-/** Les 3 valeurs de `signalements.statut` (constantes du modèle, lignes 28-30). Accents inclus, comme en base. */
+/** Réponse de `GET /avis/vendeur/{id}` (AvisController::avisVendeur), publique. */
+export type ReponseAvisVendeur = {
+  avis: Avis[];
+  /** `round(moyenne, 1)` côté back ; vaut 0 si `avis` est vide. */
+  note_moyenne: number;
+  total: number;
+};
+
+/** Pagination Laravel standard (`->paginate(20)`), sérialisée telle quelle sous `data`. Les champs de navigation (`links`, `*_page_url`…) existent aussi mais aucune page ne les lit encore. */
+export type Paginateur<T> = {
+  current_page: number;
+  data: T[];
+  last_page: number;
+  per_page: number;
+  total: number;
+};
+
+/** `data` de GET /admin/activity-log (Paginateur<ActivityLogEntry>) — voir AdminController::activityLog(). */
+export type ActivityLogEntry = {
+  id: number;
+  description: string;
+  subject_type: string;
+  subject_id: string;
+  event: string | null;
+  created_at: string;
+  /** null pour une action système (causer_id absent). */
+  causer: { id: string; fullname: string } | null;
+  properties: {
+    old?: Record<string, string | number | boolean | null>;
+    attributes?: Record<string, string | number | boolean | null>;
+  };
+};
+
+/** Les trois valeurs de `formations.statut_validation` (constantes du modèle Formation, lignes 40-42) — avec accents, contrairement à `StatutValidation` des véhicules. */
+export type StatutValidationFormation = "en_attente" | "validé" | "rejeté";
+
+/** Les deux valeurs de `formations.statut` (Formation::STATUT_DISPONIBLE/RETIREE) — visibilité publique APRÈS validation, distinct de `statut_validation` (modération). Même rôle que `Vehicules::statut`. */
+export type StatutFormation = "disponible" | "retiree";
+
+/** Formation vue par l'admin (`GET /admin/formations` ou `GET /admin/formations/{id}`, AdminController::formations()/formation()) : `withCount('inscriptions')` ajoute `inscriptions_count`, absent du modèle Formation brut. */
+export type FormationAdmin = {
+  id: string;
+  titre: string;
+  description: string;
+  type_permis: string;
+  /** Cast `decimal:2` côté Laravel : sérialisé en string, jamais en number. */
+  prix: string;
+  duree_heures: number;
+  lieu: string;
+  nombre_places: number;
+  deroulement: string | null;
+  statut_validation: StatutValidationFormation;
+  statut: StatutFormation;
+  created_at: string;
+  inscriptions_count: number;
+  /** Relation `autoEcole()` du modèle Formation — mais `Model::$snakeAttributes` (true par défaut) sérialise sa clé JSON en snake_case, quel que soit le nom PHP de la relation. */
+  auto_ecole: { id: string; fullname: string; avatar: string | null };
+};
+
+/** Les 6 valeurs de `type_permis` (StoreFormationRequest::rules(), `Rule::in(['A','A2','B','B1','C','D'])`). */
+export type TypePermis = "A" | "A2" | "B" | "B1" | "C" | "D";
+
+export type FormationCatalogue = {
+  id: string;
+  titre: string;
+  description: string;
+  type_permis: TypePermis;
+  /** Cast `decimal:2` côté Laravel : sérialisé en string, jamais en number. */
+  prix: string;
+  duree_heures: number;
+  lieu: string | null;
+  nombre_places: number | null;
+  deroulement: string | null;
+  created_at: string;
+  inscriptions_count: number;
+  auto_ecole: { id: string; fullname: string; avatar: string | null; note_moyenne: string | null };
+};
+
+/** Les 7 valeurs de `inscriptions_formation.statut_eleve` (constantes du modèle InscriptionFormation, lignes 27-35). */
+export type StatutEleve =
+  | "préinscrit"
+  | "paiement_en_cours"
+  | "inscrit"
+  | "en_cours"
+  | "examen_passe"
+  | "terminé"
+  | "abandonné";
+
+/** Une ligne de `GET /formations/mes-inscriptions` — juste de quoi savoir si le client connecté est déjà inscrit à une formation donnée. */
+export type InscriptionFormationClient = {
+  id: string;
+  formation_id: string;
+  statut_eleve: StatutEleve;
+  date_examen: string | null;
+  reussite: boolean | null;
+  created_at: string;
+};
+
+export type FormationAutoEcole = {
+  id: string;
+  titre: string;
+  description: string;
+  type_permis: TypePermis;
+  /** Cast `decimal:2` côté Laravel : sérialisé en string, jamais en number. */
+  prix: string;
+  duree_heures: number;
+  lieu: string | null;
+  nombre_places: number | null;
+  deroulement: string | null;
+  statut_validation: StatutValidationFormation;
+  statut: StatutFormation;
+  created_at: string;
+  inscriptions_count: number;
+};
+
+/** `GET /formations/mes-stats` (FormationController::mesStats()) : stats globales, toutes formations de l'auto-école confondues. */
+export type StatsAutoEcole = {
+  nb_formations: number;
+  total_inscrits: number;
+  en_cours: number;
+  termines: number;
+  reussis: number;
+  abandonnes: number;
+  /** Calculé sur les `termines` seulement (voir le commentaire du back) — `null` tant qu'aucune formation n'est terminée, pour éviter un 0/0. */
+  taux_reussite: number | null;
+  /** Nouvelles inscriptions, une entrée par mois de l'année en cours (toujours 12 entrées, zéro compris). */
+  stats_mensuel: { mois: number; nom_mois: string; inscriptions: number }[];
+  /** Nouvelles inscriptions, une entrée par jour de la semaine en cours (toujours 7 entrées, zéro compris). */
+  stats_semaine: { jour: string; nom_jour: string; inscriptions: number }[];
+};
+
+/** `GET /formations/{id}/stats` (FormationController::stats()) : stats d'UNE formation, contrairement à StatsAutoEcole. */
+export type StatsFormation = {
+  total: number;
+  en_cours: number;
+  examens_passes: number;
+  termines: number;
+  reussis: number;
+  echoues: number;
+  abandonnes: number;
+  taux_reussite: number | null;
+};
+
+/** Une ligne de `GET /formations/{id}/inscrits` (FormationController::inscrits()) — élève inscrit, vu par l'auto-école propriétaire. */
+export type EleveInscrit = {
+  id: string;
+  statut_eleve: StatutEleve;
+  date_inscription: string;
+  date_examen: string | null;
+  reussite: boolean | null;
+  client: {
+    id: string;
+    fullname: string;
+    email: string;
+    avatar: string | null;
+    telephone: string | null;
+    adresse: string | null;
+  };
+};
+
+/** Une ligne de `GET /formations/mes-inscrits` (FormationController::mesInscrits()) — même forme
+ * qu'`EleveInscrit`, mais TOUTES formations confondues, d'où le `formation` en plus pour savoir
+ * laquelle est concernée (absent sur `EleveInscrit`, qui est déjà scopé à une seule formation). */
+export type InscritAutoEcole = EleveInscrit & {
+  /** Somme agrégée des versements (`withSum`, pas l'accesseur du modèle — voir FormationController::mesInscrits()).
+   * `null` si aucun versement n'existe encore pour cette inscription (SUM() SQL sans ligne = NULL, pas 0). */
+  montant_paye: number | null;
+  formation: {
+    id: string;
+    type_permis: TypePermis;
+    titre: string;
+    /** Cast `decimal:2` côté Laravel : sérialisé en string, jamais en number — comparer avec Number(). */
+    prix: string;
+  };
+};
+
+export type TypeRemise = "pourcentage" | "montant_fixe";
+
+/** Un paiement reçu par l'auto-école pour une inscription (`versements_inscription`) — pure
+ * comptabilité déclarative, aucun argent ne transite par Move CI (voir VersementInscriptionController). */
+export type Versement = {
+  id: string;
+  inscription_id: string;
+  /** Cast `decimal:2` côté Laravel : sérialisé en string — comparer/formater avec Number(). */
+  montant: string;
+  date_versement: string;
+  note: string | null;
+};
+
+/** Réponse de `GET /formations/{formationId}/inscrits/{inscriptionId}/versements`. */
+export type DetailVersements = {
+  versements: Versement[];
+  montant_paye: number;
+  montant_total: number;
+  reste_a_payer: number;
+};
+
+/** Une ligne de `GET /formations/{id}/promotions` (PromotionsController) — code promo géré par l'auto-école propriétaire de la formation. */
+export type Promotion = {
+  id: string;
+  formation_id: string;
+  code: string;
+  type_remise: TypeRemise;
+  /** Cast `decimal:2` côté Laravel : sérialisé en string, jamais en number — même piège que `Formation.prix`. */
+  valeur: string;
+  date_debut: string | null;
+  date_fin: string | null;
+  /** `null` = pas de limite d'utilisation. */
+  usage_max: number | null;
+  usage_count: number;
+  is_active: boolean;
+  created_at: string;
+};
+
+/** Colonnes sélectionnées par `AdminController::users()` — pas le `User` complet (ni avatar, ni note). */
+export type UtilisateurAdmin = {
+  id: string;
+  fullname: string;
+  email: string;
+  telephone: string | null;
+  role: RoleUser;
+  statut: StatutUser;
+  created_at: string;
+  /** Renseigné pour concessionnaire/auto_ecole seulement, `null` sinon. */
+  raison_sociale: string | null;
+};
+
+/** Admin : routes/api.php 231-260 derrière `role:admin` — un véhicule admin est un `VehiculeCatalogue`, pas de nouveau type. */
 export type StatutSignalement = "en_attente" | "traité" | "rejeté";
+
+/** Les 4 valeurs de `support_tickets.statut` (constantes du modèle SupportTicket, lignes 41-44) — avec accents sur résolu/fermé. */
+export type StatutTicket = "ouvert" | "en_cours" | "résolu" | "fermé";
+
+/** Les 4 valeurs de `support_tickets.priorite` (SupportController::store(), validation `in:basse,normale,haute,urgente`). */
+export type PrioriteTicket = "basse" | "normale" | "haute" | "urgente";
+
+/** Ticket vu par l'admin (`GET /admin/support`, SupportController::index()) : `with('user:id,fullname,email,role')`. */
+export type TicketSupportAdmin = {
+  id: string;
+  sujet: string;
+  message: string;
+  statut: StatutTicket;
+  priorite: PrioriteTicket;
+  reponse_admin: string | null;
+  /** Renseigné seulement après une réponse admin (repondre()). */
+  admin: { id: string; fullname: string } | null;
+  repondu_at: string | null;
+  created_at: string;
+  user: { id: string; fullname: string; email: string; role: RoleUser };
+};
 
 /** Un point de `inscriptions_par_mois` : `AdminController::stats()`, ligne 468-473. */
 export type PointInscriptionMois = {
@@ -715,18 +806,7 @@ export type PointTransactionAdmin = {
   total: number;
 };
 
-/**
- * Champ `data` de `GET /admin/stats` (AdminController::stats(), lignes 452-540).
- *
- * ⚠️ Chaque `Record` partiel vient d'un `->pluck('total', 'clé')` Laravel : la
- * clé n'existe QUE si au moins une ligne l'a en base. Un `stats.vehicules_validation.rejetee`
- * sur un catalogue sans rejet vaut `undefined`, pas `0` — toujours lire avec
- * `?? 0`, jamais supposer la clé présente.
- *
- * Delibérément un sous-ensemble : `statsMarche()` et `statsGeographie()`
- * (comportement acheteurs, répartition géographique) sont deux endpoints à
- * part, pour une page d'analyse dédiée — pas le dashboard d'accueil.
- */
+/** `data` de `GET /admin/stats` — chaque `Record` partiel vient d'un `pluck()`, une clé absente vaut `undefined`, toujours lire avec `?? 0`. */
 export type StatsAdmin = {
   /** Jamais la clé "admin" : la requête back filtre `whereIn('role', [client, vendeur, concessionnaire, auto_ecole])`. */
   users_par_role: Partial<Record<Exclude<RoleUser, "admin">, number>>;
@@ -740,4 +820,178 @@ export type StatsAdmin = {
   signalements_statut: Partial<Record<StatutSignalement, number>>;
   /** Jamais "client" ni "vendeur" : filtré sur `[concessionnaire, auto_ecole]`. */
   partenaires_par_type: Partial<Record<"concessionnaire" | "auto_ecole", number>>;
+  formations_validation: Partial<Record<StatutValidationFormation, number>>;
+  formations_par_permis: { type_permis: string; total: number }[];
+  inscriptions_par_statut: Partial<Record<string, number>>;
+  /** Élèves ayant passé l'examen (`statut_eleve` in [examen_passe, terminé]), tous résultats confondus. */
+  examens_total: number;
+  /** Sous-ensemble de `examens_total` où `reussite = true`. Taux de réussite = `examens_reussis / examens_total`. */
+  examens_reussis: number;
+};
+
+/** Une ligne de `top_marques_favoris`/`top_marques_vues` : `AdminController::statsMarche()`. */
+export type PointMarque = {
+  marque: string;
+  favoris: number;
+  vues: number;
+};
+
+/** Une ligne de `top_modeles_favoris` — pas de `vues` ici, le back ne la calcule pas par modèle. */
+export type PointModele = {
+  marque: string;
+  modele: string;
+  favoris: number;
+};
+
+/** Une ligne de `repartition_carburant_demande`. */
+export type PointCarburant = {
+  carburant: string;
+  favoris: number;
+  vues: number;
+};
+
+/** Une ligne de `tranches_prix_demande` — 5 tranches fixes, calculées en SQL (`CASE WHEN`), jamais vides côté type. */
+export type PointTranchePrix = {
+  tranche: "< 5M" | "5–10M" | "10–20M" | "20–35M" | "> 35M";
+  favoris: number;
+};
+
+/** `taux_conversion` déjà arrondi côté back (`round(..., 1)`), en pourcentage — pas à diviser par 100. */
+export type ConversionRdvTransaction = {
+  total_rdv: number;
+  rdv_termines: number;
+  transactions_confirmees: number;
+  taux_conversion: number;
+};
+
+/** `data` de `GET /admin/stats/marche` — comportement acheteurs (favoris, vues, prix), pas les comptes eux-mêmes. */
+export type StatsMarche = {
+  top_marques_favoris: PointMarque[];
+  top_modeles_favoris: PointModele[];
+  repartition_carburant_demande: PointCarburant[];
+  tranches_prix_demande: PointTranchePrix[];
+  conversion_rdv_transaction: ConversionRdvTransaction;
+  top_marques_vues: PointMarque[];
+};
+
+/** Infos de base d'un client, communes à la liste et à la fiche détaillée. */
+export type CrmClient = {
+  id: string;
+  fullname: string;
+  email: string;
+  avatar: string | null;
+  telephone: string | null;
+  adresse: string | null;
+};
+
+/** Une ligne de `GET /crm/clients` — le client + ses stats agrégées avec ce vendeur. */
+export type CrmClientResume = CrmClient & {
+  nb_rdv: number;
+  nb_transactions: number;
+  /** Somme de `prix_final` sur les transactions confirmées — nombre, pas string (calculé via `->sum()`, pas casté par le modèle). */
+  chiffre_affaires: number;
+  derniere_interaction: string | null;
+  statut_dernier_rdv: StatutRendezVous | null;
+};
+
+/** Une note privée du vendeur sur un client (CrmNote, jamais visible du client). */
+export type CrmNote = {
+  id: string;
+  vendeur_id: string;
+  client_id: string;
+  contenu: string;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Un RDV tel que chargé par `clientDetail()` : `vehicule.description` en eager, pas de relation `client` (déjà connu). */
+export type CrmRdv = {
+  id: string;
+  date_heure: string;
+  type: TypeRendezVous;
+  statut: StatutRendezVous;
+  motif: string | null;
+  lieu: string | null;
+  vehicule: VehiculeTransaction;
+};
+
+/** `data` de `GET /crm/clients/{clientId}` : fiche complète d'un client pour ce vendeur. */
+export type CrmClientDetail = {
+  client: CrmClient & { created_at: string };
+  rdvs: CrmRdv[];
+  transactions: TransactionConclue[];
+  notes: CrmNote[];
+  stats: {
+    nb_rdv: number;
+    nb_confirmes: number;
+    nb_termines: number;
+    nb_transactions: number;
+    chiffre_affaires: number;
+  };
+};
+
+/** `StatutTicket`/`PrioriteTicket` déjà définis plus haut (admin/support, ligne ~736) — réutilisés tels quels. */
+export type SupportTicket = {
+  id: string;
+  sujet: string;
+  message: string;
+  statut: StatutTicket;
+  priorite: PrioriteTicket;
+  /** `null` tant qu'aucun admin n'a répondu. */
+  reponse_admin: string | null;
+  repondu_at: string | null;
+  created_at: string;
+};
+
+export type StatutReservation = "en_attente" | "confirmee" | "annulee" | "expiree";
+
+/** Colonnes chargées par `Reservation::with('vehicule:...')` — sous-ensemble de `VehiculeTransaction`, sans les photos. */
+export type VehiculeReservation = {
+  id: string;
+  post_type: PostTypeVehicule;
+  statut: StatutVehicule;
+  prix: string;
+  date_disponibilite: string | null;
+  description: DescriptionVehicule | null;
+};
+
+export type Reservation = {
+  id: string;
+  statut: StatutReservation;
+  expires_at: string;
+  annulations_count: number;
+  cancelled_at: string | null;
+  created_at: string;
+  vehicule: VehiculeReservation;
+};
+
+/** Même contrat qu'ailleurs (`description.carburant`, types/index.ts:261) : string libre, pas d'union stricte. */
+export type Alerte = {
+  id: string;
+  marque_cible: string | null;
+  modele_cible: string | null;
+  /** decimal Laravel → toujours une string en JSON, jamais un number. */
+  prix_max: string | null;
+  carburant: string | null;
+  active: boolean;
+  created_at: string;
+};
+
+export type SignalementCibleVehicule = {
+  id: string;
+  description: DescriptionVehicule | null;
+};
+
+export type Signalement = {
+  id: string;
+  motif: string;
+  description: string | null;
+  statut: StatutSignalement;
+  /** Renseignés seulement une fois `statut` sorti de `en_attente` (AdminController::traiterSignalement). */
+  action_cible: string | null;
+  note_admin: string | null;
+  date_signalement: string;
+  /** Une seule des deux cibles est non-null — jamais les deux (contrainte du `store()`). */
+  cible_user: { id: string; fullname: string } | null;
+  cible_vehicule: SignalementCibleVehicule | null;
 };

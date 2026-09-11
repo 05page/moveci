@@ -5,7 +5,6 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TendancesController;
 use App\Http\Controllers\CrmController;
-use App\Http\Controllers\GeolocalisationController;
 use App\Http\Controllers\FormationController;
 use App\Http\Controllers\InscriptionFormationController;
 use App\Http\Controllers\TransactionConclueController;
@@ -13,6 +12,7 @@ use App\Http\Controllers\AlerteController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AvisController;
 use App\Http\Controllers\FavoriController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\PromotionsController;
 use App\Http\Controllers\RendezVousController;
@@ -24,9 +24,6 @@ use App\Http\Controllers\ReservationController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public ────────────────────────────────────────────────
-// Géolocalisation — accessible sans connexion (visiteurs + clients)
-Route::get('/geo/proches', [GeolocalisationController::class, 'proches']);
-
 Route::get('/auth/{provider}/redirect',  [AuthController::class, 'redirect']);
 Route::get('/auth/{provider}/callback',  [AuthController::class, 'callback']);
 Route::post('/auth/exchange',            [AuthController::class, 'exchangeCode']);
@@ -40,6 +37,12 @@ Route::get('/avis/vendeur/{id}', [AvisController::class, 'avisVendeur']);
 
 // Profil public vendeur/concessionnaire/auto-école — visible sans connexion
 Route::get('/users/{id}/profil', [VendeurStatsController::class, 'profil']);
+
+// Vendeurs vedettes de l'accueil — public (app/page.tsx)
+Route::get('/vendeurs/vedettes', [VendeurStatsController::class, 'vedettes']);
+
+// Inscription newsletter — public (app/page.tsx, section bas de page)
+Route::post('/newsletter', [NewsletterController::class, 'store']);
 
 // Catalogue véhicules (public — visiteurs non connectés)
 // ->where() contraint {id} à n'accepter que des UUIDs valides,
@@ -59,9 +62,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::middleware(['auth:sanctum', 'check.statut'])->group(function () {
 
-    // Géolocalisation — mise à jour position (authentifié)
-    Route::post('/geo/position',  [GeolocalisationController::class, 'updatePosition']);
-    Route::post('/geo/geocode',   [GeolocalisationController::class, 'geocodeAdresse']);
     Route::put('/me/update',               [AuthController::class, 'update']);
     Route::post('/me/avatar', [AuthController::class, 'avatarProfile']);
     Route::post('/me/cover-photo', [AuthController::class, 'coverProfile']);
@@ -214,9 +214,13 @@ Route::middleware(['auth:sanctum', 'check.statut'])->group(function () {
         Route::get('/mes-demandes',    [TransactionConclueController::class, 'mesDemandes']);
         Route::post('/{id}/confirmer-client',  [TransactionConclueController::class, 'confirmerClient']);
         Route::post('/{id}/refuser',           [TransactionConclueController::class, 'refuserClient']);
+        Route::post('/{id}/restituer-client',  [TransactionConclueController::class, 'restituerClient']);
+        // Le vendeur ne confirme plus séparément (confirmer-vendeur/restituer-vendeur supprimées,
+        // voir docs/transaction.md §1.3/§2.1) — un seul scan client, via confirmer-client/
+        // restituer-client, finalise tout. refuser-vendeur reste : le vendeur garde le droit
+        // de refuser explicitement, ce n'est pas une confirmation.
         Route::middleware('role:vendeur,concessionnaire,auto_ecole')->group(function () {
             Route::get('/mes-transactions',        [TransactionConclueController::class, 'mesTransactions']);
-            Route::post('/{id}/confirmer-vendeur', [TransactionConclueController::class, 'confirmerVendeur']);
             Route::post('/{id}/refuser-vendeur',   [TransactionConclueController::class, 'refuserVendeur']);
         });
     });
@@ -229,8 +233,6 @@ Route::middleware(['auth:sanctum', 'check.statut'])->group(function () {
 
     // ── Admin ─────────────────────────────────────────────
     Route::middleware('role:admin')->prefix('admin')->group(function () {
-        Route::get('/admins',                     [AdminController::class, 'admins']);
-        Route::post('/admins',                    [AdminController::class, 'createAdmin']);
         Route::get('/users',                      [AdminController::class, 'users']);
         Route::post('/users/{id}/suspendre',      [AdminController::class, 'suspendre']);
         Route::post('/users/{id}/bannir',         [AdminController::class, 'bannir']);
@@ -242,19 +244,19 @@ Route::middleware(['auth:sanctum', 'check.statut'])->group(function () {
         Route::post('/vehicules/{id}/rejeter',    [AdminController::class, 'rejeterVehicule']);
         Route::post('/vehicules/{id}/suspendre',  [AdminController::class, 'suspendreVehicule']);
         Route::delete('/vehicules/{id}',          [AdminController::class, 'supprimerVehicule']);
-        Route::get('/vehicules/corbeille',          [AdminController::class, 'corbeille']);
         Route::post('/vehicules/{id}/restaurer',    [AdminController::class, 'restaurerVehicule']);
-        Route::delete('/vehicules/{id}/forcer',     [AdminController::class, 'forcerSupprimerVehicule']);
         Route::get('/signalements',               [AdminController::class, 'signalements']);
         Route::post('/signalements/{id}/traiter', [AdminController::class, 'traiterSignalement']);
         Route::get('/stats',                      [AdminController::class, 'stats']);
         Route::get('/stats/marche',               [AdminController::class, 'statsMarche']);
-        Route::get('/stats/geographie',           [AdminController::class, 'statsGeographie']);
-        Route::get('/logs',                       [AdminController::class, 'logs']);
+        Route::get('/activity-log',                [AdminController::class, 'activityLog']);
         Route::get('/transactions',               [AdminController::class, 'transactions']);
         Route::get('/formations',                 [AdminController::class, 'formations']);
+        Route::get('/formations/{id}',            [AdminController::class, 'formation']);
         Route::post('/formations/{id}/valider',   [AdminController::class, 'validerFormation']);
         Route::post('/formations/{id}/rejeter',   [AdminController::class, 'rejeterFormation']);
+        Route::post('/formations/{id}/retirer',   [AdminController::class, 'retirerFormation']);
+        Route::post('/formations/{id}/restaurer', [AdminController::class, 'restaurerFormation']);
         Route::get('/support',                     [SupportController::class, 'index']);
         Route::post('/support/{id}/repondre',      [SupportController::class, 'repondre']);
     });

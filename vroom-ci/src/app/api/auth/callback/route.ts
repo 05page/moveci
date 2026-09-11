@@ -11,7 +11,7 @@ const ACCUEIL_PAR_ROLE: Record<string, string> = {
     vendeur: "/vendeur/profile",
     concessionnaire: "/partenaire/concessionnaire/dashboard",
     auto_ecole: "/partenaire/auto_ecole/dashboard",
-    admin: "/",
+    admin: "/admin/dashboard",
 };
 
 type ReponseEchange = {

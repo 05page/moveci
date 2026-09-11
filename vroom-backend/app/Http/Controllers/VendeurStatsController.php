@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Avis;
+use App\Models\Formation;
 use App\Models\RendezVous;
 use App\Models\User;
 use App\Models\Vehicules;
@@ -162,8 +163,9 @@ class VendeurStatsController extends Controller
                             'note_moyenne' => 0,
                             'nb_avis'      => 0,
                         ],
-                        'vehicules' => [],
-                        'avis'      => [],
+                        'vehicules'  => [],
+                        'formations' => [],
+                        'avis'       => [],
                     ]
                 ]);
             }
@@ -172,9 +174,24 @@ class VendeurStatsController extends Controller
             $vehicules = Vehicules::with(['description', 'photos'])
                 ->where('created_by', $user->id)
                 ->where('statut', Vehicules::STATUS_DISPONIBLE)
-                ->where('status_validation', 'validee')
+                ->whereIn('status_validation', ['validee', 'restauree'])
                 ->latest()
                 ->get();
+
+            // Seul un auto_ecole publie des formations (les autres rôles ne créent jamais de ligne
+            // `formations.auto_ecole_id` les concernant) — inutile de lancer la requête pour les autres.
+            // `with('autoEcole')` obligatoire : le front (CarteFormationCatalogue) lit `formation.auto_ecole.*`
+            // sans filet, même contrat que FormationController::index().
+            $formations = $user->role === 'auto_ecole'
+                ? Formation::with(['autoEcole' => fn ($q) => $q->select('id', 'fullname', 'avatar')
+                        ->withAvg('avisVendeur as note_moyenne', 'note')])
+                    ->where('auto_ecole_id', $user->id)
+                    ->where('statut_validation', Formation::STATUT_VALIDE)
+                    ->where('statut', Formation::STATUT_DISPONIBLE)
+                    ->withCount('inscriptions')
+                    ->latest()
+                    ->get()
+                : [];
 
             $avis = Avis::with('client:id,fullname')
                 ->where('vendeur_id', $user->id)
@@ -197,8 +214,9 @@ class VendeurStatsController extends Controller
                         'note_moyenne' => round((float) Avis::where('vendeur_id', $user->id)->avg('note'), 1),
                         'nb_avis'      => $avis->count(),
                     ],
-                    'vehicules' => $vehicules,
-                    'avis'      => $avis,
+                    'vehicules'  => $vehicules,
+                    'formations' => $formations,
+                    'avis'       => $avis,
                 ]
             ]);
         } catch (\Exception $e) {
@@ -207,5 +225,42 @@ class VendeurStatsController extends Controller
                 'message' => 'Utilisateur introuvable',
             ], 404);
         }
+    }
+
+    /**
+     * Vendeurs vedettes de l'accueil : 2 concessionnaires + 1 vendeur particulier,
+     * les mieux notés d'abord. Public, appelée par app/page.tsx (front).
+     */
+    public function vedettes()
+    {
+        // withAvg/withCount ajoutent chacun UNE colonne calculée par une sous-requête
+        // SQL, sans charger les lignes de la relation en mémoire — contrairement à
+        // ->with('avisVendeur')->avg(...) qui chargerait tous les avis pour les
+        // moyenner en PHP. Le nom de la colonne générée suit un format fixe :
+        // withAvg('avisVendeur', 'note') => 'avis_vendeur_avg_note'.
+        $selectionner = fn (string $role, int $limite) => User::where('role', $role)
+            ->withAvg('avisVendeur', 'note')
+            ->withCount(['vehicules' => fn ($requete) => $requete->where('statut', Vehicules::STATUS_DISPONIBLE)])
+            ->orderByDesc('avis_vendeur_avg_note')
+            ->limit($limite)
+            ->get();
+
+        // merge() met bout à bout deux Collections déjà récupérées séparément —
+        // deux requêtes SQL (une par rôle), pas une seule mêlant les deux critères.
+        $vendeurs = $selectionner('concessionnaire', 2)->merge($selectionner('vendeur', 1));
+
+        $data = $vendeurs->map(fn (User $user) => [
+            'id' => $user->id,
+            'fullname' => $user->fullname,
+            'avatar' => $user->avatar,
+            'role' => $user->role,
+            // avis_vendeur_avg_note vaut `null` (pas 0) si le vendeur n'a aucun avis —
+            // round(null, 1) plante, d'où le `?? 0` avant de caster/arrondir.
+            'note_moyenne' => round((float) ($user->avis_vendeur_avg_note ?? 0), 1),
+            'nb_avis' => $user->avisVendeur()->count(),
+            'nb_vehicules' => $user->vehicules_count,
+        ]);
+
+        return response()->json(['success' => true, 'data' => $data]);
     }
 }

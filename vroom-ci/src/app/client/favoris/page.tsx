@@ -8,207 +8,22 @@ import BoutonRecharger from "@/components/BoutonRecharger";
 import CarteFavori from "@/components/CarteFavori";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { estDisponible } from "@/lib/vehicule";
 import type { Favori } from "@/types";
 
-/**
- * Réponse de `GET /api/favoris`, champ `data`. Le back ne filtre RIEN : un favori
- * vendu ou réservé reste dans la liste, et c'est tout l'intérêt de cette page.
- */
-const MOCK_FAVORIS: Favori[] = [
-  {
-    id: "f1000000-0000-4000-8000-000000000001",
-    user_id: "b1e7c3d2-5a49-4f18-9c26-3d8b1a0e7f54",
-    vehicule_id: "2c1d0e9f-8a7b-4c6d-9e5f-4a3b2c1d0e9f",
-    date_ajout: "2026-08-11T08:20:00.000000Z",
-    created_at: "2026-08-11T08:20:00.000000Z",
-    vehicule: {
-      id: "2c1d0e9f-8a7b-4c6d-9e5f-4a3b2c1d0e9f",
-      created_by: "3f8a1b2c-9d7e-4f60-a531-8c4e6b2a9f03",
-      post_type: "vente",
-      type: "occasion",
-      statut: "disponible",
-      // cast decimal:2 : Laravel renvoie bien les deux décimales
-      prix: "6250000.00",
-      prix_suggere: "6800000.00",
-      negociable: true,
-      date_disponibilite: null,
-      status_validation: "validee",
-      views_count: 1842,
-      created_at: "2026-07-28T11:00:00.000000Z",
-      description: {
-        marque: "Toyota",
-        modele: "RAV4",
-        annee: 2021,
-        kilometrage: 48_500,
-        carburant: "Essence",
-        transmission: "Automatique",
-        carrosserie: "SUV",
-      },
-      photos: [
-        {
-          id: "dd44ee55-ff66-4a77-8b88-cc99dd00ee11",
-          path: "/toyota.jpeg",
-          is_primary: true,
-          position: 1,
-        },
-      ],
-    },
-  },
-  {
-    id: "f1000000-0000-4000-8000-000000000002",
-    user_id: "b1e7c3d2-5a49-4f18-9c26-3d8b1a0e7f54",
-    vehicule_id: "7f1e9c3a-4b28-4d51-8e60-9a2b3c4d5e6f",
-    date_ajout: "2026-07-30T15:05:00.000000Z",
-    created_at: "2026-07-30T15:05:00.000000Z",
-    vehicule: {
-      id: "7f1e9c3a-4b28-4d51-8e60-9a2b3c4d5e6f",
-      created_by: "3f8a1b2c-9d7e-4f60-a531-8c4e6b2a9f03",
-      post_type: "vente",
-      type: "occasion",
-      // parti pris de la page : ce favori est perdu, il reste affiché quand même
-      statut: "vendu",
-      prix: "4800000.00",
-      prix_suggere: "4750000.00",
-      negociable: false,
-      date_disponibilite: null,
-      status_validation: "validee",
-      views_count: 1533,
-      created_at: "2026-06-02T09:40:00.000000Z",
-      description: {
-        marque: "Hyundai",
-        modele: "Tucson",
-        annee: 2020,
-        kilometrage: 72_300,
-        carburant: "Diesel",
-        transmission: "Automatique",
-        carrosserie: "SUV",
-      },
-      photos: [
-        {
-          id: "aa11bb22-cc33-4d44-8e55-ff66aa77bb88",
-          path: "/hyundai.jpeg",
-          is_primary: true,
-          position: 1,
-        },
-      ],
-    },
-  },
-  {
-    id: "f1000000-0000-4000-8000-000000000003",
-    user_id: "b1e7c3d2-5a49-4f18-9c26-3d8b1a0e7f54",
-    vehicule_id: "5d4c3b2a-1f0e-4998-8776-655443322110",
-    date_ajout: "2026-08-13T19:45:00.000000Z",
-    created_at: "2026-08-13T19:45:00.000000Z",
-    vehicule: {
-      id: "5d4c3b2a-1f0e-4998-8776-655443322110",
-      created_by: "9d4e2f1a-6c3b-4a71-8e15-2b7f0c9d4e11",
-      post_type: "location",
-      type: "occasion",
-      statut: "disponible",
-      prix: "45000.00",
-      // aucune estimation : Gemini n'a rien produit, le badge d'écart ne sort pas
-      prix_suggere: null,
-      negociable: false,
-      date_disponibilite: "2026-08-20",
-      status_validation: "validee",
-      views_count: 1204,
-      created_at: "2026-08-01T07:15:00.000000Z",
-      description: {
-        marque: "Kia",
-        modele: "Sportage",
-        annee: 2022,
-        kilometrage: 21_000,
-        carburant: "Essence",
-        transmission: "Manuelle",
-        carrosserie: "SUV",
-      },
-      photos: [
-        {
-          id: "bb22cc33-dd44-4e55-9f66-aa77bb88cc99",
-          path: "/kia.jpeg",
-          is_primary: true,
-          position: 1,
-        },
-      ],
-    },
-  },
-  {
-    id: "f1000000-0000-4000-8000-000000000004",
-    user_id: "b1e7c3d2-5a49-4f18-9c26-3d8b1a0e7f54",
-    vehicule_id: "0e9f8a7b-6c5d-4e3f-8a1b-2c3d4e5f6a7b",
-    date_ajout: "2026-06-19T12:00:00.000000Z",
-    created_at: "2026-06-19T12:00:00.000000Z",
-    vehicule: {
-      id: "0e9f8a7b-6c5d-4e3f-8a1b-2c3d4e5f6a7b",
-      created_by: "3f8a1b2c-9d7e-4f60-a531-8c4e6b2a9f03",
-      post_type: "vente",
-      type: "occasion",
-      statut: "réservé",
-      prix: "3100000.00",
-      // demandé AU-DESSUS de l'estimation : le badge sort en gris, pas en menthe
-      prix_suggere: "2870000.00",
-      negociable: true,
-      date_disponibilite: null,
-      status_validation: "validee",
-      views_count: 968,
-      created_at: "2026-05-11T14:25:00.000000Z",
-      description: {
-        marque: "Nissan",
-        modele: "Rogue",
-        annee: 2019,
-        kilometrage: 96_400,
-        carburant: "Essence",
-        transmission: "Automatique",
-        carrosserie: "SUV",
-      },
-      photos: [
-        {
-          id: "cc33dd44-ee55-4f66-8a77-bb88cc99dd00",
-          path: "/nissan.jpeg",
-          is_primary: true,
-          position: 1,
-        },
-      ],
-    },
-  },
-  {
-    id: "f1000000-0000-4000-8000-000000000005",
-    user_id: "b1e7c3d2-5a49-4f18-9c26-3d8b1a0e7f54",
-    vehicule_id: "4a3b2c1d-0e9f-4a8b-9c7d-6e5f4a3b2c1d",
-    date_ajout: "2026-08-06T10:10:00.000000Z",
-    created_at: "2026-08-06T10:10:00.000000Z",
-    vehicule: {
-      id: "4a3b2c1d-0e9f-4a8b-9c7d-6e5f4a3b2c1d",
-      created_by: "9d4e2f1a-6c3b-4a71-8e15-2b7f0c9d4e11",
-      post_type: "vente",
-      type: "neuf",
-      statut: "en_transaction",
-      prix: "12400000.00",
-      prix_suggere: "12500000.00",
-      negociable: false,
-      date_disponibilite: null,
-      status_validation: "validee",
-      views_count: 742,
-      created_at: "2026-07-19T16:00:00.000000Z",
-      // description ET photos absentes : les deux replis sont exercés d'un coup
-      description: null,
-      photos: [],
-    },
-  },
-];
+/** Même contrat que GET /api/favoris : le back ne filtre rien, un favori vendu/réservé reste dans la liste. */
+const recupererFavoris = async (): Promise<Favori[]> => {
+  const reponse = await api.get<{ data: Favori[] }>("favoris");
+  return reponse.data;
+};
 
-/** Même contrat que GET /api/favoris : seul ce corps changera au branchement. */
-function recupererFavoris(): Promise<Favori[]> {
-  // 700 ms : sans délai, l'état de chargement n'est jamais observable
-  return new Promise((resolve) => setTimeout(() => resolve(MOCK_FAVORIS), 700));
-}
-
-/** Même contrat que DELETE /api/favoris/{vehiculeId}. Rejette pour déclencher le retour en arrière. */
-function retirerFavori(vehiculeId: string): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 400));
-}
+/** Même contrat que DELETE /api/favoris/{vehiculeId}. Rejette (404) pour déclencher le retour en arrière. */
+const retirerFavori = async (vehiculeId: string): Promise<void> => {
+  await api.delete<{ message: string }>(`favoris/${vehiculeId}`);
+};
 
 type Filtre = "tout" | "disponibles" | "indisponibles";
 
@@ -279,10 +94,13 @@ export default function PageFavoris() {
     setErreur(null);
     setFavoris((liste) => liste.filter((f) => f.vehicule.id !== vehiculeId));
 
-    retirerFavori(vehiculeId).catch(() => {
-      setFavoris(precedents);
-      setErreur("Le retrait a échoué. Le favori a été remis dans la liste.");
-    });
+    retirerFavori(vehiculeId)
+      .then(() => toast.success("Retiré des favoris."))
+      .catch(() => {
+        setFavoris(precedents);
+        setErreur("Le retrait a échoué. Le favori a été remis dans la liste.");
+        toast.error("Le retrait a échoué. Le favori a été remis dans la liste.");
+      });
   };
 
   if (chargement) {

@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Vehicules extends Model
 {
-    use HasUuids, HasFactory, SoftDeletes;
+    use HasUuids, HasFactory, SoftDeletes, LogsActivity;
 
     protected $table = 'vehicules';
 
@@ -67,8 +69,10 @@ class Vehicules extends Model
         static::updated(function (Vehicules $vehicule) {
             // wasChanged() vérifie si la colonne a changé lors de ce save()
             // On broadcast seulement quand la validation passe à 'validee' ou 'restauree'
-            if ($vehicule->wasChanged('status_validation') &&
-                in_array($vehicule->status_validation, ['validee', 'restauree'])) {
+            if (
+                $vehicule->wasChanged('status_validation') &&
+                in_array($vehicule->status_validation, ['validee', 'restauree'])
+            ) {
                 VehiculeValidated::dispatch($vehicule);
             }
         });
@@ -140,6 +144,14 @@ class Vehicules extends Model
     public function scopeRejetee($query)
     {
         return $query->where('status_validation', 'rejetee');
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['statut', 'status_validation', 'prix', 'type', 'post_type', 'description_validation'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 
     public function suspendre(): void
