@@ -163,7 +163,7 @@ class AdminController extends Controller
 
     /**
      * Liste toutes les formations avec filtres optionnels.
-     * Parametre status_validation  : en_attente | validé | rejeté
+     * Parametre statut_validation  : en_attente | validé | rejeté
      */
     public function formations(Request $request): JsonResponse
     {
@@ -172,11 +172,11 @@ class AdminController extends Controller
             ->orderBy('created_at', 'desc');
 
         $filtres = $request->validate([
-            'status_validation ' => 'sometimes|string|in:en_attente,validé,rejeté',
+            'statut_validation' => 'sometimes|string|in:en_attente,validé,rejeté',
         ]);
 
-        if (isset($filtres['status_validation '])) {
-            $query->where('status_validation ', $filtres['status_validation ']);
+        if (isset($filtres['statut_validation'])) {
+            $query->where('statut_validation', $filtres['statut_validation']);
         }
 
         $formations = $query->paginate(20);
@@ -200,7 +200,7 @@ class AdminController extends Controller
     public function validerFormation(Request $request, $id): JsonResponse
     {
         $formation = Formation::findOrFail($id);
-        $formation->update(['status_validation ' => 'validé']);
+        $formation->update(['statut_validation' => 'validé']);
 
         $this->logAction('VALIDATE_FORMATION', 'formation', $id, $this->detailsValides($request));
 
@@ -219,7 +219,7 @@ class AdminController extends Controller
         $request->validate(['motif' => 'required|string|max:500']);
 
         $formation = Formation::findOrFail($id);
-        $formation->update(['status_validation ' => 'rejeté']);
+        $formation->update(['statut_validation' => 'rejeté']);
 
         $this->logAction('REJECT_FORMATION', 'formation', $id, $request->motif);
 
@@ -501,9 +501,9 @@ class AdminController extends Controller
             ->groupBy('role')
             ->pluck('total', 'role');
 
-        $formationsValidation = Formation::selectRaw('status_validation , count(*) as total')
-            ->groupBy('status_validation ')
-            ->pluck('total', 'status_validation ');
+        $formationsValidation = Formation::selectRaw('statut_validation, count(*) as total')
+            ->groupBy('statut_validation')
+            ->pluck('total', 'statut_validation');
 
         $formationsParPermis = Formation::selectRaw('type_permis, count(*) as total')
             ->groupBy('type_permis')

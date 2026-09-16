@@ -402,15 +402,8 @@ export default function PageCatalogue() {
             Le catalogue est vide
           </h1>
           <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-            Aucune annonce n&apos;est en ligne pour le moment. Revenez bientôt,
-            ou publiez la vôtre.
+            Aucune annonce n&apos;est en ligne pour le moment. Revenez bientôt.
           </p>
-          <Link
-            href="/vendeur/vehicules/nouveau"
-            className={cn(buttonVariants({ size: "lg" }), "effet-action mt-8")}
-          >
-            Déposer une annonce
-          </Link>
         </section>
       </main>
     );

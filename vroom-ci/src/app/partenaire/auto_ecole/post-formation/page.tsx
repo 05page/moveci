@@ -37,9 +37,12 @@ type FormulaireFormation = {
   titre: string;
   texte: string;
   prix: string;
-  duree_heures: string;
   lieu: string;
-  langue: string;
+  nombre_places: string;
+  duree_heures: string;
+  date_disponiblite: string;
+  date_fin: string;
+  date_examen: string;
 };
 
 // ÉTAPE 2 — ajoute `lieu: ""` ici, même endroit que `langue: ""`.
@@ -49,8 +52,11 @@ const FORMULAIRE_VIDE: FormulaireFormation = {
   texte: "",
   prix: "",
   duree_heures: "",
+  date_examen: "",
+  date_disponiblite: "",
+  date_fin: "",
+  nombre_places: "",
   lieu: "",
-  langue: "",
 };
 
 /** Même contrat que POST /formations (FormationController::store, StoreFormationRequest). */
@@ -159,27 +165,6 @@ export default function PagePostFormation() {
           </div>
 
           <div>
-            <Label htmlFor="langue">Langue</Label>
-            <Input
-              id="langue"
-              value={formulaire.langue}
-              onChange={(e) => definirChamp("langue", e.target.value)}
-              placeholder="Français"
-              className="mt-2"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="lieu">Lieu</Label>
-            <Input
-              id="lieu"
-              value={formulaire.lieu}
-              onChange={(e) => definirChamp("lieu", e.target.value)}
-              placeholder="Cocody, 2plateaux"
-              className="mt-2"
-            />
-          </div>
-          <div>
             <Label htmlFor="prix">Prix (FCFA) *</Label>
             <Input
               id="prix"
@@ -208,6 +193,70 @@ export default function PagePostFormation() {
               required
             />
           </div>
+
+          <div>
+            <Label htmlFor="lieu">Lieu (Optionnel)</Label>
+            <Input
+              id="lieu"
+              value={formulaire.lieu}
+              onChange={(e) => definirChamp("lieu", e.target.value)}
+              placeholder="Cocody, 2plateaux"
+              className="mt-2"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="nombre_places">Nombre de place</Label>
+            <Input
+              id="date_examen"
+              type="text"
+              inputMode="numeric"
+              min={1}
+              value={formulaire.nombre_places}
+              onChange={(e) => definirChamp("nombre_places", e.target.value)}
+              placeholder="20"
+              className="mt-2"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="date_disponiblite">Date</Label>
+            <Input
+              id="date_disponibilite"
+              type="date"
+              value={formulaire.date_disponiblite}
+              onChange={(e) => definirChamp("date_disponiblite", e.target.value)}
+              className="mt-2"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="date_fin">Date de fin</Label>
+            <Input
+              id="date_fin"
+              type="date"
+              value={formulaire.date_fin}
+              onChange={(e) => definirChamp("date_fin", e.target.value)}
+              className="mt-2"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="date_examen">Date examen</Label>
+            <Input
+              id="date_examen"
+              type="date"
+              inputMode="numeric"
+              min={1}
+              value={formulaire.date_examen}
+              onChange={(e) => definirChamp("date_examen", e.target.value)}
+              placeholder="20"
+              className="mt-2"
+              required
+            />
+          </div>
+
         </div>
 
         {erreur && (

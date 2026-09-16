@@ -22,16 +22,6 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { FormationAutoEcole, TypePermis } from "@/types";
 
-/* ────────────────────────────────────────────────────────────────────────────
-   MODIFIER UNE FORMATION — /partenaire/auto_ecole/formations/[id]/modifier
-   Même formulaire que /partenaire/auto_ecole/post-formation, pré-rempli.
-   Pas de route GET dédiée pour une formation de l'auto-école connectée : on
-   réutilise formations/mes-formations (déjà appelée par la page Formation) et
-   on isole la ligne voulue — c'est la même liste, pas un aller-retour de plus.
-   `langue` disparaît du formulaire : ni FormationAutoEcole (le contrat GET),
-   ni UpdateFormationRequest (le contrat PUT) ne la connaissent côté back.
-   ──────────────────────────────────────────────────────────────────────────── */
-
 const OPTIONS_PERMIS: { valeur: TypePermis; libelle: string }[] = [
   { valeur: "A", libelle: "Permis A — moto" },
   { valeur: "A2", libelle: "Permis A2 — moto (bridée)" },
@@ -46,7 +36,12 @@ type FormulaireFormation = {
   titre: string;
   texte: string;
   prix: string;
+  lieu: string | null;
+  nombre_places: number | null;
   duree_heures: string;
+  date_disponiblite: string | null;
+  date_fin: string | null;
+  date_examen: string | null;
 };
 
 const formulaireDepuis = (formation: FormationAutoEcole): FormulaireFormation => ({
@@ -54,7 +49,12 @@ const formulaireDepuis = (formation: FormationAutoEcole): FormulaireFormation =>
   titre: formation.titre,
   texte: formation.description,
   prix: formation.prix,
+  lieu: formation.lieu,
+  nombre_places: formation.nombre_places ?? 0,
   duree_heures: String(formation.duree_heures),
+  date_disponiblite: formation.date_disponiblite,
+  date_fin: formation.date_fin,
+  date_examen: formation.date_examen,
 });
 
 /** Pas de GET /formations/{id} pour l'auto-école : on filtre la liste complète côté client. */
@@ -257,6 +257,93 @@ const FormulaireModifierFormation = ({ id }: { id: string }) => {
               min={1}
               value={formulaire.duree_heures}
               onChange={(e) => definirChamp("duree_heures", e.target.value)}
+              placeholder="20"
+              className="mt-2"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="duree_heures">Durée (heures) *</Label>
+            <Input
+              id="duree_heures"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              value={formulaire.duree_heures}
+              onChange={(e) => definirChamp("duree_heures", e.target.value)}
+              placeholder="20"
+              className="mt-2"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="lieu">Lieu (Optionnel) </Label>
+            <Input
+              id="lieu"
+              type="text"
+              value={formulaire?.lieu ?? ""}
+              onChange={(e) => definirChamp("lieu", e.target.value)}
+              placeholder="20"
+              className="mt-2"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="nombre_places">Nombre de places *</Label>
+            <Input
+              id="nombre_places"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              value={formulaire.nombre_places ?? 0}
+              onChange={(e) => definirChamp("nombre_places", e.target.value === "" ? null : Number(e.target.value))}
+              placeholder="20"
+              className="mt-2"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="date_disponiblite">Date de début *</Label>
+            <Input
+              id="date_disponiblite"
+              type="date"
+              inputMode="numeric"
+              min={1}
+              value={formulaire.date_disponiblite ?? ""}
+              onChange={(e) => definirChamp("date_disponiblite", e.target.value)}
+              placeholder="20"
+              className="mt-2"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="date_fin">Date de fin *</Label>
+            <Input
+              id="date_fin"
+              type="date"
+              inputMode="numeric"
+              min={1}
+              value={formulaire.date_fin ?? ""}
+              onChange={(e) => definirChamp("date_fin", e.target.value)}
+              placeholder="20"
+              className="mt-2"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="date_examen">Date d'examen *</Label>
+            <Input
+              id="date_examen"
+              type="date"
+              inputMode="numeric"
+              min={1}
+              value={formulaire.date_examen ?? ""}
+              onChange={(e) => definirChamp("date_examen", e.target.value)}
               placeholder="20"
               className="mt-2"
               required

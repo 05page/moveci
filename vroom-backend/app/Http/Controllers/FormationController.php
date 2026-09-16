@@ -130,8 +130,12 @@ class FormationController extends Controller
                 'duree_heures'       => $validated['duree_heures'],
                 'lieu'               => $validated['lieu'] ?? ($user['adresse'] ?? null),
                 'nombre_places'      => $validated['nombre_places'] ?? null,
+                'date_disponiblite'  => $validated['date_disponiblite'] ?? null,
+                'date_fin'  => $validated['date_fin'] ?? null,
+                'date_examen'  => $validated['date_examen'] ?? null,
                 'deroulement'        => $validated['deroulement'] ?? null,
-                'statut_validation'  => Formation::STATUT_EN_ATTENTE,
+                'statut_validation'  => Formation::STATUT_VALIDE,
+                'statut'  => Formation::STATUT_DISPONIBLE,
             ]);
 
             Notifications::notifyAdmins(
@@ -174,7 +178,7 @@ class FormationController extends Controller
 
             $formation->update(array_intersect_key(
                 $validated,
-                array_flip(['titre', 'description', 'type_permis', 'prix', 'duree_heures', 'lieu', 'nombre_places', 'deroulement'])
+                array_flip(['titre', 'description', 'type_permis', 'prix', 'duree_heures', 'lieu', 'nombre_places', 'deroulement', 'date_disponiblite', 'date_fin', 'date_examen'])
             ));
 
             return response()->json(['success' => true, 'data' => $formation]);

@@ -15,15 +15,18 @@ class StoreFormationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type_permis'  => ['required', Rule::in(['A', 'A2', 'B', 'B1', 'C', 'D'])],
-            'prix'         => 'required|numeric|min:0',
-            'duree_heures' => 'required|integer|min:1',
-            'titre'        => 'required|string|max:255',
-            'texte'        => 'required|string',
-            'langue'       => 'nullable|string|max:10',
-            'lieu'          => 'nullable|string|max:255',
-            'nombre_places' => 'nullable|integer|min:1',
-            'deroulement'   => 'nullable|string',
+            'type_permis'        => ['required', Rule::in(['A', 'A2', 'B', 'B1', 'C', 'D'])],
+            'prix'                => 'required|numeric|min:0',
+            'duree_heures'        => 'required|integer|min:1',
+            'titre'               => 'required|string|max:255',
+            'texte'               => 'required|string',
+            'langue'              => 'nullable|string|max:10',
+            'lieu'                => 'nullable|string|max:255',
+            'nombre_places'       => 'nullable|integer|min:1',
+            'deroulement'         => 'nullable|string',
+            'date_disponiblite'   => 'nullable|date',
+            'date_fin'            => 'nullable|date|after_or_equal:date_disponiblite',
+            'date_examen'         => 'nullable|date|after_or_equal:date_disponiblite',
         ];
     }
 
@@ -35,11 +38,16 @@ class StoreFormationRequest extends FormRequest
             'prix.required'        => 'Le prix est obligatoire.',
             'prix.numeric'         => 'Le prix doit être un nombre.',
             'prix.min'             => 'Le prix ne peut pas être négatif.',
-            'duree_heures.required'=> 'La durée est obligatoire.',
+            'duree_heures.required' => 'La durée est obligatoire.',
             'duree_heures.integer' => 'La durée doit être un nombre entier d\'heures.',
             'duree_heures.min'     => 'La durée doit être d\'au moins 1 heure.',
             'titre.required'       => 'Le titre de la formation est obligatoire.',
             'texte.required'       => 'La description de la formation est obligatoire.',
+            'date_disponiblite.date'      => 'La date de disponibilité doit être une date valide.',
+            'date_fin.date'                => 'La date de fin doit être une date valide.',
+            'date_fin.after_or_equal'      => 'La date de fin doit être postérieure ou égale à la date de disponibilité.',
+            'date_examen.date'             => 'La date d\'examen doit être une date valide.',
+            'date_examen.after_or_equal'   => 'La date d\'examen doit être postérieure ou égale à la date de disponibilité.',
         ];
     }
 }

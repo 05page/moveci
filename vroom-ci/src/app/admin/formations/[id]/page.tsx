@@ -31,12 +31,6 @@ import { api, messageErreur } from "@/lib/api";
 import { cn, formaterFcfa, initiales, urlPhoto } from "@/lib/utils";
 import type { FormationAdmin, StatutFormation, StatutValidationFormation } from "@/types";
 
-/* ────────────────────────────────────────────────────────────────────────────
-   FICHE FORMATION (ADMIN) — /admin/formations/[id]
-   Contrairement à /admin/parc-auto/[id] (qui doit fouiller GET /admin/vehicules
-   faute d'endpoint dédié), cette fiche a sa propre route : GET
-   /admin/formations/{id} (AdminController::formation()).
-   ──────────────────────────────────────────────────────────────────────────── */
 
 const STYLE_VALIDATION_FORMATION: Record<
   StatutValidationFormation,
@@ -177,6 +171,10 @@ const FicheFormationAdmin = ({ id }: { id: string }) => {
     { libelle: "Durée", valeur: `${formation.duree_heures} h` },
     { libelle: "Lieu", valeur: formation.lieu },
     { libelle: "Places", valeur: `${formation.inscriptions_count}/${formation.nombre_places}` },
+    { libelle: "Date de début", valeur: formation.date_disponiblite },
+    { libelle: "Date de fin", valeur: formation.date_fin },
+    { libelle: "Date d'examen", valeur: formation.date_examen },
+
   ];
 
   return (

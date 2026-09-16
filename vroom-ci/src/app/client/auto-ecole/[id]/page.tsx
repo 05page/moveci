@@ -159,6 +159,9 @@ function FicheFormation({ id }: { id: string }) {
       libelle: "Places",
       valeur: String(formation.nombre_places),
     },
+    formation.date_disponiblite && { libelle: "Date de début", valeur: formation.date_disponiblite },
+    formation.date_fin && { libelle: "Date de fin", valeur: formation.date_fin },
+    formation.date_examen && { libelle: "Date d'examen", valeur: formation.date_examen },
   ].filter((spec): spec is { libelle: string; valeur: string } => Boolean(spec));
 
   // seule une préinscription fraîche peut encore être annulée — au-delà,

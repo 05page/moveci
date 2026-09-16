@@ -21,6 +21,9 @@ class Formation extends Model
         'duree_heures',
         'lieu',
         'nombre_places',
+        'date_examen',
+        'date_disponiblite', 
+        'date_fin', 
         'deroulement',
         'statut_validation',
         'statut',
@@ -28,8 +31,6 @@ class Formation extends Model
 
     protected $casts = ['prix' => 'decimal:2'];
 
-    // ÉTAPE. Ajoute getActivitylogOptions(): LogOptions, sur le modèle de User::getActivitylogOptions().
-    // Champs candidats dans $fillable ci-dessus : titre, prix, statut_validation...
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -44,6 +45,7 @@ class Formation extends Model
 
     /** Distinct de STATUT_VALIDE ci-dessus : `statut` gère la visibilité publique APRÈS validation, pas la modération. */
     const STATUT_DISPONIBLE = 'disponible';
+    const STATUT_NON_DISPONIBLE = 'non_disponibilte';
     const STATUT_RETIREE    = 'retiree';
 
     public function autoEcole()

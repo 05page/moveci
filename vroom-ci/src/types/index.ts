@@ -589,9 +589,12 @@ export type FormationAdmin = {
   /** Cast `decimal:2` côté Laravel : sérialisé en string, jamais en number. */
   prix: string;
   duree_heures: number;
-  lieu: string;
-  nombre_places: number;
+  lieu: string | null;
+  nombre_places: number | null;
   deroulement: string | null;
+  date_disponiblite: string | null;
+  date_fin: string | null;
+  date_examen: string | null;
   statut_validation: StatutValidationFormation;
   statut: StatutFormation;
   created_at: string;
@@ -614,6 +617,9 @@ export type FormationCatalogue = {
   lieu: string | null;
   nombre_places: number | null;
   deroulement: string | null;
+  date_disponiblite: string | null;
+  date_fin: string | null;
+  date_examen: string | null;
   created_at: string;
   inscriptions_count: number;
   auto_ecole: { id: string; fullname: string; avatar: string | null; note_moyenne: string | null };
@@ -650,6 +656,9 @@ export type FormationAutoEcole = {
   lieu: string | null;
   nombre_places: number | null;
   deroulement: string | null;
+  date_disponiblite: string | null;
+  date_fin: string | null;
+  date_examen: string | null;
   statut_validation: StatutValidationFormation;
   statut: StatutFormation;
   created_at: string;

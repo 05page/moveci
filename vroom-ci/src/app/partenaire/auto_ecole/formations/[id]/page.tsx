@@ -309,7 +309,7 @@ const DetailFormation = ({ id }: { id: string }) => {
     setDialogueStatut(eleve);
     setErreurStatut(null)
     if (envoiStatut === true || dialogueStatut === null) return;
-    setEnvoiStatut(true);
+    setEnvoiStatut(true); 
   }
 
   const envoyerStatut = async () => {
@@ -381,6 +381,9 @@ const DetailFormation = ({ id }: { id: string }) => {
     { libelle: "Durée", valeur: `${formation.duree_heures} h` },
     { libelle: "Prix", valeur: formaterFcfa(Number(formation.prix)) },
     { libelle: "Lieu", valeur: formation.lieu ?? "Non précisé" },
+    { libelle: "Date de début", valeur: formation.date_disponiblite ?? "Non précisé" },
+    { libelle: "Date de fin", valeur: formation.date_fin ?? "Non précisé" },
+    { libelle: "Date d'examen", valeur: formation.date_examen ?? "Non précisé" },
     {
       libelle: "Places",
       valeur: formation.nombre_places ? `${formation.inscriptions_count}/${formation.nombre_places}` : "Illimitées",
