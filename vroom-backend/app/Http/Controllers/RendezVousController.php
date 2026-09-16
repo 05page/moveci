@@ -284,25 +284,26 @@ class RendezVousController extends Controller
                 'statut'            => TransactionConclue::STATUT_EN_ATTENTE,
             ]);
 
-            // Notifie le vendeur avec le code (pour qu'il puisse le saisir)
+            // Notifie le vendeur avec le code (pour qu'il puisse l'afficher en QR — c'est
+            // le client qui scanne, voir CarteTransaction.tsx et docs/transaction.md §2)
             Notifications::create([
                 'user_id'    => $rdv->vendeur_id,
                 'type'       => Notifications::TYPE_TRANSACTION,
                 'level'      => 'info',
                 'title'      => 'RDV terminé — confirmez la transaction',
-                'message'    => 'Rendez-vous du ' . $rdv->date_heure->format('d/m/Y') . ' terminé. En attente de confirmation du client. Vous recevrez une notification dès qu\'il confirme.',
+                'message'    => 'Rendez-vous du ' . $rdv->date_heure->format('d/m/Y') . ' terminé. Code de confirmation : ' . $code . '. Montrez le QR de votre dashboard au client pour qu\'il scanne et confirme.',
                 'data'       => ['transaction_id' => $transaction->id, 'code' => $code],
                 'date_envoi' => now(),
             ]);
 
-            // Notifie le client avec le code (pour qu'il puisse confirmer)
+            // Notifie le client SANS le code — il doit scanner le QR du vendeur pour l'obtenir
             Notifications::create([
                 'user_id'    => $rdv->client_id,
                 'type'       => Notifications::TYPE_TRANSACTION,
                 'level'      => 'info',
                 'title'      => 'Confirmation de transaction requise',
-                'message'    => 'Votre rendez-vous du ' . $rdv->date_heure->format('d/m/Y') . ' est terminé. Code de confirmation : ' . $code . '. Rendez-vous sur votre dashboard pour confirmer et renseigner les dates si c\'est une location.',
-                'data'       => ['transaction_id' => $transaction->id, 'code' => $code],
+                'message'    => 'Votre rendez-vous du ' . $rdv->date_heure->format('d/m/Y') . ' est terminé. Scannez le QR affiché par le vendeur pour confirmer et renseigner les dates si c\'est une location.',
+                'data'       => ['transaction_id' => $transaction->id],
                 'date_envoi' => now(),
             ]);
 

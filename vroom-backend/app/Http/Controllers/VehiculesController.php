@@ -29,7 +29,7 @@ class VehiculesController extends Controller
     {
         try {
             $query = Vehicules::with([
-                'creator:id,fullname,email,role',
+                'creator:id,',
                 'description',
                 'photos',
             ])->whereIn('status_validation', ['validee', 'restauree'])
@@ -70,7 +70,7 @@ class VehiculesController extends Controller
     public function populaires(): JsonResponse
     {
         try {
-            $vehicules = Vehicules::with(['creator:id,fullname,adresse', 'description', 'photos'])
+            $vehicules = Vehicules::with(['creator:id', 'description', 'photos'])
                 ->whereIn('status_validation', ['validee', 'restauree'])
                 ->whereIn('statut', ['disponible', 'a_venir'])
                 ->orderByDesc('views_count')
@@ -92,7 +92,7 @@ class VehiculesController extends Controller
             $user = auth('sanctum')->user();
 
             $vehicule = Vehicules::with([
-                'creator:id,fullname,email',
+                'creator:id',
                 'description',
                 'photos',
             ])->whereIn('status_validation', ['validee', 'restauree'])
@@ -124,7 +124,7 @@ class VehiculesController extends Controller
             $user = Auth::user();
 
             $vehicules = Vehicules::with([
-                'creator:id,fullname,email',
+                'creator:id',
                 'description',
                 'photos',
             ])
@@ -162,7 +162,7 @@ class VehiculesController extends Controller
         try {
             $user = Auth::user();
             $monVehicule = Vehicules::with([
-                'creator:id,fullname,email',
+                'creator:id,',
                 'description',
                 'photos',
             ])->where('created_by', $user->id)

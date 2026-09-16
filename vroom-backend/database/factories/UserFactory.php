@@ -43,9 +43,6 @@ class UserFactory extends Factory
     {
         return $this->state(fn () => [
             'role'         => User::VENDEUR,
-            'rccm'         => fake()->numerify('RCCM-####'),
-            'note_moyenne' => fake()->randomFloat(1, 0, 5),
-            'nb_avis'      => fake()->numberBetween(0, 100),
             'telephone'    => fake()->phoneNumber(),
             'adresse'      => fake()->address(),
             'latitude'     => fake()->latitude(),
@@ -59,8 +56,6 @@ class UserFactory extends Factory
         return $this->state(fn () => [
             'role'             => User::CONCESSIONNAIRE,
             'raison_sociale'   => fake()->company(),
-            'badge_officiel'   => fake()->boolean(),
-            'adresse_showroom' => fake()->address(),
             'telephone'        => fake()->phoneNumber(),
             'latitude'         => fake()->latitude(),
             'longitude'        => fake()->longitude(),
@@ -73,9 +68,6 @@ class UserFactory extends Factory
         return $this->state(fn () => [
             'role'             => User::AUTO_ECOLE,
             'raison_sociale'   => fake()->company(),
-            'taux_reussite'    => fake()->numberBetween(50, 100),
-            'numero_agrement'  => fake()->numerify('AGR-####'),
-            'adresse_showroom' => fake()->address(),
             'telephone'        => fake()->phoneNumber(),
         ]);
     }
@@ -84,8 +76,7 @@ class UserFactory extends Factory
     public function admin(): static
     {
         return $this->state(fn () => [
-            'role'         => User::ADMIN,
-            'niveau_acces' => 'standard',
+            'role' => User::ADMIN,
         ]);
     }
 

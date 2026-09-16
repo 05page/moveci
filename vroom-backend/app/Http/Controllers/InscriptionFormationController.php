@@ -69,7 +69,7 @@ class InscriptionFormationController extends Controller
             'type'       => Notifications::TYPE_FORMATION,
             'level'      => 'info',
             'title'      => 'Nouvelle préinscription',
-            'message'    => $user->fullname . ' vient de se préinscrire à votre formation ' . ($formation->description->titre ?? 'Permis ' . $formation->type_permis),
+            'message'    => $user->fullname . ' vient de se préinscrire à votre formation ' . ($formation->titre ?? 'Permis ' . $formation->type_permis),
             'data'       => ['inscription_id' => $inscription->id, 'formation_id' => $id],
             'date_envoi' => now(),
         ]);
@@ -93,8 +93,8 @@ class InscriptionFormationController extends Controller
         $user = Auth::user();
 
         $inscriptions = InscriptionFormation::with([
-            'formation.description',
-            'formation.autoEcole:id,fullname,avatar,taux_reussite',
+            'formation',
+            'formation.autoEcole:id,fullname,avatar',
         ])
             ->where('client_id', $user->id)
             ->latest()
@@ -124,7 +124,7 @@ class InscriptionFormationController extends Controller
         }
 
         // Charge la formation avant suppression pour pouvoir notifier l'auto-école
-        $formation = Formation::with('description')->find($id);
+        $formation = Formation::find($id);
 
         $inscription->delete();
 
@@ -136,7 +136,7 @@ class InscriptionFormationController extends Controller
                 'level'      => 'error',
                 'title'      => 'Préinscription annulée',
                 'message'    => $user->fullname . ' a annulé sa préinscription à "' .
-                                ($formation->description->titre ?? 'Permis ' . $formation->type_permis) . '".',
+                                ($formation->titre ?? 'Permis ' . $formation->type_permis) . '".',
                 'data'       => ['formation_id' => $id],
                 'date_envoi' => now(),
             ]);

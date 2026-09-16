@@ -9,18 +9,29 @@ use Illuminate\Support\Str;
 
 class AdminSeeder extends Seeder
 {
+    /**
+     * Crée le compte administrateur de la plateforme.
+     *
+     * Le mot de passe vient de ADMIN_PASSWORD (.env) ; à défaut il est généré
+     * aléatoirement et affiché une seule fois dans la console.
+     * `?:` et non `??` : une variable d'env déclarée mais vide (ADMIN_PASSWORD=)
+     * renvoie une chaîne vide, que `??` laisserait passer comme mot de passe.
+     */
     public function run(): void
     {
-        $password = env('ADMIN_PASSWORD') ?? Str::random(20);
+        $password = env('ADMIN_PASSWORD') ?: Str::random(20);
 
         User::updateOrCreate(
             ['email' => env('ADMIN_EMAIL', 'moveci@moveci.tech')],
             [
-                'fullname'               => 'Admin MoveCi',
-                'password'               => Hash::make($password),
-                'role'                   => 'admin',
-                'niveau_acces'           => 'super_admin',
-                'onboarding_completed_at'=> now(),
+                'fullname'                => 'Admin MoveCi',
+                'telephone'               => '0102030406',
+                'adresse'                 => 'Plateau, Abidjan',
+                'password'                => Hash::make($password),
+                'role'                    => 'admin',
+                'statut'                  => 'actif',
+                'email_verified_at'       => now(),
+                'onboarding_completed_at' => now(),
             ]
         );
 

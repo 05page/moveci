@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class RendezVous extends Model
 {
-    use HasUuids, HasFactory, SoftDeletes;
+    use HasUuids, HasFactory, SoftDeletes, LogsActivity;
 
     protected $table = 'rendez_vous';
 
@@ -27,6 +29,16 @@ class RendezVous extends Model
     ];
 
     protected $casts = ['date_heure' => 'datetime'];
+
+    // ÉTAPE. Ajoute getActivitylogOptions(): LogOptions, sur le modèle de User::getActivitylogOptions().
+    // Champs candidats dans $fillable ci-dessus : date_heure, type, statut, motif, lieu...
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['date_heure', 'type', 'statut', 'motif', 'lieu'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 
     const TYPE_VISITE             = 'visite';
     const TYPE_ESSAI_ROUTIER      = 'essai_routier';

@@ -24,20 +24,8 @@ return new class extends Migration
             $table->enum('role', ['client', 'vendeur', 'concessionnaire', 'auto_ecole', 'admin'])->default('client');
             $table->enum('statut', ['actif', 'suspendu', 'banni', 'en_attente'])->default('actif');
 
-            // Champs vendeur
-            $table->string('rccm', 14)->nullable()->unique();
-            $table->float('note_moyenne')->default(0);
-            $table->integer('nb_avis')->default(0);
-
             // Champs concessionnaire / auto_ecole
             $table->string('raison_sociale', 255)->nullable();
-            $table->boolean('badge_officiel')->default(false);
-            $table->string('adresse_showroom', 255)->nullable();
-            $table->float('taux_reussite')->default(0);
-            $table->string('numero_agrement', 50)->nullable()->unique();
-
-            // Champs admin
-            $table->enum('niveau_acces', ['standard', 'super_admin'])->nullable();
 
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();

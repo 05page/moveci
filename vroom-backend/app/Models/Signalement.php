@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Signalement extends Model
 {
-    use HasUuids, SoftDeletes;
+    use HasUuids, SoftDeletes, LogsActivity;
 
     protected $fillable = [
         'client_id',
@@ -25,6 +27,17 @@ class Signalement extends Model
 
     protected $casts = ['date_signalement' => 'datetime'];
 
+    // ÉTAPE. Ajoute getActivitylogOptions(): LogOptions, sur le modèle de User::getActivitylogOptions().
+    // Champs candidats dans $fillable ci-dessus : motif, statut, action_cible, note_admin...
+
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['motif', 'statut', 'action_cible', 'note_admin'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
     const STATUT_EN_ATTENTE = 'en_attente';
     const STATUT_TRAITE     = 'traité';
     const STATUT_REJETE     = 'rejeté';

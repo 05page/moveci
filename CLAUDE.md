@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Vroom** is a vehicle marketplace platform (buy/sell/rent) built as a monorepo with two separate applications:
+**Move CI** (product/brand name — the repo and its directories still carry the old `vroom-*` naming, unchanged) is a vehicle marketplace platform (buy/sell/rent) built as a monorepo with two separate applications:
 
-- `Vroom-ci/` — Next.js 16 frontend (TypeScript, App Router)
+- `vroom-ci/` — Next.js 16 frontend (TypeScript, App Router)
 - `vroom-backend/` — Laravel 12 backend (PHP 8.2+)
 
 ## Development Commands
@@ -39,7 +39,7 @@ Both servers must run simultaneously during development (frontend on :3000, back
 2. After Google OAuth, Laravel creates/updates User, generates a Sanctum token
 3. Laravel redirects to `http://localhost:3000/api/auth/callback?token={token}&role={role}&data={user}`
 4. Next.js stores the token in an httpOnly cookie (`auth_token`, 7-day expiry)
-5. `Vroom-ci/middleware.ts` protects `/client/*`, `/vendeur/*`, `/partenaire/*` routes by checking this cookie
+5. `vroom-ci/src/proxy.ts` protects `/client/*`, `/vendeur/*`, `/partenaire/*` routes by checking this cookie (Next.js 16 renamed `middleware.ts`/`middleware()` to `proxy.ts`/`proxy()` — see `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md`; `AGENTS.md` in `vroom-ci/` flags this class of breaking change)
 
 ### Frontend → Backend Communication
 All API calls from the browser go through a Next.js proxy:
@@ -102,3 +102,43 @@ Five roles defined directly on `users.role`: `client`, `vendeur`, `concessionnai
 - Réserve l'implémentation complète aux cas réellement complexes pour son niveau (ce que le Junior ne peut pas raisonnablement déduire seul) — et dans ce cas, explique le raisonnement, ne te contente pas de livrer le code.
 - En cas de doute sur le niveau de difficulté d'une tâche donnée, demande avant de choisir entre scaffolding minimal et implémentation complète.
 - **Ça s'applique aussi aux commandes** (git, gh, artisan, pnpm...), pas seulement au code : une fois qu'un workflow a été expliqué et compris (ex. branche → PR → merge), donne la commande exacte à lancer et laisse le Junior l'exécuter lui-même — n'exécute pas à sa place par défaut. N'exécute directement que si c'est explicitement demandé, ou pour vérifier/diagnostiquer un résultat après coup (ex. lire un log d'erreur).
+
+## Rituel de vérification (obligatoire avant toute demande)
+
+Le Junior lance ces commandes **avant** de signaler un problème ou de demander de l'aide.
+Le répertoire réel est `vroom-ci/` (minuscule), et le gestionnaire de paquets est **pnpm**.
+
+```bash
+# Frontend — depuis vroom-ci/
+npx tsc --noEmit     # types : attrape ~80 % des erreurs, en 10 secondes
+pnpm dev             # rendu réel dans le navigateur
+npx next build       # ce que `dev` ne dit pas : prerender, frontières Suspense
+
+# Backend — depuis vroom-backend/
+php -l <fichier>              # syntaxe PHP
+php artisan migrate --pretend # SQL d'une migration SANS l'exécuter
+php artisan route:list --path=<x>  # vérifier qu'une route existe vraiment
+php artisan test
+```
+
+### Protocole de demande d'aide
+
+Une demande recevable contient **trois** éléments : le message d'erreur *mot à mot*, ce que le Junior
+a déjà vérifié, et ce qu'il ne comprend pas. « Erreur ligne 154 » n'est pas une demande recevable.
+
+**Claude ne prend pas le clavier tant qu'une tentative complète n'a pas été produite et vérifiée.**
+Face à « termine », « corrige », « fais-le » sur du code que le Junior peut écrire : renvoyer la copie,
+demander la tentative. Écrire à sa place fait avancer le dépôt, pas le développeur.
+
+### Points de vigilance récurrents (relire en priorité)
+
+- **Auto-import de l'IDE** : `lucide-react` exporte des icônes nommées `Link`, `Image`, `Menu`, `Search`.
+  Vérifier chaque ligne d'import ajoutée automatiquement.
+- **`<Image>` de next/image** : exige `fill` OU `width`+`height`. Avec `object-cover`, `sizes` doit décrire
+  la largeur **peinte** après recadrage, pas la largeur CSS de la boîte.
+- **Champs de formulaire** : `value` + `onChange` ensemble, sinon l'input est non contrôlé et le state
+  reste vide sans aucune erreur.
+- **Copier-coller** : au-delà de 5 lignes, extraire un composant ou retaper. C'est le vecteur principal
+  des bugs de ce projet (formulaire d'inscription cloné de la connexion, `handleLogoinSubmit` inclus).
+- **Bases JS à surveiller** : priorité des opérateurs, `!==` avec `||` (toujours vrai), `===` utilisé
+  comme affectation, code après un `return`, paramètres de callback qui masquent les variables.

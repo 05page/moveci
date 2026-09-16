@@ -154,8 +154,6 @@ class AuthController extends Controller
             'longitude'     => 'sometimes|numeric|between:-180,180',
             // champs concessionnaire / auto_ecole
             'raison_sociale'  => 'required_if:role,concessionnaire,auto_ecole|string|max:255',
-            'rccm'            => 'sometimes|required_if:role,concessionnaire|string|max:14',
-            'numero_agrement' => 'sometimes|required_if:role,auto_ecole|string|max:50',
         ]);
 
         $isProfessionnel = in_array($request->role, ['concessionnaire', 'auto_ecole']);
@@ -171,8 +169,6 @@ class AuthController extends Controller
             'latitude'        => $request->latitude,
             'longitude'       => $request->longitude,
             'raison_sociale'  => $request->raison_sociale,
-            'rccm'            => $request->rccm,
-            'numero_agrement' => $request->numero_agrement,
             'onboarding_completed_at' => now()
         ]);
 
@@ -224,28 +220,77 @@ class AuthController extends Controller
         }
     }
 
-    public function completeOnboarding(Request $request): JsonResponse
+    public function coverProfile(Request $request): JsonResponse
     {
         try {
             $user = $request->user();
+            $validatedData = $request->validate(
+                ["cover_photo" => "nullable|image|mimes:jpeg,png,jpg,webp|max:2048"]
+            );
 
-            // Validation conditionnelle — auto_ecole a des champs différents de vendeur/concessionnaire
-            if ($user->role === 'auto_ecole') {
-                $validated = $request->validate([
-                    'raison_sociale'  => 'required|string|max:255',
-                    'numero_agrement' => 'required|string|max:50',
-                ]);
-            } else {
-                $validated = $request->validate([
-                    'telephone' => 'required|string|max:20',
-                    'adresse'   => 'required|string|max:500',
-                    'role' => 'required|in:client,vendeur'
-                ]);
+            if ($user->role == "vendeur" || $user->role == "client") {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Vous n'avez pas la possibilité d'ajouter une photo de couverture"
+                ], 403);
             }
 
             DB::beginTransaction();
+            if ($request->hasFile('cover_photo')) {
+                $storagePath = $request->file('cover_photo')->store('profil', 'public');
+                $user->update(['cover_photo' => $storagePath]);
+            }
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                "message" => "Photo de couverture ajoutée avec succès"
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->serverError($e, 'Erreur lors de la mise à jour. Réessayez dans quelques instants.');
+        }
+    }
 
-            $user->update($validated);
+    public function avatarProfile(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $validatedData = $request->validate(
+                ["avatar" => "nullable|image|mimes:jpeg,png,jpg,webp|max:2048"]
+            );
+
+            DB::beginTransaction();
+            if ($request->hasFile('avatar')) {
+                $storagePath = $request->file('avatar')->store('profil', 'public');
+                $user->update(['avatar' => $storagePath]);
+            }
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                "message" => "Photo de profile ajoutée avec succès"
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->serverError($e, 'Erreur lors de la mise à jour. Réessayez dans quelques instants.');
+        }
+    }
+
+    public function completeOnboarding(Request $request): JsonResponse
+    {
+        // Validée hors du try/catch : une ValidationException doit remonter telle quelle
+        // (422 géré par Laravel), pas être avalée par le catch(\Exception) plus bas en 500.
+        $validated = $request->validate([
+            'telephone' => 'required|string|max:20',
+            'adresse'   => 'required|string|max:500',
+            'role'      => 'required|in:client,vendeur',
+        ]);
+
+        try {
+            $user = $request->user();
+
+            DB::beginTransaction();
+
+            $user->update($validated + ['onboarding_completed_at' => now()]);
 
             // Géocoder uniquement si le rôle envoie une adresse (pas auto_ecole)
             if (isset($validated['adresse'])) {
@@ -256,6 +301,12 @@ class AuthController extends Controller
             }
 
             DB::commit();
+
+            try {
+                Mail::to($user->email)->queue(new WelcomeMail($user));
+            } catch (\Exception $e) {
+                Log::error('Mail queue failed: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
@@ -268,27 +319,6 @@ class AuthController extends Controller
             DB::rollBack();
             return $this->serverError($e, 'Erreur lors de la complétion du profil. Réessayez dans quelques instants.');
         }
-    }
-
-    /**
-     * Marque l'onboarding comme terminé pour un vendeur ou partenaire.
-     * Appelé depuis le wizard frontend sur la dernière étape.
-     */
-    public function finishOnboarding(Request $request): JsonResponse
-    {
-        $user = $request->user();
-
-        $user->update(['onboarding_completed_at' => now()]);
-
-        try {
-            Mail::to($user->email)->queue(new WelcomeMail($user));
-        } catch (\Exception $e) {
-            Log::error('Mail queue failed: ' . $e->getMessage());
-        }
-        return response()->json([
-            'success' => true,
-            'data'    => ["user" => $user->fresh()],
-        ]);
     }
 
     public function getInfoUser(Request $request)
@@ -327,6 +357,7 @@ class AuthController extends Controller
                 'email' => 'sometimes|email|unique:users,email,' . $user->id,
                 'telephone' => 'sometimes|string|max:10',
                 'adresse' => 'sometimes|string|max:500',
+                'raison_sociale' => 'sometimes|string|max:255',
             ]);
 
             $user->update($data);
