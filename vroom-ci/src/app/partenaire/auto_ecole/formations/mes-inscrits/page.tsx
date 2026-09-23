@@ -138,11 +138,7 @@ export default function MesInscrits() {
         return (filtrePermis === "tous" || m.formation.type_permis === filtrePermis) && (filtreSolde === "tous" || (filtreSolde === "solde") === estSolde(m.montant_paye, m.formation.prix));
     });
 
-    // ÉTAPE 1 : dialogueDetail garde le même principe que dialogueVersements juste en dessous
-    // (un seul state EleveInscrit | null, pas un booléen séparé — voir la question qu'on avait
-    // faite plus tôt sur pourquoi "null" plutôt qu'un boolean).
     const [dialogueDetail, setDialogueDetail] = useState<InscritAutoEcole | null>(null);
-
     const [dialogueVersements, setDialogueVersements] = useState<InscritAutoEcole | null>(null);
     const [detailVersements, setDetailVersements] = useState<DetailVersements | null>(null);
     const [chargementVersements, setChargementVersements] = useState(false);
@@ -463,9 +459,6 @@ export default function MesInscrits() {
             <Dialog open={dialogueDetail !== null} onOpenChange={(ouvert) => !ouvert && setDialogueDetail(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>
-                            {dialogueDetail?.client.fullname}
-                        </DialogTitle>
                         <DialogDescription>{dialogueDetail?.formation.titre}</DialogDescription>
                     </DialogHeader>
                     {dialogueDetail && (

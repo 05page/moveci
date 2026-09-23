@@ -282,7 +282,7 @@ export default function PageFormationsAutoEcole() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right tabular-nums font-semibold">
-                        {formation.inscriptions_count.toLocaleString("fr-FR")}
+                        {(formation.inscriptions_count ?? 0).toLocaleString("fr-FR")}
                       </TableCell>
                       <TableCell className="text-right text-sm text-muted-foreground">
                         {formaterDateCourte(formation.created_at)}

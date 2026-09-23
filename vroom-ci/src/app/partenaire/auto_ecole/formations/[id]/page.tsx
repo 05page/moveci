@@ -66,8 +66,10 @@ import {
   STYLE_STATUT_ELEVE,
   STYLE_STATUT_FORMATION,
   STYLE_STATUT_VALIDATION_FORMATION,
+  SESSION_STATUT
 } from "@/lib/formation";
-import type { EleveInscrit, FormationAutoEcole, Promotion, StatsFormation, StatutEleve, TypeRemise } from "@/types";
+import type { DetailVersements, EleveInscrit, FormationAutoEcole, Promotion, StatsFormation, StatutEleve, TypeRemise, Versement } from "@/types";
+import { DialogueAjouterVersement } from "@/components/DialogueVersement";
 
 type ParametresPage = { params: Promise<{ id: string }> };
 
@@ -125,6 +127,9 @@ const FORMULAIRE_STATUT_VIDE: FormulaireStatut = {
   reussite: true,
   statut_eleve: "en_cours"
 }
+
+const recupererVersements = (formationId: string, inscriptionId: string): Promise<{ data: DetailVersements }> =>
+  api.get<{ data: DetailVersements }>(`formations/${formationId}/inscrits/${inscriptionId}/versements`);
 
 /** Même contrat que POST /formations/{id}/promotions (PromotionsController::store). */
 const creerPromotion = (formationId: string, donnees: FormulairePromo): Promise<{ data: Promotion }> =>
@@ -215,8 +220,12 @@ const DetailFormation = ({ id }: { id: string }) => {
   const [suppressionPromo, setSuppressionPromo] = useState<Promotion | null>(null);
   const [dialogueStatut, setDialogueStatut] = useState<EleveInscrit | null>(null);
   const [envoiStatut, setEnvoiStatut] = useState(false);
-  const [erreurStatut, setErreurStatut] = useState(null);
+  const [erreurStatut, setErreurStatut] = useState<string | null>(null);
+const [eleveVersement, setEleveVersement] = useState<EleveInscrit | null>(null);
 
+  const estSolde = (montantPaye: number | null, prixFormation: string): boolean => {
+    return (montantPaye ?? 0) >= Number(prixFormation);
+  };
   useEffect(() => {
     let annule = false;
 
@@ -308,15 +317,14 @@ const DetailFormation = ({ id }: { id: string }) => {
     setFormulaireStatut({ statut_eleve: statutDepart, date_examen: eleve.date_examen?.slice(0, 10) ?? "", reussite: eleve.reussite })
     setDialogueStatut(eleve);
     setErreurStatut(null)
-    if (envoiStatut === true || dialogueStatut === null) return;
-    setEnvoiStatut(true); 
   }
 
   const envoyerStatut = async () => {
+    if (envoiStatut || !dialogueStatut) return;
+
     setEnvoiStatut(true)
     setErreurStatut(null);
     try {
-      if (envoiStatut || !dialogueStatut) return;
       const reponse = await mettreAJourStatutEleve(id, dialogueStatut.id, formulaireStatut);
       setDialogueStatut(null);
       toast.success("Modification réussie")
@@ -329,7 +337,9 @@ const DetailFormation = ({ id }: { id: string }) => {
       );
 
     } catch (e) {
-      toast.error(messageErreur(e, "La mise à jour a échoué."));
+      const message = messageErreur(e, "La mise à jour a échoué.");
+      setErreurStatut(message);
+      toast.error(message);
 
     } finally {
       setEnvoiStatut(false)
@@ -375,6 +385,7 @@ const DetailFormation = ({ id }: { id: string }) => {
   const Icone = ICONE_PERMIS[formation.type_permis];
   const styleValidation = STYLE_STATUT_VALIDATION_FORMATION[formation.statut_validation];
   const styleStatut = STYLE_STATUT_FORMATION[formation.statut];
+  const statutSessions = SESSION_STATUT[formation.statut_session]
 
   const specs = [
     { libelle: "Permis", valeur: `${formation.type_permis} · ${LIBELLE_PERMIS[formation.type_permis]}` },
@@ -386,7 +397,7 @@ const DetailFormation = ({ id }: { id: string }) => {
     { libelle: "Date d'examen", valeur: formation.date_examen ?? "Non précisé" },
     {
       libelle: "Places",
-      valeur: formation.nombre_places ? `${formation.inscriptions_count}/${formation.nombre_places}` : "Illimitées",
+      valeur: formation.nombre_places ? `${formation.inscriptions_count ?? 0}/${formation.nombre_places}` : "Illimitées",
     },
     { libelle: "Publiée le", valeur: formaterDateCourte(formation.created_at) },
   ];
@@ -424,6 +435,7 @@ const DetailFormation = ({ id }: { id: string }) => {
             {formation.statut_validation === "validé" && (
               <Badge className={styleStatut.classes}>{styleStatut.libelle}</Badge>
             )}
+            <Badge className={statutSessions.classes}>{statutSessions.libelle}</Badge>
           </div>
         </div>
       </header>
@@ -582,9 +594,9 @@ const DetailFormation = ({ id }: { id: string }) => {
       </section>
 
       <section className="mt-12">
-        <h2 className="font-heading text-xl font-bold">Élèves inscrits</h2>
+        <h2 className="font-heading text-xl font-bold">Personnes intéressées</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {inscrits.length} élève{inscrits.length > 1 ? "s" : ""} sur cette formation.
+          {inscrits.length} personne{inscrits.length > 1 ? "s" : ""} sur cette formation.
         </p>
 
         {inscrits.length === 0 ? (
@@ -606,6 +618,7 @@ const DetailFormation = ({ id }: { id: string }) => {
                   <TableHead>Contact</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead>Inscrit le</TableHead>
+                  <TableHead>Soldé</TableHead>
                   <TableHead className="text-right">Examen</TableHead>
                   <TableHead className="w-10" />
                 </TableRow>
@@ -613,7 +626,7 @@ const DetailFormation = ({ id }: { id: string }) => {
               <TableBody>
                 {inscrits.map((eleve) => {
                   const styleEleve = STYLE_STATUT_ELEVE[eleve.statut_eleve];
-
+                  const solde = estSolde(eleve.montant_paye, formation.prix);
                   return (
                     <TableRow key={eleve.id}>
                       <TableCell>
@@ -648,6 +661,17 @@ const DetailFormation = ({ id }: { id: string }) => {
                       <TableCell className="text-sm text-muted-foreground">
                         {formaterDateCourte(eleve.date_inscription)}
                       </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={cn(
+                            solde
+                              ? "bg-accent text-accent-foreground"
+                              : "bg-secondary text-secondary-foreground"
+                          )}
+                        >
+                          {solde ? "Soldé" : "Non soldé"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-right text-sm">
                         {eleve.date_examen?.slice(0, 10) ? (
                           <span className="inline-flex items-center justify-end gap-1.5">
@@ -662,7 +686,7 @@ const DetailFormation = ({ id }: { id: string }) => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <button type="button" onClick={() => ouvrirDialogueStatut(eleve)}>
+                        <button type="button" onClick={() => setEleveVersement(eleve)}>
                           <Pencil className="size-4" />
                         </button>
                       </TableCell>
@@ -791,104 +815,19 @@ const DetailFormation = ({ id }: { id: string }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={dialogueStatut !== null} onOpenChange={(ouvert) => !ouvert && setDialogueStatut(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Modifier le statut</DialogTitle>
-            <DialogDescription>{dialogueStatut?.client.fullname}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="statut-eleve">Statut</Label>
-              <Select
-                value={formulaireStatut.statut_eleve}
-                onValueChange={(valeur) =>
-                  valeur && definirChampStatut("statut_eleve", valeur as FormulaireStatut["statut_eleve"])
-                }
-              >
-                <SelectTrigger id="statut-eleve" className="mt-2 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {OPTIONS_STATUT_ELEVE.map((o) => (
-                    <SelectItem key={o.valeur} value={o.valeur}>
-                      {o.libelle}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {(formulaireStatut.statut_eleve === "examen_passe" || formulaireStatut.statut_eleve === "terminé") && (
-              <>
-                <div>
-                  <Label htmlFor="date-examen">Date d&apos;examen</Label>
-                  <Input
-                    id="date-examen"
-                    type="date"
-                    value={formulaireStatut.date_examen}
-                    onChange={(e) => definirChampStatut("date_examen", e.target.value)}
-                    className="mt-2"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="reussite">Résultat</Label>
-                  {/* reussite est boolean | null côté state, mais Select ne parle qu'en strings —
-                      d'où cette table de correspondance dans les deux sens (affichage puis onValueChange). */}
-                  <Select
-                    value={
-                      formulaireStatut.reussite === true
-                        ? "reussi"
-                        : formulaireStatut.reussite === false
-                          ? "echoue"
-                          : "non_renseigne"
-                    }
-                    onValueChange={(valeur) => {
-                      if (valeur === "reussi") definirChampStatut("reussite", true);
-                      if (valeur === "echoue") definirChampStatut("reussite", false);
-                      if (valeur === "non_renseigne") definirChampStatut("reussite", null);
-                    }}
-                  >
-                    <SelectTrigger id="reussite" className="mt-2 w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="non_renseigne">Pas encore renseigné</SelectItem>
-                      <SelectItem value="reussi">Réussi</SelectItem>
-                      <SelectItem value="echoue">Échoué</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
-            )}
-
-            {erreurStatut && (
-              <p role="status" className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-xs text-destructive">
-                {erreurStatut}
-              </p>
-            )}
-          </div>
-          <DialogFooter>
-            <button
-              type="button"
-              onClick={() => setDialogueStatut(null)}
-              className={cn(buttonVariants({ variant: "outline" }))}
-            >
-              Annuler
-            </button>
-            <button
-              type="button"
-              disabled={envoiStatut}
-              onClick={() => envoyerStatut()}
-              className={cn(buttonVariants())}
-            >
-              {envoiStatut ? "Modification…" : "Modifier"}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
+      <DialogueAjouterVersement
+        formationId={id}
+        eleve={eleveVersement}
+        onClose={() => setEleveVersement(null)}
+        onSucces={({ montant_paye }) => {
+          setDonnees((actuel) => actuel && {
+            ...actuel,
+            inscrits: actuel.inscrits.map((e) =>
+              e.id === eleveVersement?.id ? { ...e, montant_paye } : e
+            ),
+          });
+        }}
+      />
       {/* Suppression d'un code promo : simple confirmation, même mécanique que Supprimer formation */}
       <AlertDialog
         open={suppressionPromo !== null}

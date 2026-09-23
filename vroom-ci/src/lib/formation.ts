@@ -1,6 +1,6 @@
 import { Bike, Bus, Car, Truck, type LucideIcon } from "lucide-react"
 
-import type { StatutEleve, StatutFormation, StatutValidationFormation, TypePermis } from "@/types"
+import type { StatutEleve, StatutFormation, StatutSession, StatutValidationFormation, TypePermis } from "@/types"
 
 /**
  * Helpers du domaine « formation ».
@@ -51,4 +51,10 @@ export const STYLE_STATUT_VALIDATION_FORMATION: Record<StatutValidationFormation
 export const STYLE_STATUT_FORMATION: Record<StatutFormation, { libelle: string; classes: string }> = {
   disponible: { libelle: "En ligne", classes: "bg-accent text-accent-foreground" },
   retiree: { libelle: "Retirée", classes: "bg-muted text-muted-foreground" },
+}
+
+export const SESSION_STATUT: Record<StatutSession, {libelle: string; classes: string}> = {
+  a_venir: {libelle: "Bientôt", classes: "bg-gray-200 text-gray-700"},
+  en_cours: {libelle: "En cours", classes: "bg-amber-400 text-amber-950"},
+  terminee: {libelle: "Terminée", classes: "bg-neutral-900 text-white"}
 }

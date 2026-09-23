@@ -46,6 +46,7 @@ function navPourRole(role: RolePartenaire) {
     nav.push({ libelle: "Transactions", href: "/partenaire/concessionnaire/transactions", icone: Handshake });
   } else {
     nav.push({ libelle: "Formation", href: "/partenaire/auto_ecole/formations", icone: GraduationCap });
+    nav.push({ libelle: "Nos élèves", href: "/partenaire/auto_ecole/formations/mes-inscrits", icone: Users });
     nav.push({ libelle: "Stats", href: "/partenaire/auto_ecole/stats", icone: BarChart3 });
   }
 
