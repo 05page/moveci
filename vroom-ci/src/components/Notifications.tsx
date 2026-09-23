@@ -11,9 +11,12 @@ export type NotificationsProps = {
     notifs: Notification[];
     /** Recompté côté serveur via le scope `unread()` — ne pas le déduire de `notifs`. */
     nonLues: number;
+    /** Marque une notif comme lue (no-op côté parent si elle l'est déjà). */
+    onMarquerLue: (id: string) => void;
+    onToutMarquer: () => void;
 };
 
-export default function Notifications({ notifs, nonLues }: NotificationsProps) {
+export default function Notifications({ notifs, nonLues, onMarquerLue, onToutMarquer }: NotificationsProps) {
     const [isOpen, setIsOpen] = useState(false)
     const boite = useRef<HTMLDivElement>(null);
 
@@ -59,15 +62,26 @@ export default function Notifications({ notifs, nonLues }: NotificationsProps) {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 z-50 mt-2 w-80 origin-top-right overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-1">
-                    <div className="flex items-center justify-between border-b px-4 py-3">
+                <div className="fixed inset-x-4 top-20 z-50 overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-80 sm:origin-top-right">
+                    <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
                         <h2 className="text-sm font-semibold">Notifications</h2>
 
-                        {nonLues > 0 && (
-                            <span className="text-xs font-medium tabular-nums text-muted-foreground">
-                                {nonLues} non lue{nonLues > 1 ? "s" : ""}
-                            </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                            {nonLues > 0 && (
+                                <span className="text-xs font-medium tabular-nums text-muted-foreground">
+                                    {nonLues} non lue{nonLues > 1 ? "s" : ""}
+                                </span>
+                            )}
+                            {nonLues > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={onToutMarquer}
+                                    className="text-xs font-medium text-primary transition-colors hover:underline"
+                                >
+                                    Tout marquer lu
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {notifs.length === 0 ? (
@@ -83,45 +97,50 @@ export default function Notifications({ notifs, nonLues }: NotificationsProps) {
                                 const Icone = ICONE_TYPE_NOTIF[notif.type] ?? Bell;
 
                                 return (
-                                    <li
-                                        key={notif.id}
-                                        className={cn(
-                                            "flex gap-3 border-b px-4 py-3 last:border-b-0",
-                                            !notif.lu && "bg-muted/50"
-                                        )}
-                                    >
-                                        <span
+                                    <li key={notif.id} className="border-b last:border-b-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => onMarquerLue(notif.id)}
+                                            disabled={notif.lu}
                                             className={cn(
-                                                "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md",
-                                                notif.lu
-                                                    ? "bg-muted text-muted-foreground"
-                                                    : "bg-primary/15 text-foreground"
+                                                "flex w-full gap-3 px-4 py-3 text-left transition-colors",
+                                                !notif.lu && "bg-muted/50 hover:bg-muted",
+                                                notif.lu && "cursor-default"
                                             )}
                                         >
-                                            <Icone className="size-4" />
-                                        </span>
-
-                                        {/* `min-w-0` : sans lui, un titre long refuse de se tronquer dans un flex */}
-                                        <div className="min-w-0 flex-1">
-                                            <p
+                                            <span
                                                 className={cn(
-                                                    "truncate text-sm",
-                                                    notif.lu ? "font-normal" : "font-semibold"
+                                                    "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md",
+                                                    notif.lu
+                                                        ? "bg-muted text-muted-foreground"
+                                                        : "bg-primary/15 text-foreground"
                                                 )}
                                             >
-                                                {notif.title}
-                                            </p>
-                                            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                                                {notif.message}
-                                            </p>
-                                            <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
-                                                {tempsRelatif(notif.created_at)}
-                                            </p>
-                                        </div>
+                                                <Icone className="size-4" />
+                                            </span>
 
-                                        {!notif.lu && (
-                                            <span className="mt-2 size-2 shrink-0 rounded-full bg-primary" />
-                                        )}
+                                            {/* `min-w-0` : sans lui, un titre long refuse de se tronquer dans un flex */}
+                                            <div className="min-w-0 flex-1">
+                                                <p
+                                                    className={cn(
+                                                        "truncate text-sm",
+                                                        notif.lu ? "font-normal" : "font-semibold"
+                                                    )}
+                                                >
+                                                    {notif.title}
+                                                </p>
+                                                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                                                    {notif.message}
+                                                </p>
+                                                <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
+                                                    {tempsRelatif(notif.created_at)}
+                                                </p>
+                                            </div>
+
+                                            {!notif.lu && (
+                                                <span className="mt-2 size-2 shrink-0 rounded-full bg-primary" />
+                                            )}
+                                        </button>
                                     </li>
                                 );
                             })}

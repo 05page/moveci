@@ -2,15 +2,6 @@ import Link from "next/link";
 import { TrendingDown, TrendingUp, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/**
- * Carte d'un chiffre unique, partagée par /client/profile et /vendeur/profile.
- *
- * Pas de "use client" : ce composant n'a ni state ni handler, il reste donc un
- * Server Component. Ajouter la directive ici enverrait du JS au navigateur pour
- * afficher du texte statique. Les pages qui l'utilisent, elles, sont clientes —
- * un Server Component rendu DEPUIS un Client Component redevient client, mais
- * garder le fichier neutre permet de le réutiliser ailleurs sans surcoût.
- */
 export type CarteStatProps = {
   /** Ce que le chiffre compte : "Véhicules en ligne". Jamais un verbe. */
   libelle: string;

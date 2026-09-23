@@ -23,7 +23,7 @@ async function requete<T>(
   }
 
   const controller = new AbortController();
-  const minuteur = setTimeout(() => controller.abort(), 15000);
+  const minuteur = setTimeout(() => controller.abort(), 30000);
 
   // 4. Appelle `fetch`, la fonction native du navigateur pour une requête HTTP.
   let response: Response;
@@ -64,3 +64,15 @@ export const api = {
     requete<T>(path, { method: "PUT", body }),
   delete: <T>(path: string) => requete<T>(path, { method: "DELETE" }),
 };
+
+/**
+ * Lit le message serveur d'une erreur levée par `requete()` (voir `throw` ci-dessus),
+ * avec repli si l'erreur n'a pas cette forme (ex. le réseau a coupé avant même la réponse).
+ */
+export const messageErreur = (erreur: unknown, repli: string): string =>
+  typeof erreur === "object" &&
+    erreur !== null &&
+    "message" in erreur &&
+    typeof (erreur as ErreurAuth).message === "string"
+    ? (erreur as ErreurAuth).message
+    : repli;

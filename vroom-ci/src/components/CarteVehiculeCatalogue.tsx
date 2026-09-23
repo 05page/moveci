@@ -1,12 +1,24 @@
+import { useState } from "react";
 import Link from "next/link";
-import { Car, Clock, Eye, Heart } from "lucide-react";
+import { Car, Clock, Eye, Heart, EllipsisVertical, Flag, ShieldAlert, BellPlus } from "lucide-react";
 
 import BadgeEcartPrix from "@/components/BadgeEcartPrix";
 import SpecsVehicule from "@/components/SpecsVehicule";
+import DialogueSignalement from "@/components/DialogueSignalement";
+import DialogueAlertePrix from "@/components/DialogueAlertePrix";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn, formaterFcfa, initiales, urlPhoto, LIBELLES_ROLE } from "@/lib/utils";
 import { libelleVehicule, photoPrincipale } from "@/lib/vehicule";
 import type { VehiculeCatalogue } from "@/types";
+
+/** Lequel des deux dialogues d'action est ouvert — `null` = aucun. */
+type DialogueOuvert = "signalement-annonce" | "signalement-vendeur" | "alerte" | null;
 
 /**
  * Fiche d'une annonce dans la grille de /vehicules.
@@ -19,21 +31,36 @@ import type { VehiculeCatalogue } from "@/types";
  */
 export type CarteVehiculeCatalogueProps = {
   vehicule: VehiculeCatalogue;
-  estFavori: boolean;
-  onBasculerFavori: (vehiculeId: string) => void;
+  /** Omis (comme sur /partenaire/concessionnaire/parc-auto) : le cœur favoris disparaît. */
+  estFavori?: boolean;
+  onBasculerFavori?: (vehiculeId: string) => void;
+  /** Défaut `true` — passer `false` masque "Créer une alerte sur ce prix" (parc-auto concessionnaire : pas de sens pour son propre marché). */
+  avecAlertePrix?: boolean;
+  /**
+   * Racine du lien vers le profil du vendeur — défaut `/vendeurs` (route publique).
+   * Sur /partenaire/concessionnaire/parc-auto, vaut `/partenaire/concessionnaire/vendeur`
+   * pour rester dans le layout à sidebar au lieu de retomber sur le site public.
+   */
+  basePathVendeur?: string;
+  /** Même principe que `basePathVendeur`, pour la fiche du véhicule — défaut `/vehicules` (public). */
+  basePathVehicule?: string;
   /** Décalage d'apparition en ms, pour l'entrée en cascade de la grille. */
   delai?: number;
 };
 
 export default function CarteVehiculeCatalogue({
   vehicule,
-  estFavori,
+  estFavori = false,
   onBasculerFavori,
+  avecAlertePrix = true,
+  basePathVendeur = "/vendeurs",
+  basePathVehicule = "/vehicules",
   delai = 0,
 }: CarteVehiculeCatalogueProps) {
   const libelle = libelleVehicule(vehicule.description, vehicule.id);
   const photo = photoPrincipale(vehicule.photos);
   const estLocation = vehicule.post_type === "location";
+  const [dialogueOuvert, setDialogueOuvert] = useState<DialogueOuvert>(null);
 
   return (
     <article
@@ -80,31 +107,60 @@ export default function CarteVehiculeCatalogue({
           </Badge>
         )}
 
-        <button
-          type="button"
-          onClick={() => onBasculerFavori(vehicule.id)}
-          aria-pressed={estFavori}
-          aria-label={
-            estFavori
-              ? `Retirer ${libelle} de mes favoris`
-              : `Ajouter ${libelle} à mes favoris`
-          }
-          className={cn(
-            "absolute right-3 top-3 flex size-9 items-center justify-center rounded-full bg-background/90 backdrop-blur transition-colors",
-            estFavori
-              ? "text-primary hover:bg-destructive/15 hover:text-destructive"
-              : "text-muted-foreground hover:text-primary"
+        <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
+          {onBasculerFavori && (
+            <button
+              type="button"
+              onClick={() => onBasculerFavori(vehicule.id)}
+              aria-pressed={estFavori}
+              aria-label={
+                estFavori
+                  ? `Retirer ${libelle} de mes favoris`
+                  : `Ajouter ${libelle} à mes favoris`
+              }
+              className={cn(
+                "flex size-9 items-center justify-center rounded-full bg-background/90 backdrop-blur transition-colors",
+                estFavori
+                  ? "text-primary hover:bg-destructive/15 hover:text-destructive"
+                  : "text-muted-foreground hover:text-primary"
+              )}
+            >
+              <Heart className={cn("size-4", estFavori && "fill-current")} />
+            </button>
           )}
-        >
-          <Heart className={cn("size-4", estFavori && "fill-current")} />
-        </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label={`Options pour ${libelle}`}
+              className="flex size-9 items-center justify-center rounded-full bg-background/90 text-muted-foreground backdrop-blur transition-colors hover:text-foreground"
+            >
+              <EllipsisVertical className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setDialogueOuvert("signalement-annonce")}>
+                <Flag className="size-4" />
+                Signaler l&apos;annonce
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDialogueOuvert("signalement-vendeur")}>
+                <ShieldAlert className="size-4" />
+                Signaler le vendeur
+              </DropdownMenuItem>
+              {avecAlertePrix && (
+                <DropdownMenuItem onClick={() => setDialogueOuvert("alerte")}>
+                  <BellPlus className="size-4" />
+                  Créer une alerte sur ce prix
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* flex-1 : les pieds de carte s'alignent même quand les titres tiennent sur 1 ou 2 lignes */}
       <div className="flex flex-1 flex-col p-5">
         <h3 className="truncate font-heading text-lg font-bold">
           <Link
-            href={`/vehicules/${vehicule.id}`}
+            href={`${basePathVehicule}/${vehicule.id}`}
             className="transition-colors hover:text-primary"
           >
             {libelle}
@@ -144,7 +200,7 @@ export default function CarteVehiculeCatalogue({
 
           <span className="min-w-0 flex-1">
             <Link
-              href={`/vendeurs/${vehicule.creator.id}`}
+              href={`${basePathVendeur}/${vehicule.creator.id}`}
               className="lien-anime block truncate text-sm font-semibold hover:text-primary"
             >
               {vehicule.creator.fullname}
@@ -160,6 +216,24 @@ export default function CarteVehiculeCatalogue({
           </span>
         </div>
       </div>
+
+      <DialogueSignalement
+        open={dialogueOuvert === "signalement-annonce"}
+        onOpenChange={(ouvert) => setDialogueOuvert(ouvert ? "signalement-annonce" : null)}
+        cible={{ type: "vehicule", id: vehicule.id, label: `« ${libelle} »` }}
+      />
+      <DialogueSignalement
+        open={dialogueOuvert === "signalement-vendeur"}
+        onOpenChange={(ouvert) => setDialogueOuvert(ouvert ? "signalement-vendeur" : null)}
+        cible={{ type: "vendeur", id: vehicule.creator.id, label: vehicule.creator.fullname }}
+      />
+      <DialogueAlertePrix
+        open={dialogueOuvert === "alerte"}
+        onOpenChange={(ouvert) => setDialogueOuvert(ouvert ? "alerte" : null)}
+        marqueDefaut={vehicule.description?.marque ?? ""}
+        modeleDefaut={vehicule.description?.modele ?? ""}
+        prixDefaut={Number(vehicule.prix)}
+      />
     </article>
   );
 }

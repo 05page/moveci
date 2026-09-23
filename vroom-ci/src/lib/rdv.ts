@@ -5,6 +5,9 @@ import type { RendezVousClient, StatutRendezVous, TypeRendezVous } from "@/types
  * `utils.ts` reste réservé aux fonctions de présentation pures.
  */
 
+/** Ce dont `estAVenir`/`estAnnulable` ont besoin — satisfait par `RendezVousClient` ET `RendezVousVendeur`, sans dupliquer ces deux fonctions pour le côté vendeur. */
+type RdvAvecStatutEtDate = { statut: StatutRendezVous; date_heure: string }
+
 /** Libellé et couleur des 5 valeurs de `rendez_vous.statut`. Le Record force à toutes les couvrir. */
 export const STYLE_STATUT_RDV: Record<
   StatutRendezVous,
@@ -35,17 +38,17 @@ export const LIBELLES_TYPE_RDV: Record<TypeRendezVous, string> = {
  * venir », c'est de l'historique — se fier à la seule date le remettrait en tête
  * de liste alors qu'il n'appelle plus aucune action.
  */
-export function estAVenir(rdv: RendezVousClient): boolean {
+export function estAVenir(rdv: RdvAvecStatutEtDate): boolean {
   const vivant = rdv.statut === "en_attente" || rdv.statut === "confirmé"
   return vivant && new Date(rdv.date_heure).getTime() > Date.now()
 }
 
 /**
- * Le client peut-il annuler ce rendez-vous ?
+ * Le client (ou le vendeur) peut-il annuler ce rendez-vous ?
  * `annuler()` refuse explicitement les RDV terminés (422). Les refusés et
  * annulés passeraient côté back, mais proposer le bouton n'aurait aucun sens.
  */
-export function estAnnulable(rdv: RendezVousClient): boolean {
+export function estAnnulable(rdv: RdvAvecStatutEtDate): boolean {
   return rdv.statut === "en_attente" || rdv.statut === "confirmé"
 }
 
@@ -56,4 +59,14 @@ export function estAnnulable(rdv: RendezVousClient): boolean {
  */
 export function peutLaisserAvis(rdv: RendezVousClient): boolean {
   return rdv.statut === "terminé" && !rdv.has_avis
+}
+
+/** Le vendeur doit-il encore répondre à cette demande de rendez-vous ? */
+export function estAConfirmer(rdv: RdvAvecStatutEtDate): boolean {
+  return rdv.statut === "en_attente"
+}
+
+/** Le vendeur peut-il clore ce rendez-vous une fois la rencontre passée (`terminer()`, ouvre la transaction) ? */
+export function estTerminable(rdv: RdvAvecStatutEtDate): boolean {
+  return rdv.statut === "confirmé"
 }

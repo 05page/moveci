@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCheck, Clock } from "lucide-react";
+import { CheckCheck, Clock, Trash2 } from "lucide-react";
 
 import { cn, formaterHeure } from "@/lib/utils";
 import type { MessageChat } from "@/types";
@@ -15,15 +15,30 @@ export type BulleMessageProps = {
    * Le parent le déduit de l'id (`temp-…`), il n'a pas d'état dédié pour ça.
    */
   enAttente?: boolean;
+  /** Absent = pas de bouton supprimer (message reçu). Présent = affiché seulement si `deMoi`. */
+  onSupprimer?: () => void;
 };
 
 export default function BulleMessage({
   message,
   deMoi,
   enAttente = false,
+  onSupprimer,
 }: BulleMessageProps) {
   return (
-    <div className={cn("flex", deMoi ? "justify-end" : "justify-start")}>
+    <div className={cn("group flex", deMoi ? "justify-end" : "justify-start")}>
+      {/* order-first : le bouton reste à gauche de la bulle même si elle est alignée à droite */}
+      {deMoi && onSupprimer && !enAttente && (
+        <button
+          type="button"
+          onClick={onSupprimer}
+          aria-label="Supprimer le message"
+          className="order-first mr-1.5 self-center text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      )}
+
       <div
         className={cn(
           "max-w-[85%] rounded-md border px-4 py-2.5 sm:max-w-[75%]",

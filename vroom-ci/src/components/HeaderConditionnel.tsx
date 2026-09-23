@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import React from "react";
 
-const ROUTES_SANS_HEADER = ["/admin"];
+const ROUTES_SANS_HEADER = ["/admin", "/partenaire"];
 
 export default function HeaderConditionnel({ children }: { children: React.ReactNode }) {
   const chemin = usePathname();

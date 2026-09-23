@@ -15,14 +15,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { buttonVariants } from "@/components/ui/button";
+import { toast } from "sonner";
+import { api, messageErreur } from "@/lib/api";
 import { cn } from "@/lib/utils";
-
-/* ────────────────────────────────────────────────────────────────────────────
-   PUBLIER UNE FORMATION — /partenaire/auto_ecole/post-formation
-   Un seul consommateur (auto_ecole) : pas de composant partagé à extraire,
-   contrairement à PostVehiculeContent.
-   Miroir de StoreFormationRequest (vroom-backend, routes/api.php:168).
-   ──────────────────────────────────────────────────────────────────────────── */
+import type { FormationAutoEcole } from "@/types";
 
 type TypePermis = "A" | "A2" | "B" | "B1" | "C" | "D";
 
@@ -35,34 +31,37 @@ const OPTIONS_PERMIS: { valeur: TypePermis; libelle: string }[] = [
   { valeur: "D", libelle: "Permis D — transport en commun" },
 ];
 
+// ÉTAPE 1 — ajoute `lieu: string;` ici, juste après `langue: string;` (même forme, optionnel côté back : StoreFormationRequest a `'lieu' => 'nullable|string|max:255'`).
 type FormulaireFormation = {
   type_permis: TypePermis;
   titre: string;
   texte: string;
   prix: string;
+  lieu: string;
+  nombre_places: string;
   duree_heures: string;
-  langue: string;
+  date_disponiblite: string;
+  date_fin: string;
+  date_examen: string;
 };
 
+// ÉTAPE 2 — ajoute `lieu: ""` ici, même endroit que `langue: ""`.
 const FORMULAIRE_VIDE: FormulaireFormation = {
   type_permis: "B",
   titre: "",
   texte: "",
   prix: "",
   duree_heures: "",
-  langue: "",
+  date_examen: "",
+  date_disponiblite: "",
+  date_fin: "",
+  nombre_places: "",
+  lieu: "",
 };
 
-/**
- * Même contrat que POST /formations (FormationController::store) : seul ce
- * corps changera au branchement. Le back valide via StoreFormationRequest —
- * titre, texte, type_permis, prix, duree_heures requis, langue optionnelle.
- */
-function posterFormation(donnees: FormulaireFormation): Promise<{ id: string }> {
-  return new Promise((resolve) =>
-    setTimeout(() => resolve({ id: crypto.randomUUID() }), 700)
-  );
-}
+/** Même contrat que POST /formations (FormationController::store, StoreFormationRequest). */
+const posterFormation = (donnees: FormulaireFormation): Promise<{ data: FormationAutoEcole }> =>
+  api.post<{ data: FormationAutoEcole }>("formations", donnees);
 
 export default function PagePostFormation() {
   const navigate = useRouter();
@@ -93,9 +92,12 @@ export default function PagePostFormation() {
     try {
       await posterFormation(formulaire);
       setFormulaire(FORMULAIRE_VIDE);
+      toast.success("Formation soumise — en attente de validation admin.");
       navigate.push("/partenaire/auto_ecole/dashboard");
-    } catch {
-      setErreur("La publication a échoué. Réessayez dans quelques instants.");
+    } catch (erreurCatch) {
+      const message = messageErreur(erreurCatch, "La publication a échoué. Réessayez dans quelques instants.");
+      setErreur(message);
+      toast.error(message);
     } finally {
       setEnvoi(false);
     }
@@ -163,17 +165,6 @@ export default function PagePostFormation() {
           </div>
 
           <div>
-            <Label htmlFor="langue">Langue</Label>
-            <Input
-              id="langue"
-              value={formulaire.langue}
-              onChange={(e) => definirChamp("langue", e.target.value)}
-              placeholder="Français"
-              className="mt-2"
-            />
-          </div>
-
-          <div>
             <Label htmlFor="prix">Prix (FCFA) *</Label>
             <Input
               id="prix"
@@ -202,6 +193,70 @@ export default function PagePostFormation() {
               required
             />
           </div>
+
+          <div>
+            <Label htmlFor="lieu">Lieu (Optionnel)</Label>
+            <Input
+              id="lieu"
+              value={formulaire.lieu}
+              onChange={(e) => definirChamp("lieu", e.target.value)}
+              placeholder="Cocody, 2plateaux"
+              className="mt-2"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="nombre_places">Nombre de place</Label>
+            <Input
+              id="date_examen"
+              type="text"
+              inputMode="numeric"
+              min={1}
+              value={formulaire.nombre_places}
+              onChange={(e) => definirChamp("nombre_places", e.target.value)}
+              placeholder="20"
+              className="mt-2"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="date_disponiblite">Date</Label>
+            <Input
+              id="date_disponibilite"
+              type="date"
+              value={formulaire.date_disponiblite}
+              onChange={(e) => definirChamp("date_disponiblite", e.target.value)}
+              className="mt-2"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="date_fin">Date de fin</Label>
+            <Input
+              id="date_fin"
+              type="date"
+              value={formulaire.date_fin}
+              onChange={(e) => definirChamp("date_fin", e.target.value)}
+              className="mt-2"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="date_examen">Date examen</Label>
+            <Input
+              id="date_examen"
+              type="date"
+              inputMode="numeric"
+              min={1}
+              value={formulaire.date_examen}
+              onChange={(e) => definirChamp("date_examen", e.target.value)}
+              placeholder="20"
+              className="mt-2"
+              required
+            />
+          </div>
+
         </div>
 
         {erreur && (
